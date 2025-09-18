@@ -1,15 +1,17 @@
-# YourBizGuru Master Template v1.0.0
+# YourBizGuru Master Template v1.1.0
 
-This template includes official YBG branding, favicon set, gradients, neon glow, and updated footer. It serves as the **master template v1.0.0** for all toolkits (Grant Genie, CompliPilot, Elev8 Analyzer, BizPlan Builder, Credit Commander, Contract Commander). Clone this template to start each toolkit.
+This template includes official YBG branding, complete theming system (Light/Dark), tokenized CSS architecture, increased yellow accents, and persistent theme preferences. It serves as the **master template v1.1.0** for all toolkits (Grant Genie, CompliPilot, Elev8 Analyzer, BizPlan Builder, Credit Commander, Contract Commander). Clone this template to start each toolkit.
 
 ## Features
 
-- **Official YBG Branding**: Professional dark gradient theme with neon glow effects
+- **Dual Theme System**: Professional Light and Dark themes with persistent user preference
+- **Tokenized CSS Architecture**: Reusable CSS variables for colors, gradients, shadows, and typography
+- **Enhanced Yellow Accents**: Tasteful use of YBG yellow (#FFEB3B) throughout both themes
 - **Complete Icon Set**: Favicon, Apple Touch Icon, Android Chrome icons, and PWA manifest
-- **Dark Gradient Background**: `linear-gradient(135deg, #0A0A0A, #1A1A1A, #000000)`
-- **Neon Glow Effects**: Interactive elements with light blue (#4FC3F7) and yellow (#FFEB3B) accents
+- **Theme Persistence**: Respects system preferences with localStorage override capability
+- **Accessibility First**: AA contrast compliance and reduced-motion support
 - **AI-Powered Backend**: OpenAI GPT-4o-mini integration with fallback support
-- **Mobile Responsive**: Optimized for all device sizes
+- **Mobile Responsive**: Optimized for all device sizes with theme-aware mobile chrome
 - **PWA Ready**: Complete manifest and icon set for Progressive Web App deployment
 
 ## Tech Stack
@@ -22,20 +24,34 @@ This template includes official YBG branding, favicon set, gradients, neon glow,
 
 ## Branding Guidelines
 
-### Colors
+### Colors (Both Themes)
 - **Primary**: #4FC3F7 (Light Blue)
-- **Accent**: #FFEB3B (Yellow)
-- **Background**: Dark gradient (#0A0A0A → #1A1A1A → #000000)
-- **Text**: #FFFFFF on dark backgrounds
+- **Accent**: #FFEB3B (Yellow - increased presence)
+- **Success**: #4CAF50 (Green)
+- **Error**: #F44336 (Red)
+
+### Light Theme
+- **Background**: Subtle gradient (#f8fafd → #f0f4f8 → #fafbfc)
+- **Cards**: Pure white with soft borders
+- **Text**: Dark slate (#1e293b)
+- **Yellow Accents**: Subtle accent markers on cards, hover underlines
+
+### Dark Theme
+- **Background**: Dark gradient (#0A0A0A → #1A1A1A → #0f0f0f)
+- **Cards**: Elevated dark surfaces with blue borders
+- **Text**: Pure white (#FFFFFF)
+- **Yellow Accents**: Enhanced glows, dual-layer button effects, accent borders
 
 ### Typography
-- **Headings**: Montserrat (with neon text-shadow)
+- **Headings**: Montserrat (with theme-aware shadows)
 - **Body**: Open Sans
+- **Sizes**: Consistent scale from 12px to 28px
 
 ### Interactive Elements
-- Buttons with gradient backgrounds and neon box-shadow
-- Hover effects with yellow accent glow
-- Focus states with blue outline for accessibility
+- Theme toggle with sun/moon icons
+- Buttons with gradient backgrounds and theme-specific glows
+- Dual-layer hover effects (blue core + yellow halo)
+- Focus states with combined blue/yellow rings for accessibility
 
 ## Setup Instructions
 
@@ -78,6 +94,40 @@ Embed the dashboard using an iframe:
 </iframe>
 ```
 
+## Themes
+
+### Theme System Architecture
+The template uses a tokenized CSS variable system located in `public/style.css`:
+
+- **Root variables**: Define brand colors as RGB values for flexible alpha usage
+- **Theme classes**: `.theme-light` (default) and `.theme-dark` applied to `<html>`
+- **Token categories**:
+  - Colors: `--bg`, `--card`, `--text`, `--muted`, `--border`
+  - Brand: `--primary`, `--accent`, `--success`, `--error`
+  - Gradients: `--bg-gradient`, `--btn-gradient`, `--accent-glow`
+  - Shadows: `--shadow`, `--shadow-strong`, `--glow-primary`, `--glow-accent`
+
+### Theme Behavior
+1. **First Load**: Honors system preference via `prefers-color-scheme`
+2. **Manual Toggle**: Overrides system preference, persists to localStorage (`ybg-theme`)
+3. **Persistence**: User choice survives page refreshes
+4. **System Changes**: Only applied if no manual preference is set
+
+### Customizing Theme Tokens
+Toolkits can override specific tokens without modifying components:
+```css
+/* Example: Increase accent intensity for a specific toolkit */
+html.theme-light {
+    --accent-glow-alpha: rgba(var(--accent-rgb), 0.4); /* Stronger yellow */
+}
+```
+
+### Accessibility Features
+- AA contrast compliance on all text/background combinations
+- `prefers-reduced-motion`: Disables heavy animations and glows
+- Focus rings: Blue core with subtle yellow halo
+- Theme toggle: Keyboard accessible with clear focus states
+
 ## Customization for Specific Toolkits
 
 To customize for each toolkit (Grant Genie, CompliPilot, etc.):
@@ -86,6 +136,7 @@ To customize for each toolkit (Grant Genie, CompliPilot, etc.):
 2. Modify the OpenAI prompt system message in `server/routes.ts`
 3. Adjust the placeholder text in the textarea
 4. Update the `site.webmanifest` with toolkit-specific details
+5. (Optional) Override theme tokens for toolkit-specific branding
 
 ## File Structure
 
@@ -141,6 +192,14 @@ For support and questions, visit [YourBizGuru.com](https://yourbizguru.com)
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Release Date**: September 2025  
-**Template Tag**: `ybg-template-v1.0.0`
+**Template Tag**: `ybg-template-v1.1.0`  
+
+### Changelog v1.1.0
+- Added comprehensive Light/Dark theme system
+- Implemented tokenized CSS architecture for reusability
+- Increased yellow accent presence across both themes
+- Added persistent theme toggle with localStorage
+- Enhanced accessibility with AA contrast and reduced-motion support
+- Improved button hover states with dual-layer glows
