@@ -24,9 +24,8 @@ const openai = new OpenAI({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from src/frontend and public
-app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'src/frontend')));
+// Serve static files from public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -35,6 +34,11 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: 'development'
     });
+});
+
+// Root route - serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // API endpoint for generating toolkit results
@@ -133,10 +137,6 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
-// Catch-all handler: serve index.html for any non-API routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'src/frontend/index.html'));
-});
 
 // Error handling middleware
 app.use((error, req, res, next) => {

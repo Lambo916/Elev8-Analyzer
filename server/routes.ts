@@ -1,13 +1,116 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import express from "express";
+import path from "path";
+import OpenAI from "openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Serve static files from public folder
+  app.use(express.static(path.join(process.cwd(), "public")));
+  
+  // Initialize OpenAI client
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // API endpoint for generating toolkit results
+  app.post("/api/generate", async (req, res) => {
+    try {
+      const { prompt } = req.body;
+
+      // Input validation
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({
+          error: "Invalid request. Prompt is required and must be a string.",
+        });
+      }
+
+      if (prompt.trim().length === 0) {
+        return res.status(400).json({
+          error: "Prompt cannot be empty.",
+        });
+      }
+
+      if (prompt.length > 2000) {
+        return res.status(400).json({
+          error: "Prompt is too long. Maximum 2000 characters allowed.",
+        });
+      }
+
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY) {
+        console.error("OpenAI API key not configured");
+        return res.status(500).json({
+          error: "Service configuration error. Please contact support.",
+        });
+      }
+
+      console.log(
+        "Generating response for prompt:",
+        prompt.substring(0, 100) + (prompt.length > 100 ? "..." : "")
+      );
+
+      // Call OpenAI API
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful business assistant powered by YourBizGuru. Provide professional, actionable advice and solutions. Be concise but comprehensive in your responses.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_tokens: 2048,
+      });
+
+      const result = completion.choices[0].message.content;
+
+      console.log("Response generated successfully");
+
+      res.json({
+        result,
+        timestamp: new Date().toISOString(),
+        model: "gpt-4",
+      });
+    } catch (error: any) {
+      console.error("Error in /api/generate:", error);
+
+      // Handle specific OpenAI errors
+      if (error.code === "insufficient_quota") {
+        return res.status(503).json({
+          error: "Service temporarily unavailable. Please try again later.",
+        });
+      }
+
+      if (error.code === "model_not_found") {
+        return res.status(503).json({
+          error: "AI model temporarily unavailable. Please try again later.",
+        });
+      }
+
+      if (error.status === 429) {
+        return res.status(429).json({
+          error: "Too many requests. Please wait a moment and try again.",
+        });
+      }
+
+      if (error.status === 401) {
+        return res.status(500).json({
+          error: "Authentication error. Please contact support.",
+        });
+      }
+
+      // Generic error response
+      res.status(500).json({
+        error: "An unexpected error occurred. Please try again.",
+      });
+    }
+  });
 
   const httpServer = createServer(app);
 
