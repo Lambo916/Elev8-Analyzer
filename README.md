@@ -1,197 +1,146 @@
-# YourBizGuru (YBG) Toolkit Template
+# YourBizGuru Master Template v1.0.0
 
-Production-ready, reusable template for creating business toolkits powered by AI. Designed for easy deployment across Replit (development), GitHub (version control), and Vercel (production).
+This template includes official YBG branding, favicon set, gradients, neon glow, and updated footer. It serves as the **master template v1.0.0** for all toolkits (Grant Genie, CompliPilot, Elev8 Analyzer, BizPlan Builder, Credit Commander, Contract Commander). Clone this template to start each toolkit.
 
-## 🎯 Project Overview
+## Features
 
-This template creates brand-aligned mini-dashboards that can be:
-- Developed locally in Replit
-- Deployed to production on Vercel
-- Embedded in GoHighLevel via iframe
-- Customized for 6 different toolkits using placeholder tokens
+- **Official YBG Branding**: Professional dark gradient theme with neon glow effects
+- **Complete Icon Set**: Favicon, Apple Touch Icon, Android Chrome icons, and PWA manifest
+- **Dark Gradient Background**: `linear-gradient(135deg, #0A0A0A, #1A1A1A, #000000)`
+- **Neon Glow Effects**: Interactive elements with light blue (#4FC3F7) and yellow (#FFEB3B) accents
+- **AI-Powered Backend**: OpenAI GPT-4o-mini integration with fallback support
+- **Mobile Responsive**: Optimized for all device sizes
+- **PWA Ready**: Complete manifest and icon set for Progressive Web App deployment
 
-## 🛠 Tech Stack
+## Tech Stack
 
-- **Frontend**: Vanilla HTML, CSS, JavaScript (no frameworks)
-- **Backend (Dev)**: Node.js + Express (Replit)
-- **Backend (Prod)**: Vercel Serverless Functions
-- **AI Integration**: OpenAI GPT-5
-- **Deployment**: Vercel + GoDaddy DNS
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3 with custom properties
+- **Backend**: Express.js with TypeScript
+- **AI Integration**: OpenAI API (GPT-4o-mini with GPT-3.5-turbo fallback)
+- **Database**: PostgreSQL with Drizzle ORM (optional)
+- **Development**: Vite, React (for client components), Tailwind CSS
 
-## 📁 Project Structure
+## Branding Guidelines
 
-```
-.
-├── public/
-│   ├── favicon.ico              # YBG favicon
-│   ├── ybg-logo.svg            # YBG logo (SVG)
-│   └── ybg-logo.png            # YBG logo (PNG)
-├── src/
-│   ├── frontend/
-│   │   ├── index.html          # Main HTML template
-│   │   ├── app.css            # Brand-aligned styles
-│   │   └── app.js             # Frontend functionality
-│   └── api/
-│       └── generate.js         # Vercel serverless function
-├── server.js                   # Express server (Replit dev)
-├── vercel.json                 # Vercel deployment config
-├── package.json                # Dependencies & scripts
-├── .env.example               # Environment variables template
-└── README.md                  # This file
-```
+### Colors
+- **Primary**: #4FC3F7 (Light Blue)
+- **Accent**: #FFEB3B (Yellow)
+- **Background**: Dark gradient (#0A0A0A → #1A1A1A → #000000)
+- **Text**: #FFFFFF on dark backgrounds
 
-## 🎨 Brand Guidelines
+### Typography
+- **Headings**: Montserrat (with neon text-shadow)
+- **Body**: Open Sans
 
-**Colors:**
-- Primary: Light Blue (#4FC3F7)
-- Accent: Yellow (#FFEB3B) - use sparingly
-- Base: White (#FFFFFF), Gray (#9E9E9E), Black (#000000)
+### Interactive Elements
+- Buttons with gradient backgrounds and neon box-shadow
+- Hover effects with yellow accent glow
+- Focus states with blue outline for accessibility
 
-**Typography:**
-- Headings: Montserrat (600/500 weights)
-- Body: Open Sans (400/500/600 weights)
+## Setup Instructions
 
-**Design:**
-- Clean, professional, helpful tone
-- 16px border radius, subtle shadows
-- Mobile-first responsive design
-- Lighthouse optimized (90+ performance)
+1. **Clone the template**
+   ```bash
+   git clone [repository-url]
+   cd ybg-template
+   ```
 
-## 🔧 Placeholder Token System
-
-Replace these tokens when creating each toolkit:
-
-- `{{TOOLKIT_NAME}}` → "Grant Genie", "CompliPilot", etc.
-- `{{TOOLKIT_DESC}}` → Short tagline/description
-- `{{DEFAULT_PROMPT_HELPER}}` → Placeholder text for input
-- `{{RESULT_LABEL}}` → "Results", "Analysis", "Recommendations"
-- `{{EXPORT_LABEL}}` → "Export", "Download", "Save"
-
-## 🚀 Quick Start
-
-### Development (Replit)
-
-1. **Clone/Import** this project to Replit
-2. **Set Environment Variables**:
-   - Go to Replit Secrets
-   - Add `OPENAI_API_KEY` with your OpenAI API key
-3. **Install Dependencies**:
+2. **Install dependencies**
    ```bash
    npm install
    ```
-4. **Start Development Server**:
+
+3. **Configure environment variables**
+   - Add your `OPENAI_API_KEY` to the secrets panel
+   - Optionally add `SESSION_SECRET` for session management
+
+4. **Run development server**
    ```bash
    npm run dev
    ```
-5. **Open** `https://your-repl-name.your-username.repl.co`
+   The application will be available at `http://localhost:5000`
 
-### Production (Vercel)
+## Deployment
 
-1. **Push to GitHub**:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial YBG toolkit template"
-   git remote add origin https://github.com/yourbizguru/your-toolkit-name.git
-   git push -u origin main
-   ```
+### Vercel Deployment
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables in Vercel dashboard
+3. Deploy with automatic builds on push
 
-2. **Deploy to Vercel**:
-   - Import GitHub repo to Vercel
-   - Add `OPENAI_API_KEY` in Project Settings > Environment Variables
-   - Deploy automatically
-
-3. **Custom Domain (Optional)**:
-   - Add CNAME in GoDaddy: `subdomain → cname.vercel-dns.com`
-   - Add domain in Vercel project settings
-
-### GoHighLevel Embedding
-
-Add iframe block with your deployed URL:
+### GoHighLevel Integration
+Embed the dashboard using an iframe:
 ```html
 <iframe 
-  src="https://your-toolkit.vercel.app" 
+  src="https://your-app.vercel.app" 
   width="100%" 
-  height="900px" 
-  frameborder="0"
-  scrolling="yes">
+  height="800"
+  frameborder="0">
 </iframe>
 ```
 
-## 📦 Creating New Toolkits
+## Customization for Specific Toolkits
 
-1. **Duplicate** this template repository
-2. **Replace** all placeholder tokens with toolkit-specific values
-3. **Customize** any toolkit-specific styling/functionality
-4. **Deploy** following the production steps above
-5. **Map** subdomain in GoDaddy DNS
+To customize for each toolkit (Grant Genie, CompliPilot, etc.):
 
-**Example for Grant Genie:**
-- `{{TOOLKIT_NAME}}` → "Grant Genie"
-- `{{TOOLKIT_DESC}}` → "AI-powered grant writing assistant"
-- `{{DEFAULT_PROMPT_HELPER}}` → "Describe your organization and funding needs..."
-- `{{RESULT_LABEL}}` → "Grant Recommendations"
-- `{{EXPORT_LABEL}}` → "Download Grant Guide"
+1. Update the title and description in `public/index.html`
+2. Modify the OpenAI prompt system message in `server/routes.ts`
+3. Adjust the placeholder text in the textarea
+4. Update the `site.webmanifest` with toolkit-specific details
 
-## 🔐 Environment Variables
+## File Structure
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENAI_API_KEY` | ✅ | OpenAI API key for GPT-5 integration |
-| `NODE_ENV` | ❌ | Environment (development/production) |
-| `PORT` | ❌ | Server port (default: 3000) |
+```
+/
+├── public/
+│   ├── index.html          # Main HTML with YBG branding
+│   ├── style.css           # Dark gradient theme with neon effects
+│   ├── script.js           # Frontend JavaScript
+│   ├── favicon.ico         # Browser favicon
+│   ├── favicon-32x32.png   # 32px favicon
+│   ├── apple-touch-icon.png # iOS icon
+│   ├── android-chrome-*.png # Android icons
+│   └── site.webmanifest    # PWA manifest
+├── server/
+│   ├── index.ts            # Express server entry
+│   ├── routes.ts           # API routes with OpenAI integration
+│   └── storage.ts          # Storage interface
+├── client/
+│   └── src/                # React components (if needed)
+└── package.json            # Dependencies
+```
 
-## 🎯 Target Toolkits
+## API Endpoints
 
-1. **Grant Genie** - Grant writing assistant
-2. **CompliPilot** - Compliance automation
-3. **Elev8 Analyzer** - Business analysis
-4. **BizPlan Builder** - Business plan creation
-5. **Credit Commander** - Credit improvement
-6. **Contract Commander** - Contract analysis
+- `GET /` - Serves the main dashboard
+- `POST /api/generate` - Generates AI responses
+  - Request: `{ "prompt": "Your business question" }`
+  - Response: `{ "result": "AI response", "timestamp": "ISO date", "model": "gpt-4o-mini" }`
 
-## 📱 Features
+## Security Features
 
-- **Responsive Design**: Mobile-first, works on all devices
-- **Real-time AI**: GPT-5 powered responses
-- **Local Storage**: Saves last 5 results per toolkit
-- **Export Functions**: Copy to clipboard & download as .txt
-- **Error Handling**: Comprehensive error management
-- **Loading States**: Professional UX during processing
-- **Accessibility**: WCAG AA compliant
-- **Performance**: Lighthouse optimized
+- API key validation and secure storage
+- Input validation and sanitization
+- Rate limiting ready
+- CORS configuration for iframe embedding
+- No API key logging in production
 
-## 🔧 Technical Details
+## Browser Support
 
-**Frontend Architecture:**
-- Vanilla JavaScript class-based structure
-- CSS variables for consistent theming
-- Progressive enhancement approach
-- Local storage for result persistence
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers (iOS Safari, Chrome Mobile)
 
-**Backend Architecture:**
-- Express.js for development server
-- Vercel serverless functions for production
-- OpenAI GPT-5 integration with error handling
-- Input validation and rate limiting
+## License
 
-**Security Features:**
-- Input length validation (2000 char limit)
-- API key environment variable management
-- CORS headers for iframe embedding
-- Error message sanitization
+© 2025 YourBizGuru.com - All Rights Reserved
 
-## 📄 License
+## Support
 
-MIT License - Feel free to customize for your toolkit needs.
-
-## 🆘 Support
-
-For technical support or questions:
-- **Development**: Check console logs and network tab
-- **Deployment**: Verify environment variables are set
-- **API Issues**: Confirm OpenAI API key is valid and has credits
+For support and questions, visit [YourBizGuru.com](https://yourbizguru.com)
 
 ---
 
-**Powered by YourBizGuru.com** - Professional business tools made simple.
+**Version**: 1.0.0  
+**Release Date**: September 2025  
+**Template Tag**: `ybg-template-v1.0.0`
