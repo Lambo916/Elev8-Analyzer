@@ -25,8 +25,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API endpoint for generating toolkit results
   app.post("/api/generate", async (req, res) => {
+    const { prompt: userPrompt } = req.body;
+    
     try {
-      const { prompt: userPrompt } = req.body;
 
       // Input validation
       if (!userPrompt || typeof userPrompt !== "string") {
