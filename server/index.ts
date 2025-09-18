@@ -67,5 +67,14 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Log API key detection (masked)
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      const masked = `${apiKey.substring(0, 4)}****${apiKey.substring(apiKey.length - 4)}`;
+      log(`OPENAI key detected: ${masked}`);
+    } else {
+      log("⚠️  OPENAI_API_KEY not found in environment variables");
+    }
   });
 })();
