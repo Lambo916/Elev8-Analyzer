@@ -1,7 +1,102 @@
 /**
  * YourBizGuru Mini-Dashboard - Frontend JavaScript
- * Handles form submission, API calls, results display, and local storage
+ * Handles form submission, API calls, results display, local storage, and theming
  */
+
+/**
+ * Theme Manager - Handles light/dark theme switching and persistence
+ */
+class ThemeManager {
+    constructor() {
+        this.STORAGE_KEY = 'ybg-theme';
+        this.THEME_LIGHT = 'theme-light';
+        this.THEME_DARK = 'theme-dark';
+        
+        this.init();
+    }
+    
+    init() {
+        // Get initial theme preference
+        const storedTheme = localStorage.getItem(this.STORAGE_KEY);
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        // Order of precedence: manual > system preference > default (light)
+        let initialTheme;
+        if (storedTheme) {
+            initialTheme = storedTheme;
+        } else if (systemPrefersDark) {
+            initialTheme = this.THEME_DARK;
+        } else {
+            initialTheme = this.THEME_LIGHT;
+        }
+        
+        // Apply initial theme
+        this.setTheme(initialTheme, false);
+        
+        // Bind toggle button
+        this.bindToggle();
+        
+        // Listen for system preference changes
+        this.listenForSystemChanges();
+    }
+    
+    setTheme(theme, persist = true) {
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        
+        // Remove existing theme classes
+        htmlElement.classList.remove(this.THEME_LIGHT, this.THEME_DARK);
+        
+        // Apply new theme
+        htmlElement.classList.add(theme);
+        
+        // Update icon
+        if (themeIcon) {
+            themeIcon.textContent = theme === this.THEME_DARK ? '🌙' : '☀️';
+        }
+        
+        // Persist choice if manual toggle
+        if (persist) {
+            localStorage.setItem(this.STORAGE_KEY, theme);
+        }
+        
+        // Update meta theme-color for mobile browsers
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+            metaTheme.content = theme === this.THEME_DARK ? '#0A0A0A' : '#4FC3F7';
+        }
+    }
+    
+    toggleTheme() {
+        const currentTheme = document.documentElement.classList.contains(this.THEME_DARK) 
+            ? this.THEME_DARK 
+            : this.THEME_LIGHT;
+        
+        const newTheme = currentTheme === this.THEME_DARK 
+            ? this.THEME_LIGHT 
+            : this.THEME_DARK;
+        
+        this.setTheme(newTheme, true);
+    }
+    
+    bindToggle() {
+        const toggleButton = document.getElementById('themeToggle');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => this.toggleTheme());
+        }
+    }
+    
+    listenForSystemChanges() {
+        // Only apply system changes if user hasn't manually set a preference
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const hasManualPreference = localStorage.getItem(this.STORAGE_KEY);
+            if (!hasManualPreference) {
+                const newTheme = e.matches ? this.THEME_DARK : this.THEME_LIGHT;
+                this.setTheme(newTheme, false);
+            }
+        });
+    }
+}
 
 class YBGToolkit {
     constructor() {
@@ -313,10 +408,11 @@ class YBGToolkit {
                     font-family: var(--font-body, 'Open Sans', sans-serif);
                     font-size: 14px;
                     font-weight: 500;
-                    z-index: 1000;
+                    z-index: 10000;
                     opacity: 0;
                     transform: translateX(100%);
                     transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 }
                 .toast.show {
                     opacity: 1;
@@ -355,8 +451,9 @@ class YBGToolkit {
     }
 }
 
-// Initialize the toolkit when DOM is loaded
+// Initialize the toolkit and theme manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    window.themeManager = new ThemeManager();
     window.ybgToolkit = new YBGToolkit();
 });
 
