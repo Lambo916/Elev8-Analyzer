@@ -3,12 +3,16 @@
  * Serves static files and handles API requests with OpenAI integration
  */
 
-const express = require('express');
-const path = require('path');
-const OpenAI = require('openai');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import OpenAI from 'openai';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Initialize OpenAI client
 // Note: the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
