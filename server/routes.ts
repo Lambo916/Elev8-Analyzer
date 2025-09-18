@@ -18,8 +18,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clean the API key - remove all whitespace and newlines
   const apiKey = rawApiKey.replace(/\s+/g, '').trim();
   
-  console.log("Raw key length:", rawApiKey.length);
-  console.log("Cleaned key length:", apiKey.length);
   
   const openai = new OpenAI({
     apiKey: apiKey,
@@ -28,22 +26,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for generating toolkit results
   app.post("/api/generate", async (req, res) => {
     try {
-      const { prompt } = req.body;
+      const { prompt: userPrompt } = req.body;
 
       // Input validation
-      if (!prompt || typeof prompt !== "string") {
+      if (!userPrompt || typeof userPrompt !== "string") {
         return res.status(400).json({
           error: "Invalid request. Prompt is required and must be a string.",
         });
       }
 
-      if (prompt.trim().length === 0) {
+      if (userPrompt.trim().length === 0) {
         return res.status(400).json({
           error: "Prompt cannot be empty.",
         });
       }
 
-      if (prompt.length > 2000) {
+      if (userPrompt.length > 2000) {
         return res.status(400).json({
           error: "Prompt is too long. Maximum 2000 characters allowed.",
         });
@@ -59,17 +57,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(
         "Generating response for prompt:",
-        prompt.substring(0, 100) + (prompt.length > 100 ? "..." : "")
+        userPrompt.substring(0, 100) + (userPrompt.length > 100 ? "..." : "")
       );
 
-      // Log API key details for debugging
-      console.log("API Key length:", apiKey.length);
-      console.log("API Key prefix:", apiKey.substring(0, 15) + "...");
-      console.log("API Key suffix:", "..." + apiKey.substring(apiKey.length - 15));
 
-      // Call OpenAI API with simpler model for testing
+      // Call OpenAI API with latest model  
       const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -78,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           {
             role: "user",
-            content: prompt,
+            content: userPrompt,
           },
         ],
         max_tokens: 1000,
@@ -91,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         result,
         timestamp: new Date().toISOString(),
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
       });
     } catch (error: any) {
       console.error("Error in /api/generate:", error);
@@ -104,9 +98,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (error.code === "model_not_found") {
-        return res.status(503).json({
-          error: "AI model temporarily unavailable. Please try again later.",
-        });
+        // Fallback to gpt-3.5-turbo if gpt-4o-mini not available
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "system",
+                content: "You are a helpful business assistant powered by YourBizGuru. Provide professional, actionable advice and solutions. Be concise but comprehensive in your responses.",
+              },
+              {
+                role: "user", 
+                content: userPrompt,
+              },
+            ],
+            max_tokens: 1000,
+          });
+          
+          const result = completion.choices[0].message.content;
+          console.log("Response generated successfully with fallback model");
+          return res.json({
+            result,
+            timestamp: new Date().toISOString(),
+            model: "gpt-3.5-turbo"
+          });
+        } catch (fallbackError) {
+          return res.status(503).json({
+            error: "AI models temporarily unavailable. Please try again later.",
+          });
+        }
       }
 
       if (error.status === 429) {
@@ -116,8 +136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (error.status === 401) {
-        return res.status(500).json({
-          error: "Authentication error. Please contact support.",
+        return res.status(401).json({
+          error: "Authentication failed",
         });
       }
 
