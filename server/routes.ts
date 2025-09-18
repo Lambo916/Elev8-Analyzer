@@ -10,8 +10,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.static(path.join(process.cwd(), "public")));
   
   // Initialize OpenAI client
+  const rawApiKey = process.env.OPENAI_API_KEY;
+  if (!rawApiKey) {
+    throw new Error("OPENAI_API_KEY is required");
+  }
+  
+  // Clean the API key - remove all whitespace and newlines
+  const apiKey = rawApiKey.replace(/\s+/g, '').trim();
+  
+  console.log("Raw key length:", rawApiKey.length);
+  console.log("Cleaned key length:", apiKey.length);
+  
   const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: apiKey,
   });
 
   // API endpoint for generating toolkit results
@@ -51,9 +62,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         prompt.substring(0, 100) + (prompt.length > 100 ? "..." : "")
       );
 
-      // Call OpenAI API
+      // Log API key details for debugging
+      console.log("API Key length:", apiKey.length);
+      console.log("API Key prefix:", apiKey.substring(0, 15) + "...");
+      console.log("API Key suffix:", "..." + apiKey.substring(apiKey.length - 15));
+
+      // Call OpenAI API with simpler model for testing
       const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
@@ -65,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: prompt,
           },
         ],
-        max_tokens: 2048,
+        max_tokens: 1000,
       });
 
       const result = completion.choices[0].message.content;
@@ -75,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         result,
         timestamp: new Date().toISOString(),
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
       });
     } catch (error: any) {
       console.error("Error in /api/generate:", error);
