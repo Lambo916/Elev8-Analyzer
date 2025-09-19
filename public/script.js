@@ -3,6 +3,8 @@
  * Handles form submission, API calls, results display, local storage, and theming
  */
 
+import { generateYBGpdf, initPDFExport } from './pdf-export.js';
+
 /**
  * Theme Manager - Handles light/dark theme switching and persistence
  */
@@ -119,6 +121,10 @@ class YBGToolkit {
         // Clear history
         const clearBtn = document.getElementById('clearHistoryBtn');
         clearBtn.addEventListener('click', () => this.clearHistory());
+        
+        // Export all results as PDF
+        const exportBtn = document.getElementById('exportAllBtn');
+        exportBtn.addEventListener('click', () => this.exportAllResults());
 
         // Dynamic event delegation for copy/download buttons
         const resultsContainer = document.getElementById('resultsContainer');
@@ -283,16 +289,20 @@ class YBGToolkit {
         if (result) {
             const toolkitName = this.getToolkitName();
             const timestamp = new Date(result.timestamp).toISOString().split('T')[0];
-            const filename = `${toolkitName}_result_${timestamp}_${resultId}.txt`;
+            const filename = `${toolkitName}_result_${timestamp}_${resultId}.pdf`;
             
-            const content = `${toolkitName} Result\n` +
-                          `Generated: ${result.displayTime}\n` +
+            const content = `Generated: ${result.displayTime}\n` +
                           `Request: ${result.prompt}\n\n` +
-                          `Result:\n${result.result}\n\n` +
-                          `---\nPowered by YourBizGuru.com`;
+                          `Result:\n${result.result}\n\n`;
             
-            this.downloadTextFile(content, filename);
-            this.showSuccess('Result downloaded!');
+            generateYBGpdf({
+                toolkitName: window.currentToolkitName || toolkitName,
+                toolkitIconUrl: window.currentToolkitIcon || "/favicon-32x32.png",
+                content: content,
+                filename: filename
+            });
+            
+            this.showSuccess('PDF downloaded!');
         }
     }
 
@@ -357,6 +367,36 @@ class YBGToolkit {
             
             this.showSuccess('History cleared successfully!');
         }
+    }
+
+    exportAllResults() {
+        const results = this.getStoredResults();
+        
+        if (results.length === 0) {
+            this.showError('No results available to export.');
+            return;
+        }
+
+        let allContent = "";
+        results.forEach((result, index) => {
+            allContent += `Result ${index + 1} - ${result.displayTime}\n`;
+            allContent += "=" + "=".repeat(50) + "\n\n";
+            allContent += `Request: ${result.prompt}\n\n`;
+            allContent += `Result:\n${result.result}\n\n\n`;
+        });
+
+        const toolkitName = this.getToolkitName();
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `${toolkitName}_All_Results_${timestamp}.pdf`;
+
+        generateYBGpdf({
+            toolkitName: window.currentToolkitName || toolkitName,
+            toolkitIconUrl: window.currentToolkitIcon || "/favicon-32x32.png",
+            content: allContent,
+            filename: filename
+        });
+
+        this.showSuccess('All results exported as PDF!');
     }
 
     getToolkitName() {
@@ -455,6 +495,9 @@ class YBGToolkit {
 document.addEventListener('DOMContentLoaded', () => {
     window.themeManager = new ThemeManager();
     window.ybgToolkit = new YBGToolkit();
+    
+    // Initialize PDF export functionality
+    initPDFExport();
 });
 
 // Global error handler for unhandled promise rejections

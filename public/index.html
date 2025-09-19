@@ -23,6 +23,9 @@
     <!-- App Styles -->
     <link rel="stylesheet" href="style.css">
     
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Open Graph for social media embedding -->
     <meta property="og:title" content="YourBizGuru Mini-Dashboard">
     <meta property="og:description" content="Professional business tools powered by YourBizGuru">
@@ -85,14 +88,24 @@
             <div class="results-panel panel" data-testid="panel-results">
                 <div class="panel-header">
                     <h2 data-testid="text-results-header">Results</h2>
-                    <button 
-                        id="clearHistoryBtn" 
-                        class="clear-btn"
-                        title="Clear all results"
-                        data-testid="button-clear-history"
-                    >
-                        Clear
-                    </button>
+                    <div class="panel-actions">
+                        <button 
+                            id="exportAllBtn" 
+                            class="action-btn"
+                            title="Export all results as PDF"
+                            data-testid="button-export-all"
+                        >
+                            Export PDF
+                        </button>
+                        <button 
+                            id="clearHistoryBtn" 
+                            class="clear-btn"
+                            title="Clear all results"
+                            data-testid="button-clear-history"
+                        >
+                            Clear
+                        </button>
+                    </div>
                 </div>
                 <div class="panel-content">
                     <div id="resultsContainer" class="results-container" data-testid="container-results">
@@ -131,6 +144,6 @@
     </template>
 
     <!-- App JavaScript -->
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -365,6 +365,12 @@ html:not(.theme-dark) .panel-header {
     color: rgb(var(--text));
 }
 
+.panel-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
 .panel-content {
     padding: var(--spacing-lg);
 }
