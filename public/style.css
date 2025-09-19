@@ -1,4 +1,4 @@
-/* YourBizGuru Master Template v1.1.2 - Tokenized Theme System with Light Gradient Polish */
+/* YourBizGuru Master Template v1.1.3 - Tokenized Theme System with "Less White" Pass */
 
 /* ========================================
    THEME TOKEN SYSTEM
@@ -36,13 +36,19 @@
     
     /* Light Theme Tokens (Default) */
     --bg: 248, 250, 253;                /* Very pale blue-gray */
-    --bg-gradient: linear-gradient(180deg, #f9fcff 0%, #ffffff 60%, #fdfcff 100%);
-    --bg-accent-wash: radial-gradient(1200px 800px at 85% -120px, rgba(255, 235, 59, 0.10), rgba(255, 255, 255, 0) 55%);
+    --bg-gradient: linear-gradient(180deg, #f3f8ff 0%, #ffffff 55%, #f7fbff 100%);
+    --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(var(--ybg-brand-accent), 0.18), rgba(255, 255, 255, 0) 58%);
+    --bg-accent-wash-2: radial-gradient(900px 700px at -10% 110%, rgba(var(--ybg-brand-primary), 0.12), rgba(255, 255, 255, 0) 60%);
     --card: 255, 255, 255;              /* Pure white cards */
     --card-gradient: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
     --card-header: 245, 247, 250;       /* Slightly tinted header */
     --card-border: rgba(17, 24, 39, 0.08);  /* Subtle slate border */
     --panel: 255, 255, 255;              /* Panel background */
+    --panel-tint: linear-gradient(180deg, rgba(79, 195, 247, 0.06) 0%, rgba(255, 255, 255, 0.0) 38%);
+    --panel-sheen: linear-gradient(0deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65));
+    --panel-border: rgba(17, 24, 39, 0.10);
+    --panel-shadow: 0 8px 28px rgba(16, 24, 40, 0.06);
+    --rim-gradient: linear-gradient(180deg, rgba(79, 195, 247, 0.18), rgba(79, 195, 247, 0.00));
     --text: 30, 41, 59;                  /* Dark slate */
     --text-secondary: 100, 116, 139;    /* Slate gray */
     --text-muted: 148, 163, 184;        /* Light slate */
