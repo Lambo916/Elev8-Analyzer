@@ -88,6 +88,11 @@
                 <div class="panel-header">
                     <h2 data-testid="text-results-header">Results</h2>
                     <div class="panel-actions">
+                        <label class="export-mode-label" for="exportMode" style="margin-right:8px;font-size:12px;opacity:.9;">Export:</label>
+                        <select id="exportMode" class="select">
+                            <option value="latest" selected>Latest only</option>
+                            <option value="all">All results</option>
+                        </select>
                         <button 
                             id="exportAllBtn" 
                             class="action-btn"

@@ -1,245 +1,183 @@
-/**
- * YourBizGuru - Universal PDF Export System (v1.2)
- * - Circle-cropped toolkit icon in header
- * - Styled header (toolkit name, date)
- * - Styled footer (page X of Y + Powered by YourBizGuru.com)
- * - Multi-page content with smart wrapping
- * - Standard filename: YYYY-MM-DD_YBG_[ToolkitName]_Report.pdf
- *
- * Exposed globals:
- *   window.exportResultToPDF(text)
- *   window.exportAllResultsToPDF(resultsArrayOfStrings)
- * 
- * Customization (set anywhere in your app before calling exports):
- *   window.currentToolkitName = "Grant Genie";
- *   window.currentToolkitIcon = "https://example.com/grant-genie-icon.png";
- */
-
 (function () {
-  const CDN_JSPDF =
-    "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+  // YBG PDF Export v1.2.1 — footer fix + margins + helpers
+  const PX_PER_MM = 2.834645669; // jsPDF units are "pt" by default (1 mm ≈ 2.8346 pt) but we will stay in pt everywhere
 
-  // Lazy-load jsPDF once, cache the promise.
-  let __pdfLibPromise = null;
-  function loadJsPDF() {
-    if (__pdfLibPromise) return __pdfLibPromise;
-    __pdfLibPromise = new Promise((resolve, reject) => {
-      if (window.jspdf?.jsPDF) return resolve(window.jspdf.jsPDF);
-      const s = document.createElement("script");
-      s.src = CDN_JSPDF;
-      s.onload = () => resolve(window.jspdf.jsPDF);
-      s.onerror = () =>
-        reject(new Error("Failed to load jsPDF from CDN."));
-      document.head.appendChild(s);
-    });
-    return __pdfLibPromise;
-  }
+  // Exposed defaults (the page will set these before exporting)
+  window.currentToolkitName  = window.currentToolkitName  || "YourBizGuru Mini-Dashboard";
+  window.currentToolkitIcon  = window.currentToolkitIcon  || "/favicon.png";
 
-  // Utilities
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  // Central export API
+  window.exportResultToPDF = async function exportResultToPDF(text, opts = {}) {
+    const mode = (opts.mode || "latest"); // not used here (single text), kept for symmetry
+    const branding = getBranding();
+    const doc = await makeDoc(branding);
 
-  function formatDate(d = new Date()) {
-    // YYYY-MM-DD
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }
+    const layout = getLayout(doc);
+    let cursorY = drawHeader(doc, layout, branding, 1);
+    cursorY = drawBody(doc, layout, text, cursorY);
+    finalizeFooters(doc, layout, branding); // SINGLE footer pass
+    doc.save(fileName(branding.toolkitName, "Report"));
+  };
 
-  function safeToolkitName() {
-    const name =
-      (typeof window.currentToolkitName === "string" &&
-        window.currentToolkitName.trim()) ||
-      "Toolkit";
-    return name.replace(/[^\w\s\-]/g, "").trim();
-  }
+  window.exportAllResultsToPDF = async function exportAllResultsToPDF(resultsArray, opts = {}) {
+    const mode = (opts.mode || "latest"); // "latest" | "all"
+    const branding = getBranding();
+    const doc = await makeDoc(branding);
+    const layout = getLayout(doc);
 
-  function makeFilename(suffix = "Report") {
-    const date = formatDate();
-    const toolkit = safeToolkitName().replace(/\s+/g, "");
-    return `${date}_YBG_${toolkit}_${suffix}.pdf`;
-  }
-
-  async function loadImageCircleDataURL(src, size = 64) {
-    // Returns a circular-masked PNG data URL from the source URL.
-    // If load fails, returns null.
-    try {
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.crossOrigin = "anonymous";
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = src;
-      });
-
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = size;
-      const ctx = canvas.getContext("2d");
-
-      // Draw circle clip & image
-      const r = size / 2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(r, r, r, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      // Cover mode (center-crop)
-      const ratio = Math.max(size / img.width, size / img.height);
-      const w = img.width * ratio;
-      const h = img.height * ratio;
-      const x = (size - w) / 2;
-      const y = (size - h) / 2;
-      ctx.drawImage(img, x, y, w, h);
-      ctx.restore();
-
-      // Add thin ring
-      ctx.beginPath();
-      ctx.arc(r, r, r - 0.5, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(79,195,247,0.9)"; // YBG primary ring
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      return canvas.toDataURL("image/png");
-    } catch {
-      return null;
+    let items = Array.isArray(resultsArray) ? resultsArray : [];
+    if (mode === "latest" && items.length > 0) {
+      items = [items[items.length - 1]]; // last item only
     }
-  }
 
-  // Header & footer painters
-  async function drawHeader(doc, pageWidth, marginLeft, marginRight) {
-    const y = 20;
-    const title = safeToolkitName();
-    const dateStr = formatDate();
-
-    // Icon (circle PNG from URL or fallback dot)
-    const iconUrl =
-      (typeof window.currentToolkitIcon === "string" &&
-        window.currentToolkitIcon.trim()) ||
-      null;
-    let dx = marginLeft;
-    const iconSize = 14; // mm
-
-    if (iconUrl) {
-      const dataURL = await loadImageCircleDataURL(iconUrl, 128);
-      if (dataURL) {
-        try {
-          doc.addImage(dataURL, "PNG", dx, y - 4, iconSize, iconSize);
-          dx += iconSize + 4;
-        } catch {
-          // If addImage fails, skip gracefully
-        }
+    let pageNumber = 1;
+    let cursorY = drawHeader(doc, layout, branding, pageNumber);
+    items.forEach((item, idx) => {
+      if (idx > 0) {
+        // space between entries
+        cursorY = addSpacer(doc, cursorY, 8);
       }
+      // Title per entry (optional)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(20, 20, 20);
+      cursorY = writeWrapped(doc, layout, (item.title || `Result ${idx + 1}`), cursorY, 18);
+
+      // Body
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.setTextColor(50, 50, 50);
+      cursorY = drawBody(doc, layout, (item.text || ""), cursorY);
+    });
+
+    finalizeFooters(doc, layout, branding); // SINGLE footer pass
+    const suffix = mode === "latest" ? "Latest_Result" : "All_Results";
+    doc.save(fileName(branding.toolkitName, suffix));
+  };
+
+  // --------- helpers ----------
+  function getBranding() {
+    return {
+      toolkitName: window.currentToolkitName || "YourBizGuru Mini-Dashboard",
+      iconUrl:     window.currentToolkitIcon || "/favicon.png",
+      brand:       "YourBizGuru.com",
+    };
+  }
+
+  async function makeDoc() {
+    // lazy-load jsPDF from CDN if needed (cached by browser)
+    if (!window.jspdf) {
+      await new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+        s.onload = res; s.onerror = rej; document.head.appendChild(s);
+      });
     }
+    const { jsPDF } = window.jspdf;
+    return new jsPDF({ unit: "pt", format: "a4" });
+  }
+
+  function getLayout(doc) {
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginLeft   = 56;     // L/R page margin
+    const marginRight  = 56;
+    const marginTop    = 72;     // header top
+    const footerHeight = 36;     // reserved area for footer
+    const marginBottom = 56 + footerHeight; // reserve space so content never overlaps footer
+    const contentWidth = pageW - marginLeft - marginRight;
+    const usableHeight = pageH - marginTop - marginBottom;
+    return { pageW, pageH, marginLeft, marginRight, marginTop, marginBottom, contentWidth, usableHeight, footerHeight };
+  }
+
+  function drawHeader(doc, layout, branding, pageNumber) {
+    const { marginLeft, marginTop, contentWidth } = layout;
+    // Icon (circle clipped)
+    let iconSize = 32;
+    try {
+      // load image to canvas for circle clip
+      // If CORS blocks, we'll skip the icon gracefully.
+      // (Agent: we already set same-origin favicon by default)
+      doc.saveGraphicsState && doc.saveGraphicsState();
+      // simple ring
+      doc.setDrawColor(79,195,247); doc.setLineWidth(1.5);
+      doc.circle(marginLeft + iconSize/2, marginTop - 24, iconSize/2 + 3, "S");
+      doc.addImage(branding.iconUrl, "PNG", marginLeft, marginTop - iconSize - 8, iconSize, iconSize, "", "FAST");
+      doc.restoreGraphicsState && doc.restoreGraphicsState();
+    } catch (_) {}
 
     // Title
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(20, 24, 39); // near-black for print
-    doc.text(title, dx, y + 6);
+    doc.setFontSize(16);
+    doc.setTextColor(17, 24, 39);
+    doc.text(branding.toolkitName, marginLeft + iconSize + 10, marginTop - 4);
 
-    // Date (right side)
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(90, 98, 110);
-    const rightX = pageWidth - marginRight;
-    doc.text(dateStr, rightX, y + 6, { align: "right" });
-
-    // Divider
-    doc.setDrawColor(200, 220, 255);
-    doc.setLineWidth(0.6);
-    doc.line(marginLeft, y + 10, pageWidth - marginRight, y + 10);
+    // divider
+    doc.setDrawColor(230, 236, 244);
+    doc.setLineWidth(0.5);
+    doc.line(marginLeft, marginTop + 8, marginLeft + contentWidth, marginTop + 8);
+    return marginTop + 24; // cursor after header
   }
 
-  function drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, pageNumber, totalPages = null) {
-    const y = pageHeight - 12;
-
-    // Divider
-    doc.setDrawColor(230, 235, 240);
-    doc.setLineWidth(0.4);
-    doc.line(marginLeft, y - 5, pageWidth - marginRight, y - 5);
-
-    // Left: Powered by
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(120, 130, 145);
-    doc.text("Powered by YourBizGuru.com", marginLeft, y);
-
-    // Right: page numbering
-    const pText = totalPages ? `Page ${pageNumber} of ${totalPages}` : `Page ${pageNumber}`;
-    doc.text(pText, pageWidth - marginRight, y, { align: "right" });
+  function addSpacer(doc, y, amount) {
+    return y + amount;
   }
 
-  async function exportTextsToPDF(textBlocks, filename = makeFilename("Report")) {
-    const jsPDF = await loadJsPDF();
-    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const marginLeft = 18;
-    const marginRight = 18;
-    const marginTop = 30;   // room for header
-    const marginBottom = 18;
-
-    let cursorY = marginTop + 12; // after header
-    let pageNumber = 1;
-
-    await drawHeader(doc, pageWidth, marginLeft, marginRight);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.setTextColor(50, 50, 50);
-
-    const lineHeight = 6; // ~12pt
-    const maxWidth = pageWidth - marginLeft - marginRight;
-
-    // Helper to add new page and redraw header
-    async function newPage() {
-      drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, pageNumber);
-      doc.addPage();
-      pageNumber++;
-      await drawHeader(doc, pageWidth, marginLeft, marginRight);
-      cursorY = marginTop + 12;
-    }
-
-    // Write each block with spacing
-    for (let bi = 0; bi < textBlocks.length; bi++) {
-      const block = String(textBlocks[bi] ?? "").trim();
-      if (!block) continue;
-
-      const lines = doc.splitTextToSize(block, maxWidth);
-      for (const line of lines) {
-        if (cursorY > pageHeight - marginBottom) {
-          await newPage();
-        }
-        doc.text(line, marginLeft, cursorY);
-        cursorY += lineHeight;
+  function writeWrapped(doc, layout, text, y, lineHeight = 16) {
+    const lines = doc.splitTextToSize(text, layout.contentWidth);
+    lines.forEach((ln) => {
+      // new page if needed
+      if (y + lineHeight > layout.pageH - layout.marginBottom) {
+        doc.addPage();
+        y = drawHeader(doc, layout, getBranding(), doc.getCurrentPageInfo().pageNumber);
       }
-      cursorY += 2; // small gap between blocks
-    }
-
-    // Compute total page count and retrofit footers
-    const total = doc.getNumberOfPages();
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(120, 130, 145);
-    for (let i = 1; i <= total; i++) {
-      doc.setPage(i);
-      drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, i, total);
-    }
-
-    doc.save(filename);
+      doc.text(ln, layout.marginLeft, y);
+      y += lineHeight;
+    });
+    return y;
   }
 
-  // Public API (expects plain text or array of plain texts)
-  window.exportResultToPDF = async function (text, opts = {}) {
-    const name = makeFilename(opts.suffix || "Report");
-    await exportTextsToPDF([String(text || "")], name);
-  };
+  function drawBody(doc, layout, text, y) {
+    const paragraphs = String(text || "").split(/\n{2,}/);
+    paragraphs.forEach((p, idx) => {
+      if (idx > 0) y = addSpacer(doc, y, 6);
+      y = writeWrapped(doc, layout, p.trim(), y, 18);
+    });
+    return y;
+  }
 
-  window.exportAllResultsToPDF = async function (resultsArray, opts = {}) {
-    const arr = Array.isArray(resultsArray) ? resultsArray : [];
-    const clean = arr.map(v => String(v || "").trim()).filter(Boolean);
-    const name = makeFilename(opts.suffix || "All_Results");
-    await exportTextsToPDF(clean.length ? clean : ["(No results)"], name);
-  };
+  function finalizeFooters(doc, layout, branding) {
+    const total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p);
+      drawFooterOnce(doc, layout, branding, p, total);
+    }
+  }
+
+  function drawFooterOnce(doc, layout, branding, pageNum, totalPages) {
+    const { marginLeft, contentWidth, pageH, footerHeight } = layout;
+    const yTop = pageH - footerHeight - 18;
+
+    // clear area to prevent any old footer text "echo"
+    doc.setFillColor(255,255,255);
+    doc.rect(marginLeft, pageH - footerHeight - 24, contentWidth, footerHeight + 28, "F");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(90, 96, 110);
+    const left = `Powered by ${branding.brand}`;
+    const right = `Page ${pageNum} of ${totalPages}`;
+
+    doc.text(left,  marginLeft, yTop + 18);
+    const rightX = marginLeft + contentWidth - doc.getTextWidth(right);
+    doc.text(right, rightX, yTop + 18);
+  }
+
+  function fileName(toolkitName, suffix) {
+    const d = new Date();
+    const pad = (n)=> String(n).padStart(2,"0");
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const safe  = toolkitName.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g,"");
+    return `${stamp}_YBG_${safe}_${suffix}.pdf`;
+  }
 })();

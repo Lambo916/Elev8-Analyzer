@@ -122,7 +122,18 @@ class YBGToolkit {
         
         // Export all results as PDF
         const exportBtn = document.getElementById('exportAllBtn');
-        exportBtn.addEventListener('click', () => this.exportAllResults());
+        const exportMode = document.getElementById('exportMode');
+        exportBtn.addEventListener('click', async () => {
+            const resultsArray = this.getStoredResults();
+            if (!resultsArray.length) return this.showError('No results to export');
+            const mode = (exportMode?.value || "latest"); // "latest" by default
+            const resultsForExport = resultsArray.map(result => ({
+                title: `Result ${resultsArray.indexOf(result) + 1} - ${result.displayTime}`,
+                text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
+            }));
+            await window.exportAllResultsToPDF(resultsForExport, { mode });
+            this.showSuccess(`PDF exported (${mode})`);
+        });
 
         // Dynamic event delegation for copy/download buttons
         const resultsContainer = document.getElementById('resultsContainer');
@@ -363,6 +374,8 @@ class YBGToolkit {
     }
 
     async exportAllResults() {
+        // This method is now handled by the event listener above
+        // Keeping for backward compatibility if called directly
         const results = this.getStoredResults();
         
         if (results.length === 0) {
@@ -370,15 +383,13 @@ class YBGToolkit {
             return;
         }
 
-        const allContent = results.map((result, index) => {
-            return `Result ${index + 1} - ${result.displayTime}\n` +
-                   "=" + "=".repeat(50) + "\n\n" +
-                   `Request: ${result.prompt}\n\n` +
-                   `Result:\n${result.result}\n\n`;
-        });
+        const allContent = results.map((result, index) => ({
+            title: `Result ${index + 1} - ${result.displayTime}`,
+            text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
+        }));
 
         try {
-            await window.exportAllResultsToPDF(allContent);
+            await window.exportAllResultsToPDF(allContent, { mode: "all" });
             this.showSuccess('All results exported as PDF!');
         } catch (error) {
             console.error('PDF export failed:', error);
