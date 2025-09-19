@@ -30,13 +30,13 @@ This template includes official YBG branding, complete theming system (Light/Dar
 - **Success**: #4CAF50 (Green)
 - **Error**: #F44336 (Red)
 
-### Light Theme (v1.1.2 Enhanced)
-- **Background**: Pale blue→white gradient with faint yellow brand wash
-- **Cards**: White→soft-gray gradient with subtle slate borders
-- **Panel Headers**: Minimal blue glow for depth
-- **Text**: Dark slate (#1e293b) - AA compliant on gradients
-- **Yellow Accents**: Subtle accent markers, hover underlines, brand wash
-- **Button Polish**: Inner white highlight for dimensional effect
+### Light Theme (v1.1.3 "Less White")
+- **Background**: Enhanced blue→white gradient with dual accent washes (yellow + blue)
+- **Cards**: Multi-layer with blue tint fade, gradient rims, and panel sheen
+- **Panel Headers**: Gradient background with enhanced styling
+- **Text**: Dark slate (#1e293b) - AA compliant on all tinted backgrounds
+- **Yellow Accents**: Enhanced button glows, stronger link cues, visible brand touches
+- **Visual Depth**: Visible blue tints, gradient borders, reduced flat white appearance
 
 ### Dark Theme
 - **Background**: Dark gradient (#0A0A0A → #1A1A1A → #0f0f0f)
@@ -115,13 +115,23 @@ The template uses a tokenized CSS variable system located in `public/style.css`:
 3. **Persistence**: User choice survives page refreshes
 4. **System Changes**: Only applied if no manual preference is set
 
-### Light Theme Gradient Polish (v1.1.2)
-The light theme now features subtle, professional gradients for enhanced depth:
+### Light Theme "Less White" Pass (v1.1.3)
+Enhanced from v1.1.2 with stronger visual depth and reduced flat appearance:
 
-**Gradient Tokens:**
-- `--bg-gradient`: Pale blue to white vertical gradient
-- `--bg-accent-wash`: Radial yellow wash at 85% -120px (very subtle)
-- `--card-gradient`: White to soft gray for panels
+**New Tokens:**
+- `--bg-accent-wash-2`: Additional blue accent wash for dual-layer effect
+- `--panel-tint`: Visible blue fade from top (6% opacity)
+- `--panel-sheen`: White overlay for dimensional depth (65% opacity)  
+- `--rim-gradient`: Blue fade borders via border-image (18% to 0%)
+- `--panel-shadow`: Enhanced shadow for elevated feel
+- `--divider-fade`: Subtle gradient dividers
+
+**Enhanced Features:**
+- Dual accent wash: Yellow (top-right) + Blue (bottom-left)
+- Three-layer panel backgrounds: Sheen + Tint + Card gradient
+- Gradient rim borders using border-image for crisp edges
+- Enhanced button/link yellow cues with higher opacity
+- Visible blue tints throughout while maintaining AA contrast
 - `--card-border`: Subtle slate border (8% opacity)
 - `--panel-header-glow`: Minimal blue glow (12% opacity)
 
