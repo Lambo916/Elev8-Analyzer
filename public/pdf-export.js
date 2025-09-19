@@ -1,3 +1,51 @@
+/*** PATCH: Fix PDF font consistency + stop footer overlap (safe & minimal)
+ * Goal: Reset body font after every page add, and keep text clear of the footer.
+ ***********************************************************************************************/
+
+window.YBG_PDF = window.YBG_PDF || {};
+
+(function (ns) {
+  // --- Layout & typography tokens (keep aligned with template) ---
+  const MARGINS = { top: 56, right: 56, bottom: 68, left: 56 }; // bottom ↑ to protect footer
+  const BODY    = { font: "helvetica", weight: "normal", size: 12, color: [50, 50, 50] };
+
+  // Apply standard body style (call whenever you start writing on a page)
+  ns.applyBodyStyle = function applyBodyStyle(doc) {
+    doc.setFont(BODY.font, BODY.weight);
+    doc.setFontSize(BODY.size);
+    doc.setTextColor(...BODY.color);
+  };
+
+  // Should we break before drawing the next line? (prevents footer overlap)
+  ns.shouldBreakBeforeLine = function shouldBreakBeforeLine(doc, cursorY, lineHeight) {
+    const pageH = doc.internal.pageSize.getHeight();
+    return cursorY > (pageH - MARGINS.bottom - lineHeight);
+  };
+
+  // Safe page add: always reset fonts and redraw header
+  ns.safeAddPage = function safeAddPage(doc, currentPageNumber, drawHeaderFn) {
+    const nextPage = currentPageNumber + 1;
+    doc.addPage();
+    ns.applyBodyStyle(doc);          // <- reset font/size/weight every new page
+    if (typeof drawHeaderFn === "function") drawHeaderFn(nextPage);
+    return nextPage;
+  };
+
+  // Safer footer (use in your export finalize loop)
+  ns.drawFooter = function drawFooter(doc, pageNumber, pageCount) {
+    const h = doc.internal.pageSize.getHeight();
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(110, 110, 110);
+    const footer = `Powered by YourBizGuru.com   Page ${pageNumber} of ${pageCount}`;
+    // place ~24pt above bottom; text stays clear of content due to bottom margin
+    doc.text(footer, MARGINS.left, h - 24);
+  };
+
+  // Expose margins for callers
+  ns.PDF_MARGINS = MARGINS;
+})(window.YBG_PDF);
+
 /* public/pdf-export.js
    YBG PDF Export - Production Quality Implementation
    - Consistent typography across all pages
@@ -268,16 +316,15 @@
     }
     
     needsNewPage(requiredHeight) {
-      return this.yPosition + requiredHeight > CONTENT.bottom;
+      return window.YBG_PDF.shouldBreakBeforeLine(this.doc, this.yPosition, requiredHeight);
     }
     
     addNewPage() {
-      this.pageNum++;
       this.totalPages++;
-      this.doc.addPage();
-      applyGlobalTypography(this.doc);
-      drawHeader(this.doc, this.pageNum, this.iconDataUrl);
-      this.yPosition = CONTENT.top;
+      this.pageNum = window.YBG_PDF.safeAddPage(this.doc, this.pageNum, (pageNum) => {
+        drawHeader(this.doc, pageNum, this.iconDataUrl);
+      });
+      this.yPosition = window.YBG_PDF.PDF_MARGINS.top;
     }
     
     writeBlock(block) {
@@ -405,10 +452,10 @@
     }
     
     finalize() {
-      // Draw footers on all pages
+      // Draw footers on all pages using the safer footer function
       for (let i = 1; i <= this.totalPages; i++) {
         this.doc.setPage(i);
-        drawFooter(this.doc, i, this.totalPages);
+        window.YBG_PDF.drawFooter(this.doc, i, this.totalPages);
       }
     }
   }
@@ -452,8 +499,8 @@
     // Initialize writer
     const writer = new PDFWriter(doc, iconDataUrl);
     
-    // Apply global typography
-    applyGlobalTypography(doc);
+    // Apply safe body style for consistent typography
+    window.YBG_PDF.applyBodyStyle(doc);
     
     // Draw first page header
     drawHeader(doc, 1, iconDataUrl);
@@ -496,8 +543,8 @@
     // Initialize writer
     const writer = new PDFWriter(doc, iconDataUrl);
     
-    // Apply global typography
-    applyGlobalTypography(doc);
+    // Apply safe body style for consistent typography
+    window.YBG_PDF.applyBodyStyle(doc);
     
     // Draw first page header
     drawHeader(doc, 1, iconDataUrl);
@@ -608,12 +655,12 @@
     return exportMultipleResults(mode);
   };
 
-  // Additional API aliases
-  window.YBG_PDF = {
+  // Additional API aliases (extend existing YBG_PDF object)
+  Object.assign(window.YBG_PDF, {
     exportResultToPDF: window.exportResultToPDF,
     exportAllResultsToPDF: window.exportAllResultsToPDF,
     exportLatestResult: () => exportMultipleResults('latest'),
     exportAllResults: () => exportMultipleResults('all')
-  };
+  });
 
 })();
