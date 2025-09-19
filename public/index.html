@@ -23,8 +23,7 @@
     <!-- App Styles -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF will be loaded dynamically by PDF export system -->
     
     <!-- Open Graph for social media embedding -->
     <meta property="og:title" content="YourBizGuru Mini-Dashboard">
@@ -143,7 +142,10 @@
         </div>
     </template>
 
+    <!-- PDF Export System -->
+    <script src="pdf-export.js"></script>
+    
     <!-- App JavaScript -->
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -1,139 +1,245 @@
 /**
- * YBG Universal PDF Export System
- * Version: v1.1.0 - Streamlined for YourBizGuru Mini-Dashboard
+ * YourBizGuru - Universal PDF Export System (v1.2)
+ * - Circle-cropped toolkit icon in header
+ * - Styled header (toolkit name, date)
+ * - Styled footer (page X of Y + Powered by YourBizGuru.com)
+ * - Multi-page content with smart wrapping
+ * - Standard filename: YYYY-MM-DD_YBG_[ToolkitName]_Report.pdf
+ *
+ * Exposed globals:
+ *   window.exportResultToPDF(text)
+ *   window.exportAllResultsToPDF(resultsArrayOfStrings)
+ * 
+ * Customization (set anywhere in your app before calling exports):
+ *   window.currentToolkitName = "Grant Genie";
+ *   window.currentToolkitIcon = "https://example.com/grant-genie-icon.png";
  */
 
-// jsPDF is loaded from CDN as window.jspdf
+(function () {
+  const CDN_JSPDF =
+    "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
 
-/**
- * Universal PDF generator function
- * @param {Object} options - PDF generation options
- * @param {string} options.toolkitName - Name of the toolkit
- * @param {string} options.toolkitIconUrl - URL to toolkit icon (optional)
- * @param {string} options.content - Content to include in PDF
- * @param {string} options.filename - Output filename
- */
-export function generateYBGpdf({ toolkitName, toolkitIconUrl, content, filename }) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const marginLeft = 20;
-  const marginTop = 30;
-  const lineHeight = 18;
-  let cursorY = marginTop;
-  let pageNumber = 1;
+  // Lazy-load jsPDF once, cache the promise.
+  let __pdfLibPromise = null;
+  function loadJsPDF() {
+    if (__pdfLibPromise) return __pdfLibPromise;
+    __pdfLibPromise = new Promise((resolve, reject) => {
+      if (window.jspdf?.jsPDF) return resolve(window.jspdf.jsPDF);
+      const s = document.createElement("script");
+      s.src = CDN_JSPDF;
+      s.onload = () => resolve(window.jspdf.jsPDF);
+      s.onerror = () =>
+        reject(new Error("Failed to load jsPDF from CDN."));
+      document.head.appendChild(s);
+    });
+    return __pdfLibPromise;
+  }
 
-  // Header function
-  function drawHeader(pageNum) {
-    if (toolkitIconUrl) {
-      doc.addImage(toolkitIconUrl, "PNG", marginLeft, 10, 15, 15);
+  // Utilities
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function formatDate(d = new Date()) {
+    // YYYY-MM-DD
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function safeToolkitName() {
+    const name =
+      (typeof window.currentToolkitName === "string" &&
+        window.currentToolkitName.trim()) ||
+      "Toolkit";
+    return name.replace(/[^\w\s\-]/g, "").trim();
+  }
+
+  function makeFilename(suffix = "Report") {
+    const date = formatDate();
+    const toolkit = safeToolkitName().replace(/\s+/g, "");
+    return `${date}_YBG_${toolkit}_${suffix}.pdf`;
+  }
+
+  async function loadImageCircleDataURL(src, size = 64) {
+    // Returns a circular-masked PNG data URL from the source URL.
+    // If load fails, returns null.
+    try {
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.crossOrigin = "anonymous";
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = src;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      // Draw circle clip & image
+      const r = size / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(r, r, r, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      // Cover mode (center-crop)
+      const ratio = Math.max(size / img.width, size / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      const x = (size - w) / 2;
+      const y = (size - h) / 2;
+      ctx.drawImage(img, x, y, w, h);
+      ctx.restore();
+
+      // Add thin ring
+      ctx.beginPath();
+      ctx.arc(r, r, r - 0.5, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(79,195,247,0.9)"; // YBG primary ring
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      return canvas.toDataURL("image/png");
+    } catch {
+      return null;
     }
+  }
+
+  // Header & footer painters
+  async function drawHeader(doc, pageWidth, marginLeft, marginRight) {
+    const y = 20;
+    const title = safeToolkitName();
+    const dateStr = formatDate();
+
+    // Icon (circle PNG from URL or fallback dot)
+    const iconUrl =
+      (typeof window.currentToolkitIcon === "string" &&
+        window.currentToolkitIcon.trim()) ||
+      null;
+    let dx = marginLeft;
+    const iconSize = 14; // mm
+
+    if (iconUrl) {
+      const dataURL = await loadImageCircleDataURL(iconUrl, 128);
+      if (dataURL) {
+        try {
+          doc.addImage(dataURL, "PNG", dx, y - 4, iconSize, iconSize);
+          dx += iconSize + 4;
+        } catch {
+          // If addImage fails, skip gracefully
+        }
+      }
+    }
+
+    // Title
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.setTextColor(30, 30, 30);
-    doc.text(toolkitName || "YourBizGuru Toolkit", marginLeft + 20, 20);
+    doc.setTextColor(20, 24, 39); // near-black for print
+    doc.text(title, dx, y + 6);
 
-    doc.setFontSize(10);
+    // Date (right side)
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Page ${pageNum}`, 180, 20, { align: "right" });
+    doc.setFontSize(10);
+    doc.setTextColor(90, 98, 110);
+    const rightX = pageWidth - marginRight;
+    doc.text(dateStr, rightX, y + 6, { align: "right" });
 
-    doc.line(20, 25, 190, 25); // divider line
+    // Divider
+    doc.setDrawColor(200, 220, 255);
+    doc.setLineWidth(0.6);
+    doc.line(marginLeft, y + 10, pageWidth - marginRight, y + 10);
   }
 
-  // Footer function
-  function drawFooter() {
+  function drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, pageNumber, totalPages = null) {
+    const y = pageHeight - 12;
+
+    // Divider
+    doc.setDrawColor(230, 235, 240);
+    doc.setLineWidth(0.4);
+    doc.line(marginLeft, y - 5, pageWidth - marginRight, y - 5);
+
+    // Left: Powered by
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(150, 150, 150);
-    doc.text("Powered by YourBizGuru.com", 105, 285, { align: "center" });
+    doc.setTextColor(120, 130, 145);
+    doc.text("Powered by YourBizGuru.com", marginLeft, y);
+
+    // Right: page numbering
+    const pText = totalPages ? `Page ${pageNumber} of ${totalPages}` : `Page ${pageNumber}`;
+    doc.text(pText, pageWidth - marginRight, y, { align: "right" });
   }
 
-  // Initial header
-  drawHeader(pageNumber);
+  async function exportTextsToPDF(textBlocks, filename = makeFilename("Report")) {
+    const jsPDF = await loadJsPDF();
+    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
 
-  // Process content (splits by line or \n)
-  const lines = content.split("\n");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.setTextColor(50, 50, 50);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 18;
+    const marginRight = 18;
+    const marginTop = 30;   // room for header
+    const marginBottom = 18;
 
-  lines.forEach(line => {
-    if (cursorY > 270) {
-      drawFooter();
+    let cursorY = marginTop + 12; // after header
+    let pageNumber = 1;
+
+    await drawHeader(doc, pageWidth, marginLeft, marginRight);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(50, 50, 50);
+
+    const lineHeight = 6; // ~12pt
+    const maxWidth = pageWidth - marginLeft - marginRight;
+
+    // Helper to add new page and redraw header
+    async function newPage() {
+      drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, pageNumber);
       doc.addPage();
       pageNumber++;
-      drawHeader(pageNumber);
-      cursorY = marginTop;
-    }
-    doc.text(line, marginLeft, cursorY);
-    cursorY += lineHeight;
-  });
-
-  // Final footer
-  drawFooter();
-
-  // Save
-  doc.save(filename || `${toolkitName || "YBG_Report"}.pdf`);
-}
-
-/**
- * Initialize PDF functionality for the YBG Mini-Dashboard
- * Enhances existing download buttons with PDF generation
- */
-export function initPDFExport() {
-  // Set default toolkit info (can be overridden by individual toolkits)
-  if (!window.currentToolkitName) {
-    window.currentToolkitName = "YourBizGuru Mini-Dashboard";
-  }
-  if (!window.currentToolkitIcon) {
-    window.currentToolkitIcon = "/favicon-32x32.png";
-  }
-
-  // Function to generate PDF from result content
-  window.generateResultPDF = function(resultContent, timestamp) {
-    const toolkitName = window.currentToolkitName || "YourBizGuru Toolkit";
-    const toolkitIconUrl = window.currentToolkitIcon || "";
-    const filename = `${toolkitName.replace(/\s+/g, "_")}_${timestamp || new Date().getTime()}.pdf`;
-
-    generateYBGpdf({
-      toolkitName,
-      toolkitIconUrl,
-      content: resultContent,
-      filename,
-    });
-  };
-
-  // Function to generate PDF from all results
-  window.generateAllResultsPDF = function() {
-    const resultsContainer = document.getElementById("resultsContainer");
-    if (!resultsContainer) return;
-
-    const resultItems = resultsContainer.querySelectorAll('.result-item');
-    if (resultItems.length === 0) {
-      alert("No results available to export.");
-      return;
+      await drawHeader(doc, pageWidth, marginLeft, marginRight);
+      cursorY = marginTop + 12;
     }
 
-    let allContent = "";
-    resultItems.forEach((item, index) => {
-      const timestamp = item.querySelector('.result-timestamp')?.textContent || '';
-      const content = item.querySelector('.result-content')?.textContent || '';
-      
-      allContent += `Result ${index + 1} - ${timestamp}\n`;
-      allContent += "=" + "=".repeat(50) + "\n\n";
-      allContent += content + "\n\n\n";
-    });
+    // Write each block with spacing
+    for (let bi = 0; bi < textBlocks.length; bi++) {
+      const block = String(textBlocks[bi] ?? "").trim();
+      if (!block) continue;
 
-    const toolkitName = window.currentToolkitName || "YourBizGuru Toolkit";
-    const filename = `${toolkitName.replace(/\s+/g, "_")}_All_Results.pdf`;
+      const lines = doc.splitTextToSize(block, maxWidth);
+      for (const line of lines) {
+        if (cursorY > pageHeight - marginBottom) {
+          await newPage();
+        }
+        doc.text(line, marginLeft, cursorY);
+        cursorY += lineHeight;
+      }
+      cursorY += 2; // small gap between blocks
+    }
 
-    generateYBGpdf({
-      toolkitName: window.currentToolkitName || "YourBizGuru Toolkit",
-      toolkitIconUrl: window.currentToolkitIcon || "",
-      content: allContent,
-      filename,
-    });
+    // Compute total page count and retrofit footers
+    const total = doc.getNumberOfPages();
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 130, 145);
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
+      drawFooter(doc, pageWidth, pageHeight, marginLeft, marginRight, i, total);
+    }
+
+    doc.save(filename);
+  }
+
+  // Public API (expects plain text or array of plain texts)
+  window.exportResultToPDF = async function (text, opts = {}) {
+    const name = makeFilename(opts.suffix || "Report");
+    await exportTextsToPDF([String(text || "")], name);
   };
 
-  console.log("YBG PDF Export system initialized");
-}
+  window.exportAllResultsToPDF = async function (resultsArray, opts = {}) {
+    const arr = Array.isArray(resultsArray) ? resultsArray : [];
+    const clean = arr.map(v => String(v || "").trim()).filter(Boolean);
+    const name = makeFilename(opts.suffix || "All_Results");
+    await exportTextsToPDF(clean.length ? clean : ["(No results)"], name);
+  };
+})();

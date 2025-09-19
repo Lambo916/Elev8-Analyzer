@@ -3,8 +3,6 @@
  * Handles form submission, API calls, results display, local storage, and theming
  */
 
-import { generateYBGpdf, initPDFExport } from './pdf-export.js';
-
 /**
  * Theme Manager - Handles light/dark theme switching and persistence
  */
@@ -281,28 +279,23 @@ class YBGToolkit {
         }
     }
 
-    downloadResult(button) {
+    async downloadResult(button) {
         const resultId = button.dataset.resultId;
         const results = this.getStoredResults();
         const result = results.find(r => r.id === resultId);
         
         if (result) {
-            const toolkitName = this.getToolkitName();
-            const timestamp = new Date(result.timestamp).toISOString().split('T')[0];
-            const filename = `${toolkitName}_result_${timestamp}_${resultId}.pdf`;
-            
             const content = `Generated: ${result.displayTime}\n` +
                           `Request: ${result.prompt}\n\n` +
                           `Result:\n${result.result}\n\n`;
             
-            generateYBGpdf({
-                toolkitName: window.currentToolkitName || toolkitName,
-                toolkitIconUrl: window.currentToolkitIcon || "/favicon-32x32.png",
-                content: content,
-                filename: filename
-            });
-            
-            this.showSuccess('PDF downloaded!');
+            try {
+                await window.exportResultToPDF(content);
+                this.showSuccess('PDF downloaded!');
+            } catch (error) {
+                console.error('PDF export failed:', error);
+                this.showError('Failed to generate PDF. Please try again.');
+            }
         }
     }
 
@@ -369,7 +362,7 @@ class YBGToolkit {
         }
     }
 
-    exportAllResults() {
+    async exportAllResults() {
         const results = this.getStoredResults();
         
         if (results.length === 0) {
@@ -377,26 +370,20 @@ class YBGToolkit {
             return;
         }
 
-        let allContent = "";
-        results.forEach((result, index) => {
-            allContent += `Result ${index + 1} - ${result.displayTime}\n`;
-            allContent += "=" + "=".repeat(50) + "\n\n";
-            allContent += `Request: ${result.prompt}\n\n`;
-            allContent += `Result:\n${result.result}\n\n\n`;
+        const allContent = results.map((result, index) => {
+            return `Result ${index + 1} - ${result.displayTime}\n` +
+                   "=" + "=".repeat(50) + "\n\n" +
+                   `Request: ${result.prompt}\n\n` +
+                   `Result:\n${result.result}\n\n`;
         });
 
-        const toolkitName = this.getToolkitName();
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `${toolkitName}_All_Results_${timestamp}.pdf`;
-
-        generateYBGpdf({
-            toolkitName: window.currentToolkitName || toolkitName,
-            toolkitIconUrl: window.currentToolkitIcon || "/favicon-32x32.png",
-            content: allContent,
-            filename: filename
-        });
-
-        this.showSuccess('All results exported as PDF!');
+        try {
+            await window.exportAllResultsToPDF(allContent);
+            this.showSuccess('All results exported as PDF!');
+        } catch (error) {
+            console.error('PDF export failed:', error);
+            this.showError('Failed to generate PDF. Please try again.');
+        }
     }
 
     getToolkitName() {
@@ -493,11 +480,12 @@ class YBGToolkit {
 
 // Initialize the toolkit and theme manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // YBG Toolkit Context (overridable per toolkit)
+    if (!window.currentToolkitName) window.currentToolkitName = "YourBizGuru Mini-Dashboard";
+    if (!window.currentToolkitIcon) window.currentToolkitIcon = "/favicon-32x32.png";
+    
     window.themeManager = new ThemeManager();
     window.ybgToolkit = new YBGToolkit();
-    
-    // Initialize PDF export functionality
-    initPDFExport();
 });
 
 // Global error handler for unhandled promise rejections
