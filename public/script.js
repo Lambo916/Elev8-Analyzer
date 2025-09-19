@@ -127,21 +127,19 @@ class YBGToolkit {
             const resultsArray = this.getStoredResults();
             if (!resultsArray.length) return this.showError('No results to export');
             const mode = (exportMode?.value || "latest"); // "latest" by default
-            const resultsForExport = resultsArray.map(result => ({
-                title: `Result ${resultsArray.indexOf(result) + 1} - ${result.displayTime}`,
+            const resultsForExport = resultsArray.map((result, index) => ({
+                title: `Result ${index + 1} - ${result.displayTime}`,
                 text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
             }));
             await window.exportAllResultsToPDF(resultsForExport, { mode });
             this.showSuccess(`PDF exported (${mode})`);
         });
 
-        // Dynamic event delegation for copy/download buttons
+        // Dynamic event delegation for copy button
         const resultsContainer = document.getElementById('resultsContainer');
         resultsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('copy-btn')) {
                 this.copyResult(e.target);
-            } else if (e.target.classList.contains('download-btn')) {
-                this.downloadResult(e.target);
             }
         });
     }
@@ -252,14 +250,12 @@ class YBGToolkit {
         const timestampEl = resultElement.querySelector('.result-timestamp');
         const contentEl = resultElement.querySelector('.result-content');
         const copyBtn = resultElement.querySelector('.copy-btn');
-        const downloadBtn = resultElement.querySelector('.download-btn');
 
         timestampEl.textContent = resultData.displayTime;
         contentEl.textContent = resultData.result;
         
-        // Store data for copy/download actions
+        // Store data for copy action
         copyBtn.dataset.resultId = resultData.id;
-        downloadBtn.dataset.resultId = resultData.id;
         
         // Add to top of results (newest first)
         resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
@@ -290,37 +286,6 @@ class YBGToolkit {
         }
     }
 
-    async downloadResult(button) {
-        const resultId = button.dataset.resultId;
-        const results = this.getStoredResults();
-        const result = results.find(r => r.id === resultId);
-        
-        if (result) {
-            const content = `Generated: ${result.displayTime}\n` +
-                          `Request: ${result.prompt}\n\n` +
-                          `Result:\n${result.result}\n\n`;
-            
-            try {
-                await window.exportResultToPDF(content);
-                this.showSuccess('PDF downloaded!');
-            } catch (error) {
-                console.error('PDF export failed:', error);
-                this.showError('Failed to generate PDF. Please try again.');
-            }
-        }
-    }
-
-    downloadTextFile(content, filename) {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
 
     saveResult(resultData) {
         const results = this.getStoredResults();
