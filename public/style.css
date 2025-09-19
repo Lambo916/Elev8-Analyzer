@@ -644,6 +644,9 @@ html:not(.theme-dark) .footer a:hover::after {
 
 /* Dark theme: yellow hover halo */
 html.theme-dark .footer a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--ybg-brand-accent), 0.55);
     text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7);
 }
 
