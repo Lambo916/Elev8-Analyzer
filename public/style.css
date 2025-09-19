@@ -621,6 +621,19 @@ html.theme-dark .submit-btn:hover {
     transition: all 0.3s ease;
 }
 
+.footer-content {
+    margin-bottom: var(--spacing-sm);
+}
+
+.footer-disclaimer {
+    font-size: var(--font-size-xs);
+    color: rgb(var(--text-muted));
+    font-style: italic;
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(var(--border), 0.1);
+}
+
 .footer a {
     color: var(--primary);
     text-decoration: none;

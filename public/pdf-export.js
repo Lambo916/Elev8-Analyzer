@@ -40,6 +40,12 @@ window.YBG_PDF = window.YBG_PDF || {};
     const footer = `Powered by YourBizGuru.com   Page ${pageNumber} of ${pageCount}`;
     // place ~24pt above bottom; text stays clear of content due to bottom margin
     doc.text(footer, MARGINS.left, h - 24);
+    
+    // Add disclaimer below main footer text
+    doc.setFontSize(7);
+    doc.setTextColor(130, 130, 130);
+    const disclaimer = "Disclaimer: For informational purposes only. Not legal, tax, or financial advice.";
+    doc.text(disclaimer, MARGINS.left, h - 18);
   };
 
   // Expose margins for callers

@@ -1,6 +1,22 @@
 /**
  * YourBizGuru Mini-Dashboard - Frontend JavaScript
  * Handles form submission, API calls, results display, local storage, and theming
+ * 
+ * === PHASE 2 RESERVATION NOTES (DEVELOPER USE ONLY) ===
+ * Future subscription system integration planned:
+ * - Toolkits will be connected to subscription plans (Basic, Pro, Enterprise tiers)
+ * - Each client will have a master dashboard showing:
+ *   • Active subscriptions and billing status
+ *   • Invoice history and payment methods
+ *   • Purchase history and usage analytics
+ *   • Additional features: integrated calendar, product marketplace, team management
+ * - Authentication will be handled via secure token system
+ * - API rate limiting based on subscription tier
+ * - Webhook integration for real-time subscription updates
+ * 
+ * Note: This is a placeholder for Phase 2 implementation. 
+ * Current template operates as a standalone toolkit without authentication.
+ * ========================================================
  */
 
 /**
