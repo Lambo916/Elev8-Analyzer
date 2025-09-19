@@ -124,6 +124,9 @@ class YBGToolkit {
 
     init() {
         this.bindEvents();
+        this.bindKeyboardShortcuts();
+        this.initAutoSave();
+        this.initCharacterCounter();
         this.loadStoredResults();
     }
 
@@ -142,14 +145,34 @@ class YBGToolkit {
         exportBtn.addEventListener('click', async () => {
             const resultsArray = this.getStoredResults();
             if (!resultsArray.length) return this.showError('No results to export');
-            const mode = (exportMode?.value || "latest"); // "latest" by default
-            const resultsForExport = resultsArray.map((result, index) => ({
-                title: `Result ${index + 1} - ${result.displayTime}`,
-                text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
-            }));
-            await window.exportAllResultsToPDF(resultsForExport, { mode });
-            this.showSuccess(`PDF exported (${mode})`);
+            
+            // Show loading state
+            const originalText = exportBtn.textContent;
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Generating...';
+            
+            try {
+                const mode = (exportMode?.value || "latest");
+                const resultsForExport = resultsArray.map((result, index) => ({
+                    title: `Result ${index + 1} - ${result.displayTime}`,
+                    text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
+                }));
+                
+                await window.exportAllResultsToPDF(resultsForExport, { mode });
+                this.showSuccess(`PDF exported successfully (${mode} mode)`);
+            } catch (error) {
+                console.error('PDF export failed:', error);
+                this.showError('Failed to export PDF. Please try again.');
+            } finally {
+                // Restore button state
+                exportBtn.disabled = false;
+                exportBtn.textContent = originalText;
+            }
         });
+
+        // Copy all results button
+        const copyAllBtn = document.getElementById('copyAllBtn');
+        copyAllBtn.addEventListener('click', () => this.copyAllResults());
 
         // Dynamic event delegation for copy button
         const resultsContainer = document.getElementById('resultsContainer');
@@ -467,6 +490,153 @@ class YBGToolkit {
                 }
             }, 300);
         }, 4000);
+    }
+
+    // === UX ENHANCEMENTS ===
+
+    bindKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Enter or Cmd+Enter to generate (works globally when input has focus)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                const form = document.getElementById('toolkitForm');
+                const promptInput = document.getElementById('promptInput');
+                
+                if (promptInput.value.trim() && !form.querySelector('button[type="submit"]').disabled) {
+                    form.dispatchEvent(new Event('submit'));
+                }
+                return;
+            }
+            
+            // Ctrl+S or Cmd+S to export PDF
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                const exportBtn = document.getElementById('exportAllBtn');
+                if (exportBtn && !exportBtn.disabled) {
+                    exportBtn.click();
+                }
+                return;
+            }
+            
+            // Ctrl+K or Cmd+K to focus input
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const promptInput = document.getElementById('promptInput');
+                promptInput.focus();
+                promptInput.select();
+                return;
+            }
+
+            // Ctrl+Shift+C or Cmd+Shift+C to copy all results
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                this.copyAllResults();
+                return;
+            }
+        });
+    }
+
+    initAutoSave() {
+        const promptInput = document.getElementById('promptInput');
+        const autoSaveKey = 'ybg_autosave_input';
+        
+        // Load saved input on page load
+        const savedInput = localStorage.getItem(autoSaveKey);
+        if (savedInput && !promptInput.value) {
+            promptInput.value = savedInput;
+        }
+        
+        // Auto-save as user types (debounced)
+        let saveTimeout;
+        promptInput.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                if (promptInput.value.trim()) {
+                    localStorage.setItem(autoSaveKey, promptInput.value);
+                } else {
+                    localStorage.removeItem(autoSaveKey);
+                }
+            }, 1000); // Save 1 second after user stops typing
+        });
+        
+        // Clear auto-save after successful submission
+        const form = document.getElementById('toolkitForm');
+        form.addEventListener('submit', () => {
+            setTimeout(() => {
+                localStorage.removeItem(autoSaveKey);
+            }, 100);
+        });
+    }
+
+    initCharacterCounter() {
+        const promptInput = document.getElementById('promptInput');
+        const formGroup = promptInput.parentElement;
+        
+        // Create character counter element
+        const counter = document.createElement('div');
+        counter.className = 'character-counter';
+        counter.id = 'characterCounter';
+        
+        // Add counter styles
+        if (!document.querySelector('#character-counter-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'character-counter-styles';
+            styles.textContent = `
+                .character-counter {
+                    font-size: var(--font-size-xs);
+                    color: rgb(var(--text-muted));
+                    text-align: right;
+                    margin-top: 4px;
+                    font-family: var(--font-body);
+                }
+                .character-counter.warning {
+                    color: #ff9800;
+                }
+                .character-counter.danger {
+                    color: #f44336;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        formGroup.appendChild(counter);
+        
+        const updateCounter = () => {
+            const length = promptInput.value.length;
+            counter.textContent = `${length.toLocaleString()} characters`;
+            
+            // Add visual warnings for common API limits
+            counter.classList.remove('warning', 'danger');
+            if (length > 8000) {
+                counter.classList.add('danger');
+            } else if (length > 6000) {
+                counter.classList.add('warning');
+            }
+        };
+        
+        promptInput.addEventListener('input', updateCounter);
+        updateCounter(); // Initial count
+    }
+
+    copyAllResults() {
+        const results = this.getStoredResults();
+        if (results.length === 0) {
+            this.showToast('No results to copy', 'info');
+            return;
+        }
+
+        // Format all results with timestamps
+        const formattedResults = results.map((result, index) => {
+            const date = new Date(result.timestamp).toLocaleString();
+            return `=== Result ${index + 1} (${date}) ===\n\n${result.result}`;
+        }).join('\n\n' + '='.repeat(50) + '\n\n');
+
+        navigator.clipboard.writeText(formattedResults).then(() => {
+            this.showToast(`Copied ${results.length} results to clipboard!`, 'success');
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            this.showToast('Failed to copy results', 'error');
+        });
     }
 }
 

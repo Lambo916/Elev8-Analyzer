@@ -59,7 +59,7 @@
                     <form id="toolkitForm" class="toolkit-form" data-testid="form-toolkit">
                         <div class="form-group">
                             <label for="promptInput" class="form-label" data-testid="text-prompt-label">
-                                Enter your request:
+                                Enter your request: <span class="keyboard-hint">(Ctrl+Enter to generate)</span>
                             </label>
                             <textarea 
                                 id="promptInput" 
@@ -96,10 +96,18 @@
                         <button 
                             id="exportAllBtn" 
                             class="action-btn"
-                            title="Export all results as PDF"
+                            title="Export results as PDF (Ctrl+S)"
                             data-testid="button-export-all"
                         >
                             Export PDF
+                        </button>
+                        <button 
+                            id="copyAllBtn" 
+                            class="action-btn"
+                            title="Copy all results to clipboard (Ctrl+Shift+C)"
+                            data-testid="button-copy-all"
+                        >
+                            Copy All
                         </button>
                         <button 
                             id="clearHistoryBtn" 
