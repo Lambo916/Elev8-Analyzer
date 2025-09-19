@@ -1,6 +1,6 @@
-# YourBizGuru Master Template v1.1.0
+# YourBizGuru Master Template v1.1.2
 
-This template includes official YBG branding, complete theming system (Light/Dark), tokenized CSS architecture, increased yellow accents, and persistent theme preferences. It serves as the **master template v1.1.0** for all toolkits (Grant Genie, CompliPilot, Elev8 Analyzer, BizPlan Builder, Credit Commander, Contract Commander). Clone this template to start each toolkit.
+This template includes official YBG branding, complete theming system (Light/Dark), tokenized CSS architecture with gradient polish, increased yellow accents, and persistent theme preferences. It serves as the **master template v1.1.2** for all toolkits (Grant Genie, CompliPilot, Elev8 Analyzer, BizPlan Builder, Credit Commander, Contract Commander). Clone this template to start each toolkit.
 
 ## Features
 
@@ -30,11 +30,13 @@ This template includes official YBG branding, complete theming system (Light/Dar
 - **Success**: #4CAF50 (Green)
 - **Error**: #F44336 (Red)
 
-### Light Theme
-- **Background**: Subtle gradient (#f8fafd → #f0f4f8 → #fafbfc)
-- **Cards**: Pure white with soft borders
-- **Text**: Dark slate (#1e293b)
-- **Yellow Accents**: Subtle accent markers on cards, hover underlines
+### Light Theme (v1.1.2 Enhanced)
+- **Background**: Pale blue→white gradient with faint yellow brand wash
+- **Cards**: White→soft-gray gradient with subtle slate borders
+- **Panel Headers**: Minimal blue glow for depth
+- **Text**: Dark slate (#1e293b) - AA compliant on gradients
+- **Yellow Accents**: Subtle accent markers, hover underlines, brand wash
+- **Button Polish**: Inner white highlight for dimensional effect
 
 ### Dark Theme
 - **Background**: Dark gradient (#0A0A0A → #1A1A1A → #0f0f0f)
@@ -113,12 +115,29 @@ The template uses a tokenized CSS variable system located in `public/style.css`:
 3. **Persistence**: User choice survives page refreshes
 4. **System Changes**: Only applied if no manual preference is set
 
+### Light Theme Gradient Polish (v1.1.2)
+The light theme now features subtle, professional gradients for enhanced depth:
+
+**Gradient Tokens:**
+- `--bg-gradient`: Pale blue to white vertical gradient
+- `--bg-accent-wash`: Radial yellow wash at 85% -120px (very subtle)
+- `--card-gradient`: White to soft gray for panels
+- `--card-border`: Subtle slate border (8% opacity)
+- `--panel-header-glow`: Minimal blue glow (12% opacity)
+
 ### Customizing Theme Tokens
 Toolkits can override specific tokens without modifying components:
 ```css
-/* Example: Increase accent intensity for a specific toolkit */
+/* Example: Adjust accent wash intensity */
 html.theme-light {
-    --accent-glow-alpha: rgba(var(--accent-rgb), 0.4); /* Stronger yellow */
+    --bg-accent-wash: radial-gradient(1200px 800px at 85% -120px, 
+        rgba(255, 235, 59, 0.15), /* Stronger yellow */
+        rgba(255, 255, 255, 0) 55%);
+}
+
+/* Example: Reduce card gradient contrast */
+html.theme-light {
+    --card-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
 }
 ```
 
@@ -192,9 +211,18 @@ For support and questions, visit [YourBizGuru.com](https://yourbizguru.com)
 
 ---
 
-**Version**: 1.1.0  
+**Version**: 1.1.2  
 **Release Date**: September 2025  
-**Template Tag**: `ybg-template-v1.1.0`  
+**Template Tag**: `ybg-template-v1.1.2`  
+
+### Changelog v1.1.2 (Light Theme Gradient Polish)
+- Enhanced light theme with subtle gradient backgrounds
+- Added faint yellow brand accent wash to page background
+- Implemented card gradients (white→soft-gray) for depth
+- Added minimal panel header glow for visual hierarchy
+- Included button inner highlight for dimensional effect
+- Maintained AA contrast compliance (14.63:1 verified)
+- Dark theme remains unchanged from v1.1.0
 
 ### Changelog v1.1.0
 - Added comprehensive Light/Dark theme system
