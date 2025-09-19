@@ -413,46 +413,32 @@
     }
   }
 
-  // ---- Result Collection from DOM ------------------------------------------
+  // ---- Result Collection (Match YBGToolkit storage) ------------------------
+  function getToolkitStorageKey() {
+    // Match the exact same logic as YBGToolkit.getStorageKey()
+    const toolkitName = getToolkitName().toLowerCase().replace(/\s+/g, '_');
+    return `ybg_toolkit_results_${toolkitName}`;
+  }
+
   function collectResults() {
-    const results = [];
-    
-    // Try to get results from localStorage first
-    const toolkitName = getToolkitName();
-    const storageKey = `ybg-results-${toolkitName}`;
+    // Get results from localStorage using the same key as YBGToolkit
+    const storageKey = getToolkitStorageKey();
     
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+          console.log('PDF Export: Retrieved', parsed.length, 'results from storage:', storageKey);
           return parsed;
         }
       }
     } catch (e) {
-      // Fall back to DOM
+      console.error('PDF Export: Error parsing stored results:', e);
     }
     
-    // Collect from DOM
-    const resultCards = document.querySelectorAll('.result-card');
-    
-    resultCards.forEach((card, index) => {
-      const textEl = card.querySelector('.result-text');
-      const promptEl = card.querySelector('.result-prompt');
-      const timeEl = card.querySelector('.result-time');
-      
-      const result = {
-        text: textEl ? textEl.textContent : '',
-        prompt: promptEl ? promptEl.textContent : '',
-        displayTime: timeEl ? timeEl.textContent : new Date().toLocaleString(),
-        timestamp: Date.now() - (resultCards.length - index - 1) * 1000, // Simulate timestamps
-        index: index
-      };
-      
-      results.push(result);
-    });
-    
-    return results;
+    console.log('PDF Export: No results found in storage key:', storageKey);
+    return [];
   }
 
   // ---- Main Export Functions -----------------------------------------------
@@ -516,15 +502,24 @@
     // Draw first page header
     drawHeader(doc, 1, iconDataUrl);
     
-    // Collect and filter results
+    // Collect results from storage
     let results = collectResults();
     
-    // Sort by timestamp (newest first for proper ordering)
-    results.sort((a, b) => a.timestamp - b.timestamp);
+    console.log('PDF Export: Collected', results.length, 'results for mode:', mode);
     
-    // Filter based on mode
-    if (mode === 'latest' && results.length > 0) {
-      results = [results[results.length - 1]]; // Take only the most recent
+    if (results.length > 0) {
+      // Sort by timestamp (oldest to newest for proper chronological order)
+      results.sort((a, b) => {
+        const timestampA = new Date(a.timestamp).getTime();
+        const timestampB = new Date(b.timestamp).getTime();
+        return timestampA - timestampB;
+      });
+      
+      // Filter based on mode
+      if (mode === 'latest') {
+        results = [results[results.length - 1]]; // Take only the most recent
+        console.log('PDF Export: Using latest result only');
+      }
     }
     
     // Write results
@@ -554,7 +549,7 @@
         if (result.prompt) {
           writer.writeBlock({
             type: 'h3',
-            text: 'Prompt'
+            text: 'Request'
           });
           writer.writeBlock({
             type: 'paragraph',
@@ -563,14 +558,14 @@
         }
         
         // Result content
-        if (result.text) {
+        if (result.result) {
           writer.writeBlock({
             type: 'h3',
             text: 'Response'
           });
           
           // Parse the result text for any markdown formatting
-          const contentBlocks = parseContent(result.text);
+          const contentBlocks = parseContent(result.result);
           for (const block of contentBlocks) {
             writer.writeBlock(block);
           }
