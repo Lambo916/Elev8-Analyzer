@@ -1,251 +1,371 @@
-/* YBG Universal PDF Export v1.2.3
-   - Fixes footer overlap using content bounds + reserved footer height
-   - Enforces global typography per page (prevents bold/size drift after addPage)
-   - Keeps circle icon header, page X of Y footer, and smart filenames
+/* public/pdf-export.js
+   YBG PDF Export v1.2.4
+   - Fixes footer collisions & duplicate footers
+   - Ensures consistent typography across pages
+   - Makes "Latest only" truly latest via timestamp sort
+   - Safe with existing buttons / API
 */
 
-(function () {
-  const YBG_PDF = {};
+(() => {
+  // ---- jsPDF Lazy Loader ---------------------------------------------------
+  const loadJsPDF = (() => {
+    let cached;
+    return async () => {
+      if (cached) return cached;
+      // Use the same CDN the template uses
+      const src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+      await new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = res;
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      // eslint-disable-next-line no-undef
+      cached = window.jspdf.jsPDF;
+      return cached;
+    };
+  })();
 
-  // ---- Constants (tuned for A4 portrait) ----
-  const PAGE = { width: 210, height: 297 };               // mm
-  const MARGINS = { top: 22, right: 16, bottom: 22, left: 16 }; // mm
-  const HEADER = { h: 20 };  // header block height (incl. icon ring)
-  const FOOTER = { h: 14 };  // footer block height
-  const CONTENT_TOP = MARGINS.top + HEADER.h;
-  const CONTENT_BOTTOM = PAGE.height - MARGINS.bottom - FOOTER.h;
-  const CONTENT_HEIGHT = CONTENT_BOTTOM - CONTENT_TOP;
-
-  // Global typography tokens (re-applied on EVERY page)
-  const TYPE = {
-    family: "helvetica",     // use built-in helvetica for reliability
-    bodySize: 11,
-    line: 5.5,               // line height in mm (approx ~1.25)
-    color: [30, 34, 41],     // slate-ish
-    h2Size: 13,
-    h2Weight: "bold",
-    h3Size: 12,
-    h3Weight: "bold",
-    codeSize: 10
+  // ---- Constants (A4 Portrait) ---------------------------------------------
+  const MM = 1; // jsPDF default unit is 'mm' in our init
+  const PAGE = {
+    width: 210 * MM,
+    height: 297 * MM,
   };
 
-  // Lazy-load jsPDF if not present on window (should already be loaded via CDN)
-  async function ensureJsPDF() {
-    if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
-    await new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
-      s.onload = resolve;
-      s.onerror = () => reject(new Error("Failed to load jsPDF"));
-      document.head.appendChild(s);
-    });
-    return window.jspdf.jsPDF;
+  const MARGINS = {
+    top: 22,
+    bottom: 18, // room above footer
+    left: 16,
+    right: 16,
+  };
+
+  const HEADER = {
+    h: 20,
+    iconSize: 12,
+    ring: 1.5,
+  };
+
+  const FOOTER = {
+    h: 14, // reserved space for footer band
+  };
+
+  // Computed safe writing area
+  const CONTENT_TOP = MARGINS.top + HEADER.h;
+  const CONTENT_BOTTOM = PAGE.height - MARGINS.bottom - FOOTER.h;
+
+  // ---- Toolkit Branding -----------------------------------------------------
+  // These are set by the template before calling export:
+  //   window.currentToolkitName
+  //   window.currentToolkitIcon (URL)
+  function getToolkitName() {
+    return window.currentToolkitName || "YourBizGuru";
+  }
+  function getToolkitIcon() {
+    return window.currentToolkitIcon || "/favicon.png";
   }
 
-  // ---- Helpers ----
+  // ---- Typography Tokens ----------------------------------------------------
+  const TYPE = {
+    family: "helvetica",
+    bodySize: 11,
+    line: 5.5, // line height in mm
+    h2Size: 13,
+    h3Size: 11,
+    colorBody: [33, 37, 41],  // dark gray
+    colorHead: [20, 24, 39],  // slightly darker for headers
+    colorMeta: [90, 95, 105], // footer/meta gray
+    accentBlue: [79, 195, 247],
+  };
+
   function applyGlobalType(doc) {
-    // Always re-apply on each page and after addPage()
     doc.setFont(TYPE.family, "normal");
     doc.setFontSize(TYPE.bodySize);
-    doc.setTextColor(...TYPE.color);
+    doc.setTextColor(...TYPE.colorBody);
   }
 
-  function drawHeader(doc, toolkitName, iconImg, pageNumber) {
-    // subtle header bar + icon ring + title
-    const y0 = MARGINS.top;
-    // Title
-    doc.setFont(TYPE.family, "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(23, 85, 200); // brand-ish blue
-    doc.text(toolkitName || "YourBizGuru", MARGINS.left + 22, y0 + 8);
+  // ---- Header / Footer ------------------------------------------------------
+  async function drawHeader(doc, pageNumber, imgCache) {
+    const x = MARGINS.left;
+    const y = MARGINS.top;
 
-    // Circle-cropped icon ring (if provided)
-    if (iconImg) {
-      // outer ring
-      doc.setDrawColor(255, 195, 59); // yellow ring
-      doc.setLineWidth(0.8);
-      doc.circle(MARGINS.left + 8, y0 + 6.5, 6, "S"); // just a ring
-      // icon bitmap (approx circle)
-      try { doc.addImage(iconImg, "PNG", MARGINS.left + 2, y0 + 0.5, 12, 12, "", "FAST"); } catch {}
+    // Icon (circle crop illusion with ring)
+    if (imgCache && imgCache.img) {
+      const s = HEADER.iconSize;
+      const ring = HEADER.ring;
+      // ring
+      doc.setDrawColor(...TYPE.accentBlue);
+      doc.setLineWidth(ring);
+      doc.circle(x + s/2 + 1, y + s/2 + 1, s/2 + 0.8, "S");
+      // icon
+      doc.addImage(imgCache.img, imgCache.type, x + 1, y + 1, s, s);
     }
 
-    // reset body type after header
-    applyGlobalType(doc);
+    // Toolkit + Title
+    doc.setFont(TYPE.family, "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...TYPE.colorHead);
+    const tk = getToolkitName();
+    doc.text(`${tk} – Report`, x + HEADER.iconSize + 6, y + 6);
+
+    doc.setFont(TYPE.family, "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...TYPE.colorMeta);
+    const d = new Date();
+    const meta = `${d.toLocaleDateString()}  •  ${d.toLocaleTimeString()}`;
+    doc.text(meta, x + HEADER.iconSize + 6, y + 12);
   }
 
-  function drawFooter(doc, pageNumber, pageCount) {
-    const y = PAGE.height - MARGINS.bottom - 6;
+  function drawFooter(doc, pageNumber, totalPages) {
+    const y = PAGE.height - FOOTER.h + 6; // inside footer band
+    const leftX = MARGINS.left;
+    const rightX = PAGE.width - MARGINS.right;
+
+    // Hairline
+    doc.setDrawColor(230, 233, 240);
+    doc.setLineWidth(0.2);
+    doc.line(MARGINS.left, PAGE.height - FOOTER.h, PAGE.width - MARGINS.right, PAGE.height - FOOTER.h);
+
+    // Left: powered by
     doc.setFont(TYPE.family, "normal");
     doc.setFontSize(9);
-    doc.setTextColor(110, 117, 124);
+    doc.setTextColor(...TYPE.colorMeta);
+    doc.text("Powered by YourBizGuru.com", leftX, y);
 
-    const left = "Powered by YourBizGuru.com";
-    const right = `Page ${pageNumber} of ${pageCount || "…"}`;
-    doc.text(left, MARGINS.left, y);
-
-    const w = doc.getTextWidth(right);
-    doc.text(right, PAGE.width - MARGINS.right - w, y);
-
-    // Ensure footer area is reserved visually (no text underneath)
-    // (Optional soft divider line)
-    doc.setDrawColor(230, 234, 239);
-    doc.setLineWidth(0.2);
-    doc.line(MARGINS.left, y - 6, PAGE.width - MARGINS.right, y - 6);
+    // Right: page x of y
+    const pageStr = `Page ${pageNumber} of ${totalPages || " "}`;
+    const w = doc.getTextWidth(pageStr);
+    doc.text(pageStr, rightX - w, y);
   }
 
-  // Very simple Markdown-ish parser for ##/### headings; everything else = body
-  function parseBlocks(text) {
+  // ---- Pagination-safe write helpers ---------------------------------------
+  function willOverflow(currentY, needed) {
+    return currentY + needed > CONTENT_BOTTOM;
+  }
+
+  async function ensureSpace(doc, state, needed, imgCache) {
+    if (!willOverflow(state.y, needed)) return;
+
+    // Finish the current page by drawing footer ONCE
+    state.pageNumber++;
+    state.deferredFooters.push(state.pageNumber);
+
+    doc.addPage();
+    await drawHeader(doc, state.pageNumber, imgCache);
+    state.y = CONTENT_TOP;
+  }
+
+  // ---- Image Loader (cached) ------------------------------------------------
+  async function loadImage(url) {
+    if (!url) return null;
+    try {
+      const resp = await fetch(url, { cache: "force-cache" }).catch(() => null);
+      if (!resp || !resp.ok) return null;
+      const blob = await resp.blob();
+      const reader = new FileReader();
+      const fr = await new Promise(res => {
+        reader.onload = () => res(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      // Determine type from dataURL header
+      const type = fr.startsWith("data:image/png") ? "PNG" : "JPEG";
+      return { img: fr, type };
+    } catch {
+      return null;
+    }
+  }
+
+  // ---- Content Writers ------------------------------------------------------
+  async function writeMarkdownish(doc, state, text, imgCache) {
+    // Super-light MD-ish parsing for ### and **bold** lines
     const lines = text.split(/\r?\n/);
-    return lines.map((line) => {
-      if (/^#{2}\s+/.test(line)) return { type: "h2", text: line.replace(/^#{2}\s+/, "") };
-      if (/^#{3}\s+/.test(line)) return { type: "h3", text: line.replace(/^#{3}\s+/, "") };
-      return { type: "p", text: line.length ? line : " " };
-    });
-  }
 
-  function wrapText(doc, text, maxWidth) {
-    // jsPDF splits to array based on font metrics
-    return doc.splitTextToSize(text, maxWidth);
-  }
+    for (let raw of lines) {
+      const line = raw.trimEnd();
 
-  // write a block with pagination awareness
-  function writeBlock(doc, block, cursorX, cursorY, maxWidth) {
-    let neededHeight = TYPE.line; // minimum
-    let fontStyle = "normal";
-    let fontSize = TYPE.bodySize;
-
-    if (block.type === "h2") { fontStyle = TYPE.h2Weight; fontSize = TYPE.h2Size; }
-    if (block.type === "h3") { fontStyle = TYPE.h3Weight; fontSize = TYPE.h3Size; }
-
-    doc.setFont(TYPE.family, fontStyle);
-    doc.setFontSize(fontSize);
-
-    const lines = wrapText(doc, block.text, maxWidth);
-    neededHeight = lines.length * TYPE.line;
-
-    // If not enough space on page, tell caller
-    if (cursorY + neededHeight > CONTENT_BOTTOM) {
-      // restore body defaults (caller will add a page)
-      applyGlobalType(doc);
-      return { wrote: false, height: neededHeight, lines };
-    }
-
-    // Write lines
-    lines.forEach((ln) => {
-      doc.text(ln, cursorX, cursorY);
-      cursorY += TYPE.line;
-    });
-
-    // restore defaults after headings
-    applyGlobalType(doc);
-    return { wrote: true, cursorY };
-  }
-
-  async function createDoc() {
-    const jsPDF = await ensureJsPDF();
-    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-    applyGlobalType(doc);
-    return doc;
-  }
-
-  async function exportTextToPDF({ text, toolkitName, toolkitIconUrl }) {
-    const doc = await createDoc();
-    let pageNumber = 1;
-    let iconImg = null;
-    if (toolkitIconUrl) {
-      try {
-        const res = await fetch(toolkitIconUrl);
-        const buf = await res.arrayBuffer();
-        iconImg = btoa(
-          new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), "")
-        );
-        iconImg = "data:image/png;base64," + iconImg;
-      } catch {}
-    }
-
-    // First page header
-    drawHeader(doc, toolkitName, iconImg, pageNumber);
-
-    const blocks = parseBlocks(text || "");
-    let cursorX = MARGINS.left;
-    let cursorY = CONTENT_TOP;
-
-    const writeOrPaginate = (block) => {
-      const attempt = writeBlock(doc, block, cursorX, cursorY, PAGE.width - MARGINS.left - MARGINS.right);
-      if (!attempt.wrote) {
-        // New page: finish footer first with page count unknown (placeholder)
-        drawFooter(doc, pageNumber, null);
-
-        doc.addPage();
-        pageNumber += 1;
-        applyGlobalType(doc);          // <== CRITICAL: lock fonts on new page
-        drawHeader(doc, toolkitName, iconImg, pageNumber);
-        cursorY = CONTENT_TOP;
-
-        // Now write for sure (enough room because of pagination)
-        const wrote = writeBlock(doc, block, cursorX, cursorY, PAGE.width - MARGINS.left - MARGINS.right);
-        cursorY = wrote.cursorY;
-      } else {
-        cursorY = attempt.cursorY;
+      // Heading H2
+      if (/^###[ ]?/.test(line)) {
+        const content = line.replace(/^###[ ]?/, "").trim();
+        await ensureSpace(doc, state, TYPE.line * 2.2, imgCache);
+        doc.setFont(TYPE.family, "bold");
+        doc.setFontSize(TYPE.h2Size);
+        doc.setTextColor(...TYPE.colorHead);
+        doc.text(content, MARGINS.left, state.y);
+        // Reset back to body
+        doc.setFont(TYPE.family, "normal");
+        doc.setFontSize(TYPE.bodySize);
+        doc.setTextColor(...TYPE.colorBody);
+        state.y += TYPE.line * 1.8;
+        continue;
       }
+
+      // Paragraph (bold inline kept simple)
+      if (line.length === 0) {
+        state.y += TYPE.line * 0.8;
+        continue;
+      }
+
+      // Wrap text within content width
+      const maxWidth = PAGE.width - MARGINS.left - MARGINS.right;
+      const wrapped = doc.splitTextToSize(line, maxWidth);
+
+      // Reserve height for wrapped block
+      const blockHeight = wrapped.length * TYPE.line;
+      await ensureSpace(doc, state, blockHeight, imgCache);
+
+      wrapped.forEach((l) => {
+        doc.text(l, MARGINS.left, state.y);
+        state.y += TYPE.line;
+      });
+    }
+  }
+
+  // ---- Public API (adapted for existing button calls) ----------------------
+  async function exportResultToPDF(text) {
+    // Single result export
+    const jsPDF = await loadJsPDF();
+    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+
+    applyGlobalType(doc);
+
+    const imgCache = await loadImage(getToolkitIcon());
+
+    // State
+    const state = {
+      y: CONTENT_TOP,
+      pageNumber: 1,
+      deferredFooters: [], // we'll draw footers once totalPages is known
     };
 
-    blocks.forEach(writeOrPaginate);
+    await drawHeader(doc, state.pageNumber, imgCache);
 
-    // Close out final page
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      applyGlobalType(doc);            // reinforce uniform styles per page
-      drawFooter(doc, i, pageCount);
+    // Write the single result content
+    if (!text) {
+      await ensureSpace(doc, state, TYPE.line * 2, imgCache);
+      doc.text("No content available.", MARGINS.left, state.y);
+      state.y += TYPE.line;
+    } else {
+      await writeMarkdownish(doc, state, text, imgCache);
     }
 
-    // filename
-    const date = new Date();
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const safeToolkit = (toolkitName || "YourBizGuru").replace(/[^a-z0-9_\-]+/gi, "_");
+    // Close final page
+    state.deferredFooters.push(state.pageNumber);
+
+    // ---- Second pass: draw footers with total page count -------------------
+    const total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p);
+      drawFooter(doc, p, total);
+    }
+
+    // Filename: YYYY-MM-DD_YBG_[Toolkit]_Report.pdf
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const safeToolkit = getToolkitName().replace(/[^\w-]+/g, "");
     const filename = `${yyyy}-${mm}-${dd}_YBG_${safeToolkit}_Report.pdf`;
 
     doc.save(filename);
   }
 
-  // ---- Public API (unchanged) ----
-  YBG_PDF.exportResultToPDF = async function (text) {
-    await exportTextToPDF({
-      text,
-      toolkitName: window.currentToolkitName || "YourBizGuru Mini-Dashboard",
-      toolkitIconUrl: window.currentToolkitIcon || "/favicon.png"
-    });
-  };
+  async function exportAllResultsToPDF(resultsArray, opts = {}) {
+    const jsPDF = await loadJsPDF();
+    const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
 
-  YBG_PDF.exportAllResultsToPDF = async function (resultsArray, opts = {}) {
+    applyGlobalType(doc);
+
+    const imgCache = await loadImage(getToolkitIcon());
+
+    // State
+    const state = {
+      y: CONTENT_TOP,
+      pageNumber: 1,
+      deferredFooters: [],
+    };
+
+    await drawHeader(doc, state.pageNumber, imgCache);
+
+    // Handle export mode
     const mode = opts.mode || "all";
     let items = Array.isArray(resultsArray) ? resultsArray : [];
     
-    // Handle mode selection
-    if (mode === "latest" && items.length > 0) {
-      items = [items[items.length - 1]];
+    // Sort by timestamp if available and handle "latest only" mode
+    if (items.length > 0 && items[0].timestamp) {
+      items.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     }
     
-    // Convert to text format
-    const combined = items.map(item => {
-      if (typeof item === 'string') return item;
-      if (item.text) return item.text;
-      if (item.title && item.text) return `## ${item.title}\n\n${item.text}`;
-      return String(item);
-    }).join("\n\n---\n\n");
-    
-    await exportTextToPDF({
-      text: combined,
-      toolkitName: window.currentToolkitName || "YourBizGuru Mini-Dashboard",
-      toolkitIconUrl: window.currentToolkitIcon || "/favicon.png"
-    });
-  };
+    if (mode === "latest" && items.length > 0) {
+      items = [items[items.length - 1]]; // Take the most recent
+    }
 
-  // Maintain backward compatibility with existing API
-  window.exportResultToPDF = YBG_PDF.exportResultToPDF;
-  window.exportAllResultsToPDF = YBG_PDF.exportAllResultsToPDF;
-  window.YBG_PDF = YBG_PDF;
+    // Collect content
+    if (!items.length) {
+      await ensureSpace(doc, state, TYPE.line * 2, imgCache);
+      doc.text("No content available.", MARGINS.left, state.y);
+      state.y += TYPE.line;
+    } else {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        let content = "";
+        
+        // Handle different data formats
+        if (typeof item === 'string') {
+          content = item;
+        } else if (item.text) {
+          if (item.title) {
+            content = `### ${item.title}\n\n${item.text}`;
+          } else {
+            content = item.text;
+          }
+        } else if (item.result) {
+          // Handle the format from YBG toolkit
+          const header = `### Result ${i + 1}${item.displayTime ? ' - ' + item.displayTime : ''}\n\n`;
+          const prompt = item.prompt ? `Request: ${item.prompt}\n\n` : '';
+          const result = `Result:\n${item.result}`;
+          content = header + prompt + result;
+        }
+        
+        await writeMarkdownish(doc, state, content, imgCache);
+        
+        // Spacer between results (except last)
+        if (i < items.length - 1) {
+          state.y += TYPE.line * 2;
+          await ensureSpace(doc, state, TYPE.line, imgCache);
+          // Add separator
+          doc.setDrawColor(230, 233, 240);
+          doc.setLineWidth(0.2);
+          const lineY = state.y - TYPE.line;
+          doc.line(MARGINS.left, lineY, PAGE.width - MARGINS.right, lineY);
+        }
+      }
+    }
+
+    // Close final page
+    state.deferredFooters.push(state.pageNumber);
+
+    // Second pass: draw footers with total page count
+    const total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p);
+      drawFooter(doc, p, total);
+    }
+
+    // Filename with mode indicator
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const safeToolkit = getToolkitName().replace(/[^\w-]+/g, "");
+    const suffix = mode === "latest" ? "Latest_Result" : "All_Results";
+    const filename = `${yyyy}-${mm}-${dd}_YBG_${safeToolkit}_${suffix}.pdf`;
+
+    doc.save(filename);
+  }
+
+  // Expose in window (used by buttons)
+  window.exportResultToPDF = exportResultToPDF;
+  window.exportAllResultsToPDF = exportAllResultsToPDF;
+
 })();
