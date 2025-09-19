@@ -221,23 +221,35 @@ window.YBG_PDF = window.YBG_PDF || {};
 
   // ---- Footer Drawing ------------------------------------------------------
   function drawFooter(doc, pageNum, totalPages) {
-    const y = PAGE.height - MARGINS.bottom - 5;
+    const mainFooterY = PAGE.height - MARGINS.bottom - 12;
+    const disclaimerY = PAGE.height - MARGINS.bottom - 4;
     
-    // Separator line
-    doc.setDrawColor(230, 230, 230);
-    doc.setLineWidth(0.2);
-    doc.line(CONTENT.left, CONTENT.bottom + 2, CONTENT.right, CONTENT.bottom + 2);
+    // Faint divider line above footer
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.15);
+    doc.line(CONTENT.left, CONTENT.bottom + 6, CONTENT.right, CONTENT.bottom + 6);
     
-    // Left text
+    // Main footer row
     doc.setFont(TYPOGRAPHY.fontFamily, "normal");
     doc.setFontSize(TYPOGRAPHY.footerSize);
     doc.setTextColor(...TYPOGRAPHY.colorMeta);
-    doc.text("Powered by YourBizGuru.com", CONTENT.left, y);
     
-    // Right text (page numbers)
+    // Left side: "Powered by YourBizGuru.com"
+    doc.text("Powered by YourBizGuru.com", CONTENT.left, mainFooterY);
+    
+    // Right side: "Page X of Y"
     const pageText = `Page ${pageNum} of ${totalPages}`;
     const pageWidth = doc.getTextWidth(pageText);
-    doc.text(pageText, CONTENT.right - pageWidth, y);
+    doc.text(pageText, CONTENT.right - pageWidth, mainFooterY);
+    
+    // Disclaimer below (small, muted)
+    doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+    doc.setFontSize(7); // Smaller than footer size
+    doc.setTextColor(120, 120, 120); // More muted gray
+    const disclaimer = "Disclaimer: For informational purposes only. Not legal, tax, or financial advice.";
+    const disclaimerWidth = doc.getTextWidth(disclaimer);
+    const disclaimerX = (CONTENT.left + CONTENT.right - disclaimerWidth) / 2; // Center the disclaimer
+    doc.text(disclaimer, disclaimerX, disclaimerY);
     
     // Reset to body typography
     applyGlobalTypography(doc);
