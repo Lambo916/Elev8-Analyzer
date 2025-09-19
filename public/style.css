@@ -371,6 +371,11 @@ html:not(.theme-dark) .panel-header {
     align-items: center;
 }
 
+/* Ensure Clear button always has transparent background */
+.panel-actions .clear-btn {
+    background: transparent !important;
+}
+
 .panel-content {
     padding: var(--spacing-lg);
 }
