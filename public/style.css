@@ -36,15 +36,20 @@
     
     /* Light Theme Tokens (Default) */
     --bg: 248, 250, 253;                /* Very pale blue-gray */
-    --bg-gradient: linear-gradient(135deg, #f8fafd, #f0f4f8, #fafbfc);
+    --bg-gradient: linear-gradient(180deg, #f9fcff 0%, #ffffff 60%, #fdfcff 100%);
+    --bg-accent-wash: radial-gradient(1200px 800px at 85% -120px, rgba(255, 235, 59, 0.10), rgba(255, 255, 255, 0) 55%);
     --card: 255, 255, 255;              /* Pure white cards */
+    --card-gradient: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
     --card-header: 245, 247, 250;       /* Slightly tinted header */
+    --card-border: rgba(17, 24, 39, 0.08);  /* Subtle slate border */
     --panel: 255, 255, 255;              /* Panel background */
     --text: 30, 41, 59;                  /* Dark slate */
     --text-secondary: 100, 116, 139;    /* Slate gray */
     --text-muted: 148, 163, 184;        /* Light slate */
     --border: 226, 232, 240;             /* Soft border */
     --border-strong: 203, 213, 225;      /* Stronger border */
+    --divider-fade: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(17, 24, 39, 0.10), rgba(0, 0, 0, 0));
+    --panel-header-glow: 0 0 12px rgba(79, 195, 247, 0.12);
     
     /* Interactive Colors */
     --primary: rgb(var(--ybg-brand-primary));
@@ -127,6 +132,18 @@ body {
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Light theme background with accent wash */
+html.theme-light,
+html:not(.theme-dark) {
+    background: var(--bg-accent-wash), var(--bg-gradient);
+    background-attachment: fixed;
+}
+
+html.theme-light body,
+html:not(.theme-dark) body {
+    background: transparent;
 }
 
 /* ========================================
@@ -272,6 +289,15 @@ html.theme-dark h3 {
     position: relative;
 }
 
+/* Light theme panel gradient polish */
+html.theme-light .panel,
+html:not(.theme-dark) .panel {
+    background: var(--card-gradient);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    backdrop-filter: none;
+}
+
 /* Light theme: subtle yellow accent marker on cards */
 html:not(.theme-dark) .panel::before {
     content: '';
@@ -306,6 +332,13 @@ html.theme-dark .results-panel::before {
     padding: var(--spacing-md) var(--spacing-lg);
     background: rgba(var(--card-header), 0.5);
     border-bottom: 1px solid rgba(var(--border), 0.15);
+}
+
+/* Light theme panel header polish */
+html.theme-light .panel-header,
+html:not(.theme-dark) .panel-header {
+    box-shadow: var(--panel-header-glow);
+    border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 }
 
 .panel-header h2 {
@@ -398,11 +431,17 @@ html.theme-dark .form-textarea:focus {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Light theme button with inner highlight */
+html.theme-light .submit-btn,
+html:not(.theme-dark) .submit-btn {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Light theme button hover: soft yellow edge glow */
 html:not(.theme-dark) .submit-btn:hover {
     background: var(--btn-gradient-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(var(--primary-rgb), 0.3), 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 8px rgba(var(--primary-rgb), 0.3), 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 /* Dark theme button hover: dual-layer glow (blue + yellow) */
