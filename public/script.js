@@ -222,7 +222,7 @@ class YBGToolkit {
             }
 
             // Add result to display and storage
-            this.addResult(formData, result.output, result.profileUsed, result.matchType);
+            this.addResult(formData, result.output, result.profileUsed, result.matchType, result.sections);
             
         } catch (error) {
             console.error('Error generating result:', error);
@@ -384,7 +384,7 @@ class YBGToolkit {
         }
     }
 
-    addResult(formData, result, profileUsed, matchType) {
+    addResult(formData, result, profileUsed, matchType, sections) {
         const timestamp = new Date();
         
         // Create a summary prompt for display
@@ -395,6 +395,7 @@ class YBGToolkit {
             prompt: promptSummary,
             formData,
             result,
+            sections: sections || null,
             profileUsed: profileUsed || 'Unknown',
             matchType: matchType || 'generic',
             timestamp: timestamp.toISOString(),
@@ -423,7 +424,13 @@ class YBGToolkit {
         const copyBtn = resultElement.querySelector('.copy-btn');
 
         timestampEl.textContent = resultData.displayTime;
-        contentEl.textContent = resultData.result;
+        
+        // Use structured rendering if sections available, otherwise fallback to text
+        if (resultData.sections) {
+            contentEl.innerHTML = this.renderStructuredResult(resultData.sections);
+        } else {
+            contentEl.textContent = resultData.result;
+        }
         
         // Store data for copy action
         copyBtn.dataset.resultId = resultData.id;
@@ -433,6 +440,110 @@ class YBGToolkit {
 
         // Scroll to show new result
         resultsContainer.scrollTop = 0;
+    }
+
+    renderStructuredResult(sections) {
+        let html = '';
+
+        // Section 1: Executive Summary
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Executive Compliance Summary</h2>';
+        html += `<div class="section-content">${sections.executiveSummary.replace(/\n\n/g, '</p><p>').replace(/^(.+)$/, '<p>$1</p>')}</div>`;
+        html += '</div>';
+
+        // Section 2: Requirements Checklist
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Filing Requirements Checklist</h2>';
+        html += '<div class="checklist-container">';
+        
+        let currentCategory = '';
+        sections.requirementsChecklist.forEach(item => {
+            if (item.category && item.category !== currentCategory) {
+                if (currentCategory) html += '</div>';
+                html += `<div class="checklist-category"><strong>${item.category}:</strong></div>`;
+                html += '<div class="checklist-items">';
+                currentCategory = item.category;
+            }
+            const checkIcon = item.checkbox === '✓' ? '✓' : '□';
+            const checkClass = item.checkbox === '✓' ? 'checked' : 'unchecked';
+            const suggestedClass = item.label.includes('Suggested by CompliPilot') ? ' suggested-item' : '';
+            html += `<div class="checklist-item ${checkClass}${suggestedClass}">`;
+            html += `<span class="checkbox-icon">${checkIcon}</span>`;
+            html += `<div class="item-details">`;
+            html += `<div class="item-label">${item.label}</div>`;
+            html += `<div class="item-description">${item.description}</div>`;
+            html += `</div></div>`;
+        });
+        html += '</div></div></div>';
+
+        // Section 3: Timeline
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Compliance Timeline</h2>';
+        html += '<div class="table-container">';
+        html += '<table class="compliance-table timeline-table">';
+        html += '<thead><tr><th>Milestone</th><th>Owner</th><th>Due Date</th><th>Notes</th></tr></thead>';
+        html += '<tbody>';
+        sections.timeline.forEach(item => {
+            html += `<tr>`;
+            html += `<td>${item.milestone}</td>`;
+            html += `<td>${item.owner}</td>`;
+            html += `<td>${item.due}</td>`;
+            html += `<td>${item.notes}</td>`;
+            html += `</tr>`;
+        });
+        html += '</tbody></table></div></div>';
+
+        // Section 4: Risk Matrix
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Risk Matrix</h2>';
+        html += '<div class="table-container">';
+        html += '<table class="compliance-table risk-table">';
+        html += '<thead><tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation</th></tr></thead>';
+        html += '<tbody>';
+        sections.riskMatrix.forEach(risk => {
+            const severityClass = risk.severity.toLowerCase().replace(' ', '-');
+            html += `<tr>`;
+            html += `<td>${risk.risk}</td>`;
+            html += `<td><span class="severity-badge ${severityClass}">${risk.severity}</span></td>`;
+            html += `<td>${risk.likelihood}</td>`;
+            html += `<td>${risk.mitigation}</td>`;
+            html += `</tr>`;
+        });
+        html += '</tbody></table></div></div>';
+
+        // Section 5: Recommendations
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Strategic Recommendations</h2>';
+        html += '<div class="recommendations-list">';
+        sections.recommendations.forEach(rec => {
+            html += `<div class="recommendation-item">`;
+            html += `<div class="rec-number">${rec.number}</div>`;
+            html += `<div class="rec-content">`;
+            html += `<div class="rec-action"><strong>${rec.action}</strong></div>`;
+            html += `<div class="rec-detail">${rec.detail}</div>`;
+            html += `</div></div>`;
+        });
+        html += '</div></div>';
+
+        // Section 6: References
+        html += '<div class="compliance-section">';
+        html += '<h2 class="section-title">Official References</h2>';
+        html += '<div class="references-list">';
+        if (sections.references.links && sections.references.links.length > 0) {
+            sections.references.links.forEach(link => {
+                html += `<div class="reference-item">`;
+                html += `<strong>${link.label}:</strong> `;
+                html += `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.url}</a>`;
+                html += `<div class="ref-description">${link.description}</div>`;
+                html += `</div>`;
+            });
+        } else {
+            html += '<p><em>Contact your state or federal agency for official filing portals.</em></p>';
+        }
+        html += `<div class="disclaimer"><strong>Disclaimer:</strong> ${sections.references.disclaimer}</div>`;
+        html += '</div></div>';
+
+        return html;
     }
 
     copyResult(button) {
