@@ -65,9 +65,49 @@ CRITICAL FORMATTING RULES:
 REMEMBER: Consistency and structure are critical. Every document must have all 5 sections in the exact format specified.`;
   };
 
+  // Elev8 Analyzer diagnostic system prompt template (SCAFFOLD)
+  const getDiagnosticSystemPrompt = () => {
+    return `You are Elev8 Analyzer, an expert business diagnostic assistant powered by YourBizGuru.
+
+Your role is to generate professional strategic analysis reports that help businesses identify opportunities, address challenges, and elevate their operations.
+
+CRITICAL FORMATTING RULES:
+1. ALWAYS structure your response with these exact 4 sections using markdown headings:
+   # Executive Summary
+   ## SWOT Analysis
+   ## Risk & Opportunity Matrix
+   ## Strategic Recommendations
+
+2. Format each section as follows:
+   - Executive Summary: Write 2-3 clear, insightful paragraphs (150-200 words) analyzing the business profile
+   - SWOT Analysis: Create a markdown table with 4 columns: Strengths | Weaknesses | Opportunities | Threats
+   - Risk & Opportunity Matrix: Create a markdown table with 3 columns: Factor | Impact Level | Action Priority
+   - Strategic Recommendations: Use numbered list (1., 2., 3., etc.) with specific, actionable items
+
+3. PLACEHOLDER HANDLING:
+   - If business information is missing, insert clean placeholders like [Pending Input] or [AWAITING DATA]
+   - NEVER leave blank sections or break table structure
+   - For incomplete matrices, include at least one placeholder row
+
+4. WRITING STYLE:
+   - Use clear business language, avoid unnecessary jargon
+   - Be strategic and forward-looking
+   - Ground insights in the provided business data
+   - Focus on actionable intelligence
+   - Maintain professional consultant tone throughout
+
+5. TABLE FORMATTING:
+   - Always use proper markdown table syntax with | separators
+   - Include header row with column names
+   - Include separator row with dashes
+   - Add at least 3-4 data rows per table (use placeholders if needed)
+   
+REMEMBER: Your analysis should be data-driven yet strategic, helping business owners make informed decisions.`;
+  };
+
   // API endpoint for generating toolkit results
   app.post("/api/generate", async (req, res) => {
-    const { prompt: userPrompt, formData } = req.body;
+    const { prompt: userPrompt, formData, toolkitType } = req.body;
     
     try {
 
@@ -98,9 +138,18 @@ REMEMBER: Consistency and structure are critical. Every document must have all 5
         });
       }
 
+      // Select appropriate system prompt based on toolkit type
+      const systemPrompt = toolkitType === 'diagnostic' 
+        ? getDiagnosticSystemPrompt() 
+        : getComplianceSystemPrompt();
+
+      const reportType = toolkitType === 'diagnostic' 
+        ? `${formData?.industry || 'business'} analysis` 
+        : `${formData?.filingType || 'compliance'} - ${formData?.entityType || 'filing'}`;
+
       console.log(
-        "Generating compliance report:",
-        formData ? `${formData.filingType} - ${formData.entityType}` : userPrompt.substring(0, 100)
+        `Generating ${toolkitType || 'compliance'} report:`,
+        formData ? reportType : userPrompt.substring(0, 100)
       );
 
 
@@ -110,7 +159,7 @@ REMEMBER: Consistency and structure are critical. Every document must have all 5
         messages: [
           {
             role: "system",
-            content: getComplianceSystemPrompt(),
+            content: systemPrompt,
           },
           {
             role: "user",
@@ -142,12 +191,16 @@ REMEMBER: Consistency and structure are critical. Every document must have all 5
       if (error.code === "model_not_found") {
         // Fallback to gpt-3.5-turbo if gpt-4o-mini not available
         try {
+          const systemPrompt = toolkitType === 'diagnostic' 
+            ? getDiagnosticSystemPrompt() 
+            : getComplianceSystemPrompt();
+          
           const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
               {
                 role: "system",
-                content: getComplianceSystemPrompt(),
+                content: systemPrompt,
               },
               {
                 role: "user", 
