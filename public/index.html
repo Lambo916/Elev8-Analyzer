@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YourBizGuru Mini-Dashboard</title>
-    <meta name="description" content="Professional business tools powered by YourBizGuru">
+    <title>CompliPilot · YourBizGuru</title>
+    <meta name="description" content="Navigate compliance with confidence — powered by YourBizGuru">
     
     <!-- Favicon and Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -13,7 +13,7 @@
     <link rel="manifest" href="/site.webmanifest">
     
     <!-- Theme Color -->
-    <meta name="theme-color" content="#4FC3F7">
+    <meta name="theme-color" content="#4DB6E7">
     
     <!-- Google Fonts - Montserrat (headings) and Open Sans (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,8 +26,8 @@
     <!-- jsPDF will be loaded dynamically by PDF export system -->
     
     <!-- Open Graph for social media embedding -->
-    <meta property="og:title" content="YourBizGuru Mini-Dashboard">
-    <meta property="og:description" content="Professional business tools powered by YourBizGuru">
+    <meta property="og:title" content="CompliPilot · YourBizGuru">
+    <meta property="og:description" content="Navigate compliance with confidence — powered by YourBizGuru">
     <meta property="og:type" content="website">
     <meta property="og:image" content="ybg-logo.png">
 </head>
@@ -39,7 +39,10 @@
             <div class="header-content">
                 <div class="header-left">
                     <img src="ybg-logo.svg" alt="YourBizGuru Logo" class="logo" data-testid="img-logo">
-                    <h1 class="app-title" data-testid="text-app-title">YourBizGuru Mini-Dashboard</h1>
+                    <div class="title-container">
+                        <h1 class="app-title" data-testid="text-app-title">CompliPilot</h1>
+                        <p class="app-tagline" data-testid="text-app-tagline">Navigate compliance with confidence — powered by YourBizGuru</p>
+                    </div>
                 </div>
                 <button class="theme-toggle" id="themeToggle" data-testid="button-theme-toggle" aria-label="Toggle theme">
                     <span class="theme-icon" id="themeIcon">☀️</span>
@@ -56,28 +59,166 @@
                     <h2 data-testid="text-input-header">Input</h2>
                 </div>
                 <div class="panel-content">
-                    <form id="toolkitForm" class="toolkit-form" data-testid="form-toolkit">
+                    <form id="toolkitForm" class="toolkit-form compliance-form" data-testid="form-toolkit">
                         <div class="form-group">
-                            <label for="promptInput" class="form-label" data-testid="text-prompt-label">
-                                Enter your request: <span class="keyboard-hint">(Ctrl+Enter to generate)</span>
+                            <label for="entityName" class="form-label" data-testid="label-entity-name">
+                                Entity Name
+                            </label>
+                            <input 
+                                type="text" 
+                                id="entityName" 
+                                class="form-input"
+                                placeholder="Your Company Name LLC"
+                                data-testid="input-entity-name"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="entityType" class="form-label required" data-testid="label-entity-type">
+                                Business Entity Type <span class="required-marker">*</span>
+                            </label>
+                            <select 
+                                id="entityType" 
+                                class="form-select"
+                                required
+                                data-testid="select-entity-type"
+                            >
+                                <option value="">Select entity type...</option>
+                                <option value="LLC">LLC (Limited Liability Company)</option>
+                                <option value="Corporation">Corporation</option>
+                                <option value="S-Corporation">S-Corporation</option>
+                                <option value="C-Corporation">C-Corporation</option>
+                                <option value="Nonprofit">Nonprofit Organization</option>
+                                <option value="Sole Proprietorship">Sole Proprietorship</option>
+                                <option value="Partnership">Partnership</option>
+                                <option value="LLP">LLP (Limited Liability Partnership)</option>
+                            </select>
+                            <span class="error-message" id="entityTypeError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="jurisdiction" class="form-label" data-testid="label-jurisdiction">
+                                Jurisdiction (State/Country)
+                            </label>
+                            <input 
+                                type="text" 
+                                id="jurisdiction" 
+                                class="form-input"
+                                placeholder="e.g., Delaware, California, etc."
+                                data-testid="input-jurisdiction"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="filingType" class="form-label required" data-testid="label-filing-type">
+                                Filing Type <span class="required-marker">*</span>
+                            </label>
+                            <select 
+                                id="filingType" 
+                                class="form-select"
+                                required
+                                data-testid="select-filing-type"
+                            >
+                                <option value="">Select filing type...</option>
+                                <option value="Annual Report">Annual Report</option>
+                                <option value="BOIR">BOIR (Beneficial Ownership Information Report)</option>
+                                <option value="DBE Certification">DBE Certification</option>
+                                <option value="MBE Certification">MBE Certification</option>
+                                <option value="8a Certification">8a Certification</option>
+                                <option value="SAM Registration">SAM.gov Registration</option>
+                                <option value="Business License">Business License Renewal</option>
+                                <option value="SBA Filing">SBA Filing</option>
+                                <option value="State Tax Registration">State Tax Registration</option>
+                                <option value="Operating Agreement">Operating Agreement Update</option>
+                                <option value="Other">Other Compliance Filing</option>
+                            </select>
+                            <span class="error-message" id="filingTypeError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deadline" class="form-label required" data-testid="label-deadline">
+                                Filing Deadline <span class="required-marker">*</span>
+                            </label>
+                            <input 
+                                type="date" 
+                                id="deadline" 
+                                class="form-input"
+                                required
+                                data-testid="input-deadline"
+                            />
+                            <span class="error-message" id="deadlineError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" data-testid="label-requirements">
+                                Required Documents & Information
+                            </label>
+                            <div class="checkbox-group" data-testid="group-requirements">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-articles" value="Articles of Incorporation/Organization" data-testid="checkbox-articles" />
+                                    <span>Articles of Incorporation/Organization</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-ein" value="EIN (Employer Identification Number)" data-testid="checkbox-ein" />
+                                    <span>EIN (Employer Identification Number)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-financials" value="Financial Statements" data-testid="checkbox-financials" />
+                                    <span>Financial Statements</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-boir" value="Beneficial Ownership Information" data-testid="checkbox-boir" />
+                                    <span>Beneficial Ownership Information</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-operating" value="Operating Agreement" data-testid="checkbox-operating" />
+                                    <span>Operating Agreement</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-resolutions" value="Board Resolutions" data-testid="checkbox-resolutions" />
+                                    <span>Board Resolutions</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="req-certificates" value="Certificates/Licenses" data-testid="checkbox-certificates" />
+                                    <span>Certificates/Licenses</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="risks" class="form-label" data-testid="label-risks">
+                                Risks/Consequences of Non-Compliance
                             </label>
                             <textarea 
-                                id="promptInput" 
-                                class="form-textarea" 
-                                placeholder="Ask me anything about your business..."
-                                rows="6"
-                                required
-                                data-testid="input-prompt"
+                                id="risks" 
+                                class="form-textarea"
+                                placeholder="Describe potential risks, penalties, or consequences..."
+                                rows="3"
+                                data-testid="textarea-risks"
                             ></textarea>
                         </div>
+
+                        <div class="form-group">
+                            <label for="mitigation" class="form-label" data-testid="label-mitigation">
+                                Mitigation Plan / Action Items
+                            </label>
+                            <textarea 
+                                id="mitigation" 
+                                class="form-textarea"
+                                placeholder="Describe your plan to address compliance requirements..."
+                                rows="3"
+                                data-testid="textarea-mitigation"
+                            ></textarea>
+                        </div>
+
                         <button 
                             type="submit" 
                             class="submit-btn" 
                             id="submitBtn"
                             data-testid="button-submit"
                         >
-                            <span id="submitText">Generate</span>
-                            <span id="loadingText" class="hidden">Thinking...</span>
+                            <span id="submitText">Generate Compliance Report</span>
+                            <span id="loadingText" class="hidden">Generating...</span>
                         </button>
                     </form>
                 </div>

@@ -79,7 +79,7 @@ class ThemeManager {
         // Update meta theme-color for mobile browsers
         const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) {
-            metaTheme.content = theme === this.THEME_DARK ? '#0A0A0A' : '#4FC3F7';
+            metaTheme.content = theme === this.THEME_DARK ? '#0A0A0A' : '#4DB6E7';
         }
     }
     
@@ -125,8 +125,9 @@ class YBGToolkit {
     init() {
         this.bindEvents();
         this.bindKeyboardShortcuts();
-        this.initAutoSave();
-        this.initCharacterCounter();
+        // Auto-save and character counter disabled for compliance form
+        // this.initAutoSave();
+        // this.initCharacterCounter();
         this.loadStoredResults();
     }
 
@@ -153,10 +154,14 @@ class YBGToolkit {
             
             try {
                 const mode = (exportMode?.value || "latest");
-                const resultsForExport = resultsArray.map((result, index) => ({
-                    title: `Result ${index + 1} - ${result.displayTime}`,
-                    text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
-                }));
+                const resultsForExport = resultsArray.map((result, index) => {
+                    // Handle both old (prompt) and new (formData) result formats
+                    const requestText = result.prompt || this.formatFormDataSummary(result.formData);
+                    return {
+                        title: `Result ${index + 1} - ${result.displayTime}`,
+                        text: `Request: ${requestText}\n\nResult:\n${result.result}`
+                    };
+                });
                 
                 await window.exportAllResultsToPDF(resultsForExport, { mode });
                 this.showSuccess(`PDF exported successfully (${mode} mode)`);
@@ -186,24 +191,22 @@ class YBGToolkit {
     async handleSubmit(e) {
         e.preventDefault();
         
-        const promptInput = document.getElementById('promptInput');
-        const submitBtn = document.getElementById('submitBtn');
-        const submitText = document.getElementById('submitText');
-        const loadingText = document.getElementById('loadingText');
+        // Clear previous errors
+        this.clearValidationErrors();
         
-        const prompt = promptInput.value.trim();
+        // Collect form data
+        const formData = this.collectFormData();
         
-        if (!prompt) {
-            this.showError('Please enter a request before submitting.');
+        // Validate required fields
+        const validation = this.validateForm(formData);
+        if (!validation.isValid) {
+            this.showValidationErrors(validation.errors);
             return;
         }
-
-        // Input length validation (max 2000 characters)
-        if (prompt.length > 2000) {
-            this.showError('Request is too long. Please limit to 2000 characters or less.');
-            return;
-        }
-
+        
+        // Build structured prompt for AI
+        const prompt = this.buildCompliancePrompt(formData);
+        
         // Show loading state
         this.setLoadingState(true);
         
@@ -213,7 +216,7 @@ class YBGToolkit {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt }),
+                body: JSON.stringify({ prompt, formData }),
             });
 
             if (!response.ok) {
@@ -227,10 +230,10 @@ class YBGToolkit {
             }
 
             // Add result to display and storage
-            this.addResult(prompt, data.result);
+            this.addResult(formData, data.result);
             
-            // Clear input
-            promptInput.value = '';
+            // Optionally clear form (or keep it for edits)
+            // this.clearForm();
             
         } catch (error) {
             console.error('Error generating result:', error);
@@ -240,30 +243,168 @@ class YBGToolkit {
         }
     }
 
+    collectFormData() {
+        // Collect all form field values
+        const entityName = document.getElementById('entityName').value.trim();
+        const entityType = document.getElementById('entityType').value;
+        const jurisdiction = document.getElementById('jurisdiction').value.trim();
+        const filingType = document.getElementById('filingType').value;
+        const deadline = document.getElementById('deadline').value;
+        const risks = document.getElementById('risks').value.trim();
+        const mitigation = document.getElementById('mitigation').value.trim();
+        
+        // Collect selected requirements
+        const requirements = [];
+        const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => requirements.push(cb.value));
+        
+        return {
+            entityName,
+            entityType,
+            jurisdiction,
+            filingType,
+            deadline,
+            requirements,
+            risks,
+            mitigation
+        };
+    }
+
+    validateForm(formData) {
+        const errors = {};
+        let isValid = true;
+        
+        // Validate required fields
+        if (!formData.entityType) {
+            errors.entityType = 'Business Entity Type is required';
+            isValid = false;
+        }
+        
+        if (!formData.filingType) {
+            errors.filingType = 'Filing Type is required';
+            isValid = false;
+        }
+        
+        if (!formData.deadline) {
+            errors.deadline = 'Filing Deadline is required';
+            isValid = false;
+        }
+        
+        return { isValid, errors };
+    }
+
+    showValidationErrors(errors) {
+        // Display error messages
+        for (const [field, message] of Object.entries(errors)) {
+            const errorEl = document.getElementById(`${field}Error`);
+            if (errorEl) {
+                errorEl.textContent = message;
+            }
+        }
+        
+        // Show general error notification
+        this.showError('Please fill in all required fields');
+    }
+
+    clearValidationErrors() {
+        const errorElements = document.querySelectorAll('.error-message');
+        errorElements.forEach(el => el.textContent = '');
+    }
+
+    buildCompliancePrompt(formData) {
+        // Build a structured prompt that includes all form data
+        let prompt = `Generate a comprehensive compliance report for the following filing:\n\n`;
+        
+        if (formData.entityName) {
+            prompt += `Entity Name: ${formData.entityName}\n`;
+        }
+        prompt += `Entity Type: ${formData.entityType}\n`;
+        
+        if (formData.jurisdiction) {
+            prompt += `Jurisdiction: ${formData.jurisdiction}\n`;
+        }
+        
+        prompt += `Filing Type: ${formData.filingType}\n`;
+        prompt += `Deadline: ${formData.deadline}\n\n`;
+        
+        if (formData.requirements.length > 0) {
+            prompt += `Required Documents:\n${formData.requirements.map(r => `- ${r}`).join('\n')}\n\n`;
+        }
+        
+        if (formData.risks) {
+            prompt += `Identified Risks/Consequences:\n${formData.risks}\n\n`;
+        }
+        
+        if (formData.mitigation) {
+            prompt += `Mitigation Plan:\n${formData.mitigation}\n\n`;
+        }
+        
+        prompt += `Please provide a structured compliance report with the following sections:\n`;
+        prompt += `1. Executive Compliance Summary (1-2 paragraphs)\n`;
+        prompt += `2. Filing Requirements Checklist (bulleted with checkmarks)\n`;
+        prompt += `3. Compliance Roadmap (timeline table)\n`;
+        prompt += `4. Risk Matrix (3-column table: Risk | Consequence | Mitigation)\n`;
+        prompt += `5. Next Steps & Recommendations (numbered list)`;
+        
+        return prompt;
+    }
+
+    clearForm() {
+        document.getElementById('entityName').value = '';
+        document.getElementById('entityType').value = '';
+        document.getElementById('jurisdiction').value = '';
+        document.getElementById('filingType').value = '';
+        document.getElementById('deadline').value = '';
+        document.getElementById('risks').value = '';
+        document.getElementById('mitigation').value = '';
+        
+        const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+
+    formatFormDataSummary(formData) {
+        if (!formData) return 'Compliance Filing';
+        
+        let summary = '';
+        if (formData.filingType) summary += formData.filingType;
+        if (formData.entityType) summary += ` for ${formData.entityType}`;
+        if (formData.entityName) summary += ` (${formData.entityName})`;
+        if (formData.jurisdiction) summary += ` - ${formData.jurisdiction}`;
+        
+        return summary || 'Compliance Filing';
+    }
+
     setLoadingState(loading) {
         const submitBtn = document.getElementById('submitBtn');
         const submitText = document.getElementById('submitText');
         const loadingText = document.getElementById('loadingText');
-        const promptInput = document.getElementById('promptInput');
+        const formInputs = document.querySelectorAll('#toolkitForm input, #toolkitForm select, #toolkitForm textarea');
 
         if (loading) {
             submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
             submitText.classList.add('hidden');
             loadingText.classList.remove('hidden');
-            promptInput.disabled = true;
+            formInputs.forEach(input => input.disabled = true);
         } else {
             submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
             submitText.classList.remove('hidden');
             loadingText.classList.add('hidden');
-            promptInput.disabled = false;
+            formInputs.forEach(input => input.disabled = false);
         }
     }
 
-    addResult(prompt, result) {
+    addResult(formData, result) {
         const timestamp = new Date();
+        
+        // Create a summary prompt for display
+        const promptSummary = `${formData.filingType} for ${formData.entityType}${formData.entityName ? ` (${formData.entityName})` : ''}`;
+        
         const resultData = {
             id: Date.now().toString(),
-            prompt,
+            prompt: promptSummary,
+            formData,
             result,
             timestamp: timestamp.toISOString(),
             displayTime: this.formatTimestamp(timestamp)
@@ -496,14 +637,15 @@ class YBGToolkit {
 
     bindKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+Enter or Cmd+Enter to generate (works globally when input has focus)
+            // Ctrl+Enter or Cmd+Enter to submit form
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 const form = document.getElementById('toolkitForm');
-                const promptInput = document.getElementById('promptInput');
+                if (!form) return;
                 
-                if (promptInput.value.trim() && !form.querySelector('button[type="submit"]').disabled) {
-                    form.dispatchEvent(new Event('submit'));
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
                 }
                 return;
             }
@@ -518,12 +660,14 @@ class YBGToolkit {
                 return;
             }
             
-            // Ctrl+K or Cmd+K to focus input
+            // Ctrl+K or Cmd+K to focus first input
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
-                const promptInput = document.getElementById('promptInput');
-                promptInput.focus();
-                promptInput.select();
+                const firstInput = document.getElementById('entityName');
+                if (firstInput) {
+                    firstInput.focus();
+                    firstInput.select();
+                }
                 return;
             }
 
@@ -643,7 +787,7 @@ class YBGToolkit {
 // Initialize the toolkit and theme manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // YBG Toolkit Context (overridable per toolkit)
-    if (!window.currentToolkitName) window.currentToolkitName = "YourBizGuru Mini-Dashboard";
+    if (!window.currentToolkitName) window.currentToolkitName = "CompliPilot";
     if (!window.currentToolkitIcon) window.currentToolkitIcon = "/favicon-32x32.png";
     
     window.themeManager = new ThemeManager();

@@ -23,9 +23,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiKey: apiKey,
   });
 
+  // CompliPilot compliance system prompt template
+  const getComplianceSystemPrompt = () => {
+    return `You are CompliPilot, an expert compliance assistant powered by YourBizGuru.
+
+Your role is to generate professional, submission-ready compliance documents that help businesses navigate regulatory requirements with confidence.
+
+CRITICAL FORMATTING RULES:
+1. ALWAYS structure your response with these exact 5 sections using markdown headings:
+   # Executive Compliance Summary
+   ## Filing Requirements Checklist
+   ## Compliance Roadmap
+   ## Risk Matrix
+   ## Next Steps & Recommendations
+
+2. Format each section as follows:
+   - Executive Summary: Write 1-2 clear, professional paragraphs (120-150 words)
+   - Filing Requirements: Use bulleted list with ✓ symbols for each requirement
+   - Compliance Roadmap: Create a markdown table with columns: Phase | Task | Deadline
+   - Risk Matrix: Create a markdown table with columns: Risk | Consequence | Mitigation
+   - Next Steps: Use numbered list (1., 2., 3., etc.) with specific, actionable items
+
+3. PLACEHOLDER HANDLING:
+   - If information is missing, insert clean placeholders like [Pending Input] or [ADD DATE]
+   - NEVER leave blank sections or break table structure
+   - For empty Risk Matrix, include at least one row: "[Pending Input] | [Pending Input] | [Pending Input]"
+
+4. WRITING STYLE:
+   - Use plain English, avoid legalese
+   - Be specific and actionable
+   - Do NOT invent deadlines, legal codes, or specific regulations you're unsure about
+   - Do NOT use ALL-CAPS text (except for proper acronyms like LLC, EIN, BOIR)
+   - Maintain professional tone throughout
+
+5. TABLE FORMATTING:
+   - Always use proper markdown table syntax with | separators
+   - Include header row with column names
+   - Include separator row with dashes
+   - Add at least 2-3 data rows (use placeholders if needed)
+   
+REMEMBER: Consistency and structure are critical. Every document must have all 5 sections in the exact format specified.`;
+  };
+
   // API endpoint for generating toolkit results
   app.post("/api/generate", async (req, res) => {
-    const { prompt: userPrompt } = req.body;
+    const { prompt: userPrompt, formData } = req.body;
     
     try {
 
@@ -42,9 +84,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (userPrompt.length > 2000) {
+      if (userPrompt.length > 5000) {
         return res.status(400).json({
-          error: "Prompt is too long. Maximum 2000 characters allowed.",
+          error: "Prompt is too long. Maximum 5000 characters allowed.",
         });
       }
 
@@ -57,8 +99,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(
-        "Generating response for prompt:",
-        userPrompt.substring(0, 100) + (userPrompt.length > 100 ? "..." : "")
+        "Generating compliance report:",
+        formData ? `${formData.filingType} - ${formData.entityType}` : userPrompt.substring(0, 100)
       );
 
 
@@ -68,15 +110,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         messages: [
           {
             role: "system",
-            content:
-              "You are a helpful business assistant powered by YourBizGuru. Provide professional, actionable advice and solutions. Be concise but comprehensive in your responses.",
+            content: getComplianceSystemPrompt(),
           },
           {
             role: "user",
             content: userPrompt,
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 2500,
       });
 
       const result = completion.choices[0].message.content;
@@ -106,14 +147,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             messages: [
               {
                 role: "system",
-                content: "You are a helpful business assistant powered by YourBizGuru. Provide professional, actionable advice and solutions. Be concise but comprehensive in your responses.",
+                content: getComplianceSystemPrompt(),
               },
               {
                 role: "user", 
                 content: userPrompt,
               },
             ],
-            max_tokens: 1000,
+            max_tokens: 2500,
           });
           
           const result = completion.choices[0].message.content;

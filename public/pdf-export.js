@@ -152,7 +152,7 @@ window.YBG_PDF = window.YBG_PDF || {};
 
   // ---- Toolkit Configuration -----------------------------------------------
   function getToolkitName() {
-    return window.currentToolkitName || "YourBizGuru Mini-Dashboard";
+    return window.currentToolkitName || "CompliPilot";
   }
 
   function getToolkitIcon() {

@@ -1,7 +1,7 @@
 {
-  "name": "YourBizGuru Mini-Dashboard",
-  "short_name": "YBG Dashboard",
-  "description": "AI-powered business toolkit by YourBizGuru",
+  "name": "CompliPilot",
+  "short_name": "CompliPilot",
+  "description": "Navigate compliance filings with confidence - powered by YourBizGuru",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -14,7 +14,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#4FC3F7",
+  "theme_color": "#4DB6E7",
   "background_color": "#0A0A0A",
   "display": "standalone",
   "start_url": "/"
