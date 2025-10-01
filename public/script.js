@@ -204,36 +204,25 @@ class YBGToolkit {
             return;
         }
         
-        // Build structured prompt for AI
-        const prompt = this.buildCompliancePrompt(formData);
-        
         // Show loading state
         this.setLoadingState(true);
         
         try {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt, formData }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
+            // Initialize compliance generator
+            const generator = new window.ComplianceGenerator();
             
-            if (data.error) {
-                throw new Error(data.error);
+            // Generate structured output using filing profile
+            const result = await generator.generate(formData);
+            
+            // Show profile badge if generic fallback was used
+            if (result.isGeneric) {
+                this.showInfo(`Using generic ${formData.filingType} profile. State-specific profile not available for ${formData.jurisdiction || 'selected jurisdiction'}.`);
+            } else {
+                this.showSuccess(`Loaded: ${result.profileUsed}`);
             }
 
             // Add result to display and storage
-            this.addResult(formData, data.result);
-            
-            // Optionally clear form (or keep it for edits)
-            // this.clearForm();
+            this.addResult(formData, result.output, result.profileUsed, result.matchType);
             
         } catch (error) {
             console.error('Error generating result:', error);
@@ -395,7 +384,7 @@ class YBGToolkit {
         }
     }
 
-    addResult(formData, result) {
+    addResult(formData, result, profileUsed, matchType) {
         const timestamp = new Date();
         
         // Create a summary prompt for display
@@ -406,6 +395,8 @@ class YBGToolkit {
             prompt: promptSummary,
             formData,
             result,
+            profileUsed: profileUsed || 'Unknown',
+            matchType: matchType || 'generic',
             timestamp: timestamp.toISOString(),
             displayTime: this.formatTimestamp(timestamp)
         };
@@ -569,6 +560,10 @@ class YBGToolkit {
 
     showError(message) {
         this.showToast(message, 'error');
+    }
+
+    showInfo(message) {
+        this.showToast(message, 'info');
     }
 
     showToast(message, type = 'info') {
