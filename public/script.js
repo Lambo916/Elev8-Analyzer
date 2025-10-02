@@ -1,42 +1,23 @@
 /**
- * YourBizGuru Mini-Dashboard - Frontend JavaScript
- * Handles form submission, API calls, results display, local storage, and theming
- * 
- * === PHASE 2 RESERVATION NOTES (DEVELOPER USE ONLY) ===
- * Future subscription system integration planned:
- * - Toolkits will be connected to subscription plans (Basic, Pro, Enterprise tiers)
- * - Each client will have a master dashboard showing:
- *   • Active subscriptions and billing status
- *   • Invoice history and payment methods
- *   • Purchase history and usage analytics
- *   • Additional features: integrated calendar, product marketplace, team management
- * - Authentication will be handled via secure token system
- * - API rate limiting based on subscription tier
- * - Webhook integration for real-time subscription updates
- * 
- * Note: This is a placeholder for Phase 2 implementation. 
- * Current template operates as a standalone toolkit without authentication.
- * ========================================================
+ * CompliPilot - Unified Rendering Architecture
+ * Panel = PDF with checksum verification
  */
 
-/**
- * Theme Manager - Handles light/dark theme switching and persistence
- */
+// =====================================================
+// THEME MANAGER (keeping existing functionality)
+// =====================================================
 class ThemeManager {
     constructor() {
         this.STORAGE_KEY = 'ybg-theme';
         this.THEME_LIGHT = 'theme-light';
         this.THEME_DARK = 'theme-dark';
-        
         this.init();
     }
     
     init() {
-        // Get initial theme preference
         const storedTheme = localStorage.getItem(this.STORAGE_KEY);
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        // Order of precedence: manual > system preference > default (light)
         let initialTheme;
         if (storedTheme) {
             initialTheme = storedTheme;
@@ -46,321 +27,444 @@ class ThemeManager {
             initialTheme = this.THEME_LIGHT;
         }
         
-        // Apply initial theme
         this.setTheme(initialTheme, false);
-        
-        // Bind toggle button
         this.bindToggle();
-        
-        // Listen for system preference changes
-        this.listenForSystemChanges();
     }
     
     setTheme(theme, persist = true) {
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         
-        // Remove existing theme classes
         htmlElement.classList.remove(this.THEME_LIGHT, this.THEME_DARK);
-        
-        // Apply new theme
         htmlElement.classList.add(theme);
         
-        // Update icon
         if (themeIcon) {
             themeIcon.textContent = theme === this.THEME_DARK ? '🌙' : '☀️';
         }
         
-        // Persist choice if manual toggle
         if (persist) {
             localStorage.setItem(this.STORAGE_KEY, theme);
         }
-        
-        // Update meta theme-color for mobile browsers
-        const metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) {
-            metaTheme.content = theme === this.THEME_DARK ? '#0A0A0A' : '#4DB6E7';
-        }
-    }
-    
-    toggleTheme() {
-        const currentTheme = document.documentElement.classList.contains(this.THEME_DARK) 
-            ? this.THEME_DARK 
-            : this.THEME_LIGHT;
-        
-        const newTheme = currentTheme === this.THEME_DARK 
-            ? this.THEME_LIGHT 
-            : this.THEME_DARK;
-        
-        this.setTheme(newTheme, true);
     }
     
     bindToggle() {
-        const toggleButton = document.getElementById('themeToggle');
-        if (toggleButton) {
-            toggleButton.addEventListener('click', () => this.toggleTheme());
+        const toggleBtn = document.getElementById('themeToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                const current = document.documentElement.classList.contains(this.THEME_DARK) 
+                    ? this.THEME_DARK 
+                    : this.THEME_LIGHT;
+                const newTheme = current === this.THEME_DARK ? this.THEME_LIGHT : this.THEME_DARK;
+                this.setTheme(newTheme);
+            });
         }
-    }
-    
-    listenForSystemChanges() {
-        // Only apply system changes if user hasn't manually set a preference
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            const hasManualPreference = localStorage.getItem(this.STORAGE_KEY);
-            if (!hasManualPreference) {
-                const newTheme = e.matches ? this.THEME_DARK : this.THEME_LIGHT;
-                this.setTheme(newTheme, false);
-            }
-        });
     }
 }
 
-class YBGToolkit {
+// =====================================================
+// COMPLIANCE TOOLKIT - UNIFIED RENDERING SYSTEM
+// =====================================================
+class ComplianceToolkit {
     constructor() {
-        this.maxResults = 5; // Store last 5 results per toolkit
-        this.storageKey = 'ybg_toolkit_results'; // Will be prefixed with toolkit name
-        
+        this.currentResult = null;
         this.init();
     }
 
     init() {
-        this.bindEvents();
-        this.bindKeyboardShortcuts();
-        // Auto-save and character counter disabled for compliance form
-        // this.initAutoSave();
-        // this.initCharacterCounter();
-        this.loadStoredResults();
+        this.bindFormSubmit();
+        this.bindActions();
+        this.loadCurrentResult();
     }
 
-    bindEvents() {
-        // Form submission
-        const form = document.getElementById('toolkitForm');
-        form.addEventListener('submit', (e) => this.handleSubmit(e));
-
-        // Clear history
-        const clearBtn = document.getElementById('clearHistoryBtn');
-        clearBtn.addEventListener('click', () => this.clearHistory());
-        
-        // Export all results as PDF
-        const exportBtn = document.getElementById('exportAllBtn');
-        const exportMode = document.getElementById('exportMode');
-        exportBtn.addEventListener('click', async () => {
-            const resultsArray = this.getStoredResults();
-            if (!resultsArray.length) return this.showError('No results to export');
-            
-            // Show loading state
-            const originalText = exportBtn.textContent;
-            exportBtn.disabled = true;
-            exportBtn.textContent = 'Generating...';
-            
-            try {
-                const mode = (exportMode?.value || "latest");
-                const resultsForExport = resultsArray.map((result, index) => {
-                    // Handle both old (prompt) and new (formData) result formats
-                    const requestText = result.prompt || this.formatFormDataSummary(result.formData);
-                    return {
-                        title: `Result ${index + 1} - ${result.displayTime}`,
-                        text: `Request: ${requestText}\n\nResult:\n${result.result}`
-                    };
-                });
-                
-                await window.exportAllResultsToPDF(resultsForExport, { mode });
-                this.showSuccess(`PDF exported successfully (${mode} mode)`);
-            } catch (error) {
-                console.error('PDF export failed:', error);
-                this.showError('Failed to export PDF. Please try again.');
-            } finally {
-                // Restore button state
-                exportBtn.disabled = false;
-                exportBtn.textContent = originalText;
-            }
-        });
-
-        // Copy all results button
-        const copyAllBtn = document.getElementById('copyAllBtn');
-        copyAllBtn.addEventListener('click', () => this.copyAllResults());
-
-        // Dynamic event delegation for copy button
-        const resultsContainer = document.getElementById('resultsContainer');
-        resultsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('copy-btn')) {
-                this.copyResult(e.target);
-            }
-        });
-    }
-
-    async handleSubmit(e) {
-        e.preventDefault();
-        
-        // Clear previous errors
-        this.clearValidationErrors();
-        
-        // Collect form data
-        const formData = this.collectFormData();
-        
-        // Validate required fields
-        const validation = this.validateForm(formData);
-        if (!validation.isValid) {
-            this.showValidationErrors(validation.errors);
-            return;
+    // ========================================================
+    // CHECKSUM (djb2 hash for Panel=PDF verification)
+    // ========================================================
+    checksum(str) {
+        let hash = 5381;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
         }
-        
-        // Show loading state
-        this.setLoadingState(true);
-        
+        return ('00000000' + (hash >>> 0).toString(16)).slice(-8);
+    }
+
+    // ========================================================
+    // HELPERS FOR SAFE CONTENT
+    // ========================================================
+    ensure(val) {
+        if (Array.isArray(val)) return val.length ? val : null;
+        return val && String(val).trim() ? val : null;
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+
+    safePlaceholder(val) {
+        // Returns escaped content or styled placeholder
+        if (!val || (Array.isArray(val) && val.length === 0)) {
+            return '<em style="color: rgb(var(--text-muted));">[Pending Input]</em>';
+        }
+        return this.escapeHtml(val);
+    }
+
+    // ========================================================
+    // UNIFIED HTML RENDERER (single source of truth)
+    // ========================================================
+    renderStructuredHTML(payload, generated) {
+        const {
+            summary = '',
+            checklist = [],
+            timeline = [],
+            riskMatrix = [],
+            recommendations = [],
+            references = []
+        } = generated || {};
+
+        // Build header metadata
+        const headerBlock = `
+            <div class="doc-meta">
+                <div><strong>Entity:</strong> ${this.safePlaceholder(payload.entityName)}</div>
+                <div><strong>Type:</strong> ${this.safePlaceholder(payload.entityType)}</div>
+                <div><strong>Jurisdiction:</strong> ${this.safePlaceholder(payload.jurisdiction || 'General')}</div>
+                <div><strong>Filing:</strong> ${this.safePlaceholder(payload.filingType)}</div>
+                <div><strong>Deadline:</strong> ${this.safePlaceholder(payload.deadline)}</div>
+            </div>
+            <hr/>
+        `;
+
+        // Build sections
+        const checklistItems = checklist && checklist.length > 0 ? checklist : ['[No checklist items provided]'];
+        const checklistHTML = checklistItems.map(item => 
+            `<li>${this.escapeHtml(item)}</li>`
+        ).join('');
+
+        const timelineItems = timeline && timeline.length > 0 ? timeline : [{
+            milestone: '[Pending Input]', 
+            owner: '[Pending Input]', 
+            dueDate: '[Deadline required]', 
+            notes: 'Provide filing deadline to generate timeline'
+        }];
+        const timelineRows = timelineItems.map(row => `
+            <tr>
+                <td>${this.safePlaceholder(row.milestone)}</td>
+                <td>${this.safePlaceholder(row.owner)}</td>
+                <td>${this.safePlaceholder(row.dueDate)}</td>
+                <td>${this.escapeHtml(row.notes || '')}</td>
+            </tr>
+        `).join('');
+
+        const riskItems = riskMatrix && riskMatrix.length > 0 ? riskMatrix : [{
+            risk: 'Late filing penalty',
+            severity: 'Medium',
+            likelihood: 'Medium',
+            mitigation: 'File well before deadline; set calendar reminders'
+        }];
+        const riskRows = riskItems.map(r => `
+            <tr>
+                <td>${this.safePlaceholder(r.risk)}</td>
+                <td><span class="severity-badge ${(r.severity || 'medium').toLowerCase()}">${this.safePlaceholder(r.severity)}</span></td>
+                <td>${this.safePlaceholder(r.likelihood)}</td>
+                <td>${this.safePlaceholder(r.mitigation)}</td>
+            </tr>
+        `).join('');
+
+        const recItems = recommendations && recommendations.length > 0 ? recommendations : ['Create compliance calendar with reminders'];
+        const recList = recItems.map((r, i) => 
+            `<li><strong>${i+1}.</strong> ${this.escapeHtml(r)}</li>`
+        ).join('');
+
+        const refItems = references && references.length > 0 ? references : ['Contact your state or federal agency for official filing portals'];
+        const refs = refItems.map(r => 
+            `<li>${this.escapeHtml(r)}</li>`
+        ).join('');
+
+        // Assemble final HTML
+        const html = `
+            ${headerBlock}
+
+            <section class="compliance-section">
+                <h2 class="section-title">Executive Compliance Summary</h2>
+                <div class="section-content">${this.safePlaceholder(summary)}</div>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Filing Requirements Checklist</h3>
+                <ul class="checklist">${checklistHTML}</ul>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Compliance Timeline</h3>
+                <div class="table-container">
+                    <table class="compliance-table grid">
+                        <thead>
+                            <tr><th>Milestone</th><th>Owner</th><th>Due Date</th><th>Notes</th></tr>
+                        </thead>
+                        <tbody>${timelineRows}</tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Risk Matrix</h3>
+                <div class="table-container">
+                    <table class="compliance-table grid">
+                        <thead>
+                            <tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation</th></tr>
+                        </thead>
+                        <tbody>${riskRows}</tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Strategic Recommendations</h3>
+                <ol class="recs">${recList}</ol>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Official References</h3>
+                <ul class="refs">${refs}</ul>
+            </section>
+        `;
+
+        return html;
+    }
+
+    // ========================================================
+    // FORM SUBMISSION
+    // ========================================================
+    bindFormSubmit() {
+        const form = document.getElementById('toolkitForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleGenerate();
+            });
+        }
+    }
+
+    async handleGenerate() {
         try {
-            // Initialize compliance generator
-            const generator = new window.ComplianceGenerator();
-            
-            // Generate structured output using filing profile
-            const result = await generator.generate(formData);
-            
-            // Show profile badge if generic fallback was used
-            if (result.isGeneric) {
-                this.showInfo(`Using generic ${formData.filingType} profile. State-specific profile not available for ${formData.jurisdiction || 'selected jurisdiction'}.`);
-            } else {
-                this.showSuccess(`Loaded: ${result.profileUsed}`);
+            // Show loading state
+            this.setLoadingState(true);
+
+            // Collect form data
+            const payload = {
+                entityName: document.getElementById('entityName')?.value.trim() || '',
+                entityType: document.getElementById('entityType')?.value || '',
+                jurisdiction: document.getElementById('jurisdiction')?.value.trim() || '',
+                filingType: document.getElementById('filingType')?.value || '',
+                deadline: document.getElementById('deadline')?.value || '',
+                requirements: Array.from(document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked'))
+                    .map(cb => cb.value),
+                risks: document.getElementById('risks')?.value.trim() || '',
+                mitigation: document.getElementById('mitigation')?.value.trim() || ''
+            };
+
+            // Call backend for structured JSON
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ formData: payload })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Generation failed');
             }
 
-            // Add result to display and storage
-            this.addResult(formData, result.output, result.profileUsed, result.matchType, result.sections);
-            
+            const generated = await response.json();
+
+            // Build ONE HTML using unified renderer
+            const html = this.renderStructuredHTML(payload, generated);
+
+            // Display in panel
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (resultsContainer) {
+                resultsContainer.innerHTML = html;
+            }
+
+            // Compute checksum on exact HTML
+            const cs = this.checksum(html);
+
+            // Update checksum display
+            const checksumEl = document.getElementById('results-checksum');
+            if (checksumEl) {
+                checksumEl.textContent = `checksum: ${cs}`;
+            }
+
+            // Store result (single source of truth)
+            this.currentResult = {
+                id: 'r_' + Date.now(),
+                payload,
+                structured: { html, text: this.stripHTML(html) },
+                createdAt: new Date().toISOString(),
+                checksum: cs
+            };
+
+            this.saveCurrentResult();
+
+            // Hide "no results" message
+            const noResults = document.getElementById('noResults');
+            if (noResults) {
+                noResults.style.display = 'none';
+            }
+
+            this.showSuccess('Compliance guide generated successfully!');
+
         } catch (error) {
-            console.error('Error generating result:', error);
-            this.showError(error.message || 'Failed to generate result. Please try again.');
+            console.error('Generation error:', error);
+            this.showError(error.message || 'Failed to generate compliance guide');
         } finally {
             this.setLoadingState(false);
         }
     }
 
-    collectFormData() {
-        // Collect all form field values
-        const entityName = document.getElementById('entityName').value.trim();
-        const entityType = document.getElementById('entityType').value;
-        const jurisdiction = document.getElementById('jurisdiction').value.trim();
-        const filingType = document.getElementById('filingType').value;
-        const deadline = document.getElementById('deadline').value;
-        const risks = document.getElementById('risks').value.trim();
-        const mitigation = document.getElementById('mitigation').value.trim();
-        
-        // Collect selected requirements
-        const requirements = [];
-        const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
-        checkboxes.forEach(cb => requirements.push(cb.value));
-        
-        return {
-            entityName,
-            entityType,
-            jurisdiction,
-            filingType,
-            deadline,
-            requirements,
-            risks,
-            mitigation
-        };
+    // ========================================================
+    // STATE PERSISTENCE
+    // ========================================================
+    saveCurrentResult() {
+        try {
+            localStorage.setItem('currentResult', JSON.stringify(this.currentResult));
+        } catch (e) {
+            console.warn('Failed to save result to localStorage:', e);
+        }
     }
 
-    validateForm(formData) {
-        const errors = {};
-        let isValid = true;
-        
-        // Validate required fields
-        if (!formData.entityType) {
-            errors.entityType = 'Business Entity Type is required';
-            isValid = false;
-        }
-        
-        if (!formData.filingType) {
-            errors.filingType = 'Filing Type is required';
-            isValid = false;
-        }
-        
-        if (!formData.deadline) {
-            errors.deadline = 'Filing Deadline is required';
-            isValid = false;
-        }
-        
-        return { isValid, errors };
-    }
-
-    showValidationErrors(errors) {
-        // Display error messages
-        for (const [field, message] of Object.entries(errors)) {
-            const errorEl = document.getElementById(`${field}Error`);
-            if (errorEl) {
-                errorEl.textContent = message;
+    loadCurrentResult() {
+        try {
+            const raw = localStorage.getItem('currentResult');
+            if (raw) {
+                this.currentResult = JSON.parse(raw);
+                if (this.currentResult?.structured?.html) {
+                    const resultsContainer = document.getElementById('resultsContainer');
+                    if (resultsContainer) {
+                        resultsContainer.innerHTML = this.currentResult.structured.html;
+                    }
+                    const checksumEl = document.getElementById('results-checksum');
+                    if (checksumEl) {
+                        checksumEl.textContent = `checksum: ${this.currentResult.checksum}`;
+                    }
+                    const noResults = document.getElementById('noResults');
+                    if (noResults) {
+                        noResults.style.display = 'none';
+                    }
+                }
             }
+        } catch (e) {
+            console.warn('Failed to load result from localStorage:', e);
         }
-        
-        // Show general error notification
-        this.showError('Please fill in all required fields');
     }
 
-    clearValidationErrors() {
-        const errorElements = document.querySelectorAll('.error-message');
-        errorElements.forEach(el => el.textContent = '');
+    // ========================================================
+    // ACTIONS (Export, Copy, Clear)
+    // ========================================================
+    bindActions() {
+        const exportBtn = document.getElementById('exportPdfBtn');
+        const copyBtn = document.getElementById('copyAllBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.handleExport());
+        }
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => this.handleCopy());
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.handleClear());
+        }
     }
 
-    buildCompliancePrompt(formData) {
-        // Build a structured prompt that includes all form data
-        let prompt = `Generate a comprehensive compliance report for the following filing:\n\n`;
-        
-        if (formData.entityName) {
-            prompt += `Entity Name: ${formData.entityName}\n`;
+    async handleExport() {
+        if (!this.currentResult?.structured?.html) {
+            this.showError('No results to export');
+            return;
         }
-        prompt += `Entity Type: ${formData.entityType}\n`;
-        
-        if (formData.jurisdiction) {
-            prompt += `Jurisdiction: ${formData.jurisdiction}\n`;
+
+        try {
+            // Wrap HTML for PDF with header/footer and checksum
+            const pdfHTML = this.wrapForPdf(this.currentResult.structured.html, this.currentResult);
+            
+            // Use existing pdf-export.js functionality
+            if (window.exportAllResultsToPDF) {
+                await window.exportAllResultsToPDF([{
+                    html: pdfHTML,
+                    fileName: this.buildFileName(this.currentResult)
+                }], { mode: 'single' });
+                this.showSuccess('PDF exported successfully!');
+            } else {
+                this.showError('PDF export not available');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showError('Failed to export PDF');
         }
-        
-        prompt += `Filing Type: ${formData.filingType}\n`;
-        prompt += `Deadline: ${formData.deadline}\n\n`;
-        
-        if (formData.requirements.length > 0) {
-            prompt += `Required Documents:\n${formData.requirements.map(r => `- ${r}`).join('\n')}\n\n`;
-        }
-        
-        if (formData.risks) {
-            prompt += `Identified Risks/Consequences:\n${formData.risks}\n\n`;
-        }
-        
-        if (formData.mitigation) {
-            prompt += `Mitigation Plan:\n${formData.mitigation}\n\n`;
-        }
-        
-        prompt += `Please provide a structured compliance report with the following sections:\n`;
-        prompt += `1. Executive Compliance Summary (1-2 paragraphs)\n`;
-        prompt += `2. Filing Requirements Checklist (bulleted with checkmarks)\n`;
-        prompt += `3. Compliance Roadmap (timeline table)\n`;
-        prompt += `4. Risk Matrix (3-column table: Risk | Consequence | Mitigation)\n`;
-        prompt += `5. Next Steps & Recommendations (numbered list)`;
-        
-        return prompt;
     }
 
-    clearForm() {
-        document.getElementById('entityName').value = '';
-        document.getElementById('entityType').value = '';
-        document.getElementById('jurisdiction').value = '';
-        document.getElementById('filingType').value = '';
-        document.getElementById('deadline').value = '';
-        document.getElementById('risks').value = '';
-        document.getElementById('mitigation').value = '';
-        
-        const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
-        checkboxes.forEach(cb => cb.checked = false);
+    buildFileName(r) {
+        const safe = (s) => String(s || '').replace(/[^a-z0-9-_]+/gi, '_');
+        return `CompliPilot_${safe(r?.payload?.entityName)}_${safe(r?.payload?.filingType)}.pdf`;
     }
 
-    formatFormDataSummary(formData) {
-        if (!formData) return 'Compliance Filing';
+    wrapForPdf(innerHTML, r) {
+        const stamp = new Date(r.createdAt).toLocaleString();
+        return `
+            <div class="pdf-wrapper">
+                <div class="pdf-header">
+                    <div class="brand">CompliPilot</div>
+                    <div class="tiny">Generated: ${stamp} • checksum: ${r.checksum}</div>
+                </div>
+                ${innerHTML}
+                <div class="footer">
+                    Powered by YourBizGuru.com • For informational purposes only. Not legal, tax, or financial advice.
+                </div>
+            </div>
+        `;
+    }
+
+    handleCopy() {
+        if (!this.currentResult?.structured?.text) {
+            this.showError('No results to copy');
+            return;
+        }
         
-        let summary = '';
-        if (formData.filingType) summary += formData.filingType;
-        if (formData.entityType) summary += ` for ${formData.entityType}`;
-        if (formData.entityName) summary += ` (${formData.entityName})`;
-        if (formData.jurisdiction) summary += ` - ${formData.jurisdiction}`;
+        navigator.clipboard.writeText(this.currentResult.structured.text)
+            .then(() => this.showSuccess('Results copied to clipboard!'))
+            .catch(() => this.showError('Failed to copy results'));
+    }
+
+    handleClear() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
+        }
         
-        return summary || 'Compliance Filing';
+        const checksumEl = document.getElementById('results-checksum');
+        if (checksumEl) {
+            checksumEl.textContent = '';
+        }
+
+        const noResults = document.getElementById('noResults');
+        if (noResults) {
+            noResults.style.display = 'block';
+        }
+
+        this.currentResult = null;
+        localStorage.removeItem('currentResult');
+        
+        this.showSuccess('History cleared');
+    }
+
+    // ========================================================
+    // UI HELPERS
+    // ========================================================
+    stripHTML(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
     }
 
     setLoadingState(loading) {
@@ -370,299 +474,16 @@ class YBGToolkit {
         const formInputs = document.querySelectorAll('#toolkitForm input, #toolkitForm select, #toolkitForm textarea');
 
         if (loading) {
-            submitBtn.disabled = true;
-            submitBtn.classList.add('loading');
-            submitText.classList.add('hidden');
-            loadingText.classList.remove('hidden');
+            if (submitBtn) submitBtn.disabled = true;
+            if (submitText) submitText.classList.add('hidden');
+            if (loadingText) loadingText.classList.remove('hidden');
             formInputs.forEach(input => input.disabled = true);
         } else {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('loading');
-            submitText.classList.remove('hidden');
-            loadingText.classList.add('hidden');
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) submitText.classList.remove('hidden');
+            if (loadingText) loadingText.classList.add('hidden');
             formInputs.forEach(input => input.disabled = false);
         }
-    }
-
-    addResult(formData, result, profileUsed, matchType, sections) {
-        const timestamp = new Date();
-        
-        // Create a summary prompt for display
-        const promptSummary = `${formData.filingType} for ${formData.entityType}${formData.entityName ? ` (${formData.entityName})` : ''}`;
-        
-        const resultData = {
-            id: Date.now().toString(),
-            prompt: promptSummary,
-            formData,
-            result,
-            sections: sections || null,
-            profileUsed: profileUsed || 'Unknown',
-            matchType: matchType || 'generic',
-            timestamp: timestamp.toISOString(),
-            displayTime: this.formatTimestamp(timestamp)
-        };
-
-        // Add to storage
-        this.saveResult(resultData);
-
-        // Add to display
-        this.displayResult(resultData);
-
-        // Hide "no results" message
-        const noResults = document.getElementById('noResults');
-        noResults.style.display = 'none';
-    }
-
-    displayResult(resultData) {
-        const resultsContainer = document.getElementById('resultsContainer');
-        const template = document.getElementById('resultTemplate');
-        const resultElement = template.content.cloneNode(true);
-
-        // Populate result data
-        const timestampEl = resultElement.querySelector('.result-timestamp');
-        const contentEl = resultElement.querySelector('.result-content');
-        const copyBtn = resultElement.querySelector('.copy-btn');
-
-        timestampEl.textContent = resultData.displayTime;
-        
-        // Use structured rendering if sections available, otherwise fallback to text
-        if (resultData.sections) {
-            contentEl.innerHTML = this.renderStructuredResult(resultData.sections);
-        } else {
-            contentEl.textContent = resultData.result;
-        }
-        
-        // Store data for copy action
-        copyBtn.dataset.resultId = resultData.id;
-        
-        // Add to top of results (newest first)
-        resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
-
-        // Scroll to show new result
-        resultsContainer.scrollTop = 0;
-    }
-
-    renderStructuredResult(sections) {
-        let html = '';
-
-        // Section 1: Executive Summary
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Executive Compliance Summary</h2>';
-        html += `<div class="section-content">${sections.executiveSummary.replace(/\n\n/g, '</p><p>').replace(/^(.+)$/, '<p>$1</p>')}</div>`;
-        html += '</div>';
-
-        // Section 2: Requirements Checklist
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Filing Requirements Checklist</h2>';
-        html += '<div class="checklist-container">';
-        
-        let currentCategory = '';
-        sections.requirementsChecklist.forEach(item => {
-            if (item.category && item.category !== currentCategory) {
-                if (currentCategory) html += '</div>';
-                html += `<div class="checklist-category"><strong>${item.category}:</strong></div>`;
-                html += '<div class="checklist-items">';
-                currentCategory = item.category;
-            }
-            const checkIcon = item.checkbox === '✓' ? '✓' : '□';
-            const checkClass = item.checkbox === '✓' ? 'checked' : 'unchecked';
-            const suggestedClass = item.label.includes('Suggested by CompliPilot') ? ' suggested-item' : '';
-            html += `<div class="checklist-item ${checkClass}${suggestedClass}">`;
-            html += `<span class="checkbox-icon">${checkIcon}</span>`;
-            html += `<div class="item-details">`;
-            html += `<div class="item-label">${item.label}</div>`;
-            html += `<div class="item-description">${item.description}</div>`;
-            html += `</div></div>`;
-        });
-        html += '</div></div></div>';
-
-        // Section 3: Timeline
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Compliance Timeline</h2>';
-        html += '<div class="table-container">';
-        html += '<table class="compliance-table timeline-table">';
-        html += '<thead><tr><th>Milestone</th><th>Owner</th><th>Due Date</th><th>Notes</th></tr></thead>';
-        html += '<tbody>';
-        sections.timeline.forEach(item => {
-            html += `<tr>`;
-            html += `<td>${item.milestone}</td>`;
-            html += `<td>${item.owner}</td>`;
-            html += `<td>${item.due}</td>`;
-            html += `<td>${item.notes}</td>`;
-            html += `</tr>`;
-        });
-        html += '</tbody></table></div></div>';
-
-        // Section 4: Risk Matrix
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Risk Matrix</h2>';
-        html += '<div class="table-container">';
-        html += '<table class="compliance-table risk-table">';
-        html += '<thead><tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation</th></tr></thead>';
-        html += '<tbody>';
-        sections.riskMatrix.forEach(risk => {
-            const severityClass = risk.severity.toLowerCase().replace(' ', '-');
-            html += `<tr>`;
-            html += `<td>${risk.risk}</td>`;
-            html += `<td><span class="severity-badge ${severityClass}">${risk.severity}</span></td>`;
-            html += `<td>${risk.likelihood}</td>`;
-            html += `<td>${risk.mitigation}</td>`;
-            html += `</tr>`;
-        });
-        html += '</tbody></table></div></div>';
-
-        // Section 5: Recommendations
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Strategic Recommendations</h2>';
-        html += '<div class="recommendations-list">';
-        sections.recommendations.forEach(rec => {
-            html += `<div class="recommendation-item">`;
-            html += `<div class="rec-number">${rec.number}</div>`;
-            html += `<div class="rec-content">`;
-            html += `<div class="rec-action"><strong>${rec.action}</strong></div>`;
-            html += `<div class="rec-detail">${rec.detail}</div>`;
-            html += `</div></div>`;
-        });
-        html += '</div></div>';
-
-        // Section 6: References
-        html += '<div class="compliance-section">';
-        html += '<h2 class="section-title">Official References</h2>';
-        html += '<div class="references-list">';
-        if (sections.references.links && sections.references.links.length > 0) {
-            sections.references.links.forEach(link => {
-                html += `<div class="reference-item">`;
-                html += `<strong>${link.label}:</strong> `;
-                html += `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.url}</a>`;
-                html += `<div class="ref-description">${link.description}</div>`;
-                html += `</div>`;
-            });
-        } else {
-            html += '<p><em>Contact your state or federal agency for official filing portals.</em></p>';
-        }
-        html += `<div class="disclaimer"><strong>Disclaimer:</strong> ${sections.references.disclaimer}</div>`;
-        html += '</div></div>';
-
-        return html;
-    }
-
-    copyResult(button) {
-        const resultId = button.dataset.resultId;
-        const results = this.getStoredResults();
-        const result = results.find(r => r.id === resultId);
-        
-        if (result) {
-            navigator.clipboard.writeText(result.result).then(() => {
-                this.showSuccess('Result copied to clipboard!');
-                
-                // Visual feedback
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 2000);
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                this.showError('Failed to copy result');
-            });
-        }
-    }
-
-
-    saveResult(resultData) {
-        const results = this.getStoredResults();
-        results.unshift(resultData); // Add to beginning
-        
-        // Keep only last N results
-        if (results.length > this.maxResults) {
-            results.splice(this.maxResults);
-        }
-        
-        localStorage.setItem(this.getStorageKey(), JSON.stringify(results));
-    }
-
-    getStoredResults() {
-        const stored = localStorage.getItem(this.getStorageKey());
-        return stored ? JSON.parse(stored) : [];
-    }
-
-    loadStoredResults() {
-        const results = this.getStoredResults();
-        
-        if (results.length === 0) {
-            return;
-        }
-
-        // Hide "no results" message
-        const noResults = document.getElementById('noResults');
-        noResults.style.display = 'none';
-
-        // Display results (newest first)
-        results.forEach(result => {
-            this.displayResult(result);
-        });
-    }
-
-    clearHistory() {
-        if (confirm('Are you sure you want to clear all results? This cannot be undone.')) {
-            localStorage.removeItem(this.getStorageKey());
-            
-            // Clear display
-            const resultsContainer = document.getElementById('resultsContainer');
-            const resultItems = resultsContainer.querySelectorAll('.result-item');
-            resultItems.forEach(item => item.remove());
-            
-            // Show "no results" message
-            const noResults = document.getElementById('noResults');
-            noResults.style.display = 'block';
-            
-            this.showSuccess('History cleared successfully!');
-        }
-    }
-
-    async exportAllResults() {
-        // This method is now handled by the event listener above
-        // Keeping for backward compatibility if called directly
-        const results = this.getStoredResults();
-        
-        if (results.length === 0) {
-            this.showError('No results available to export.');
-            return;
-        }
-
-        const allContent = results.map((result, index) => ({
-            title: `Result ${index + 1} - ${result.displayTime}`,
-            text: `Request: ${result.prompt}\n\nResult:\n${result.result}`
-        }));
-
-        try {
-            await window.exportAllResultsToPDF(allContent, { mode: "all" });
-            this.showSuccess('All results exported as PDF!');
-        } catch (error) {
-            console.error('PDF export failed:', error);
-            this.showError('Failed to generate PDF. Please try again.');
-        }
-    }
-
-    getToolkitName() {
-        // Extract toolkit name from page title (before " ·")
-        const title = document.title;
-        return title.split(' ·')[0] || 'YBG Mini-Dashboard';
-    }
-
-    getStorageKey() {
-        const toolkitName = this.getToolkitName().toLowerCase().replace(/\s+/g, '_');
-        return `${this.storageKey}_${toolkitName}`;
-    }
-
-    formatTimestamp(date) {
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
     }
 
     showSuccess(message) {
@@ -673,237 +494,35 @@ class YBGToolkit {
         this.showToast(message, 'error');
     }
 
-    showInfo(message) {
-        this.showToast(message, 'info');
-    }
-
     showToast(message, type = 'info') {
-        // Simple toast notification
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
-        
-        // Add toast styles if not already present
-        if (!document.querySelector('.toast-styles')) {
-            const styles = document.createElement('style');
-            styles.className = 'toast-styles';
-            styles.textContent = `
-                .toast {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    font-family: var(--font-body, 'Open Sans', sans-serif);
-                    font-size: 14px;
-                    font-weight: 500;
-                    z-index: 10000;
-                    opacity: 0;
-                    transform: translateX(100%);
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                }
-                .toast.show {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                .toast-success {
-                    background: #4CAF50;
-                    color: white;
-                }
-                .toast-error {
-                    background: #F44336;
-                    color: white;
-                }
-                .toast-info {
-                    background: #2196F3;
-                    color: white;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            background: ${type === 'success' ? '#4DB6E7' : type === 'error' ? '#F44336' : '#FFC107'};
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
         document.body.appendChild(toast);
-        
-        // Trigger animation
-        setTimeout(() => toast.classList.add('show'), 10);
-        
-        // Remove toast after 4 seconds
         setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 4000);
-    }
-
-    // === UX ENHANCEMENTS ===
-
-    bindKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+Enter or Cmd+Enter to submit form
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                const form = document.getElementById('toolkitForm');
-                if (!form) return;
-                
-                const submitBtn = form.querySelector('button[type="submit"]');
-                if (submitBtn && !submitBtn.disabled) {
-                    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                }
-                return;
-            }
-            
-            // Ctrl+S or Cmd+S to export PDF
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                const exportBtn = document.getElementById('exportAllBtn');
-                if (exportBtn && !exportBtn.disabled) {
-                    exportBtn.click();
-                }
-                return;
-            }
-            
-            // Ctrl+K or Cmd+K to focus first input
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                const firstInput = document.getElementById('entityName');
-                if (firstInput) {
-                    firstInput.focus();
-                    firstInput.select();
-                }
-                return;
-            }
-
-            // Ctrl+Shift+C or Cmd+Shift+C to copy all results
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
-                e.preventDefault();
-                this.copyAllResults();
-                return;
-            }
-        });
-    }
-
-    initAutoSave() {
-        const promptInput = document.getElementById('promptInput');
-        const autoSaveKey = 'ybg_autosave_input';
-        
-        // Load saved input on page load
-        const savedInput = localStorage.getItem(autoSaveKey);
-        if (savedInput && !promptInput.value) {
-            promptInput.value = savedInput;
-        }
-        
-        // Auto-save as user types (debounced)
-        let saveTimeout;
-        promptInput.addEventListener('input', () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                if (promptInput.value.trim()) {
-                    localStorage.setItem(autoSaveKey, promptInput.value);
-                } else {
-                    localStorage.removeItem(autoSaveKey);
-                }
-            }, 1000); // Save 1 second after user stops typing
-        });
-        
-        // Clear auto-save after successful submission
-        const form = document.getElementById('toolkitForm');
-        form.addEventListener('submit', () => {
-            setTimeout(() => {
-                localStorage.removeItem(autoSaveKey);
-            }, 100);
-        });
-    }
-
-    initCharacterCounter() {
-        const promptInput = document.getElementById('promptInput');
-        const formGroup = promptInput.parentElement;
-        
-        // Create character counter element
-        const counter = document.createElement('div');
-        counter.className = 'character-counter';
-        counter.id = 'characterCounter';
-        
-        // Add counter styles
-        if (!document.querySelector('#character-counter-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'character-counter-styles';
-            styles.textContent = `
-                .character-counter {
-                    font-size: var(--font-size-xs);
-                    color: rgb(var(--text-muted));
-                    text-align: right;
-                    margin-top: 4px;
-                    font-family: var(--font-body);
-                }
-                .character-counter.warning {
-                    color: #ff9800;
-                }
-                .character-counter.danger {
-                    color: #f44336;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        formGroup.appendChild(counter);
-        
-        const updateCounter = () => {
-            const length = promptInput.value.length;
-            counter.textContent = `${length.toLocaleString()} characters`;
-            
-            // Add visual warnings for common API limits
-            counter.classList.remove('warning', 'danger');
-            if (length > 8000) {
-                counter.classList.add('danger');
-            } else if (length > 6000) {
-                counter.classList.add('warning');
-            }
-        };
-        
-        promptInput.addEventListener('input', updateCounter);
-        updateCounter(); // Initial count
-    }
-
-    copyAllResults() {
-        const results = this.getStoredResults();
-        if (results.length === 0) {
-            this.showToast('No results to copy', 'info');
-            return;
-        }
-
-        // Format all results with timestamps
-        const formattedResults = results.map((result, index) => {
-            const date = new Date(result.timestamp).toLocaleString();
-            return `=== Result ${index + 1} (${date}) ===\n\n${result.result}`;
-        }).join('\n\n' + '='.repeat(50) + '\n\n');
-
-        navigator.clipboard.writeText(formattedResults).then(() => {
-            this.showToast(`Copied ${results.length} results to clipboard!`, 'success');
-        }).catch(err => {
-            console.error('Copy failed:', err);
-            this.showToast('Failed to copy results', 'error');
-        });
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 }
 
-// Initialize the toolkit and theme manager when DOM is loaded
+// =====================================================
+// INITIALIZE ON PAGE LOAD
+// =====================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // YBG Toolkit Context (overridable per toolkit)
-    if (!window.currentToolkitName) window.currentToolkitName = "CompliPilot";
-    if (!window.currentToolkitIcon) window.currentToolkitIcon = "/favicon-32x32.png";
-    
     window.themeManager = new ThemeManager();
-    window.ybgToolkit = new YBGToolkit();
-});
-
-// Global error handler for unhandled promise rejections
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
-    if (window.ybgToolkit) {
-        window.ybgToolkit.showError('An unexpected error occurred. Please try again.');
-    }
+    window.complianceToolkit = new ComplianceToolkit();
 });
