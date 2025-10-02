@@ -660,18 +660,170 @@ window.YBG_PDF = window.YBG_PDF || {};
     return exportSingleResult(text || '');
   };
 
+  // Helper: Convert HTML to markdown-like text for PDF rendering
+  function htmlToMarkdown(html) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    let markdown = '';
+    
+    function processNode(node) {
+      // Text nodes
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.trim();
+        if (text) markdown += text + ' ';
+        return;
+      }
+      
+      // Element nodes
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName.toLowerCase();
+        
+        switch (tagName) {
+          case 'h2':
+            markdown += '\n## ' + node.textContent.trim() + '\n\n';
+            break;
+          
+          case 'h3':
+            markdown += '\n### ' + node.textContent.trim() + '\n\n';
+            break;
+          
+          case 'hr':
+            markdown += '\n---\n\n';
+            break;
+          
+          case 'p':
+          case 'div':
+            // Process children first
+            for (const child of node.childNodes) {
+              processNode(child);
+            }
+            markdown += '\n';
+            break;
+          
+          case 'ul':
+            for (const li of node.querySelectorAll(':scope > li')) {
+              markdown += '• ' + li.textContent.trim() + '\n';
+            }
+            markdown += '\n';
+            break;
+          
+          case 'ol':
+            let index = 1;
+            for (const li of node.querySelectorAll(':scope > li')) {
+              markdown += `${index}. ` + li.textContent.trim() + '\n';
+              index++;
+            }
+            markdown += '\n';
+            break;
+          
+          case 'table':
+            // Convert HTML table to text representation
+            const rows = node.querySelectorAll('tr');
+            for (const row of rows) {
+              const cells = row.querySelectorAll('th, td');
+              const cellTexts = Array.from(cells).map(cell => cell.textContent.trim());
+              markdown += cellTexts.join(' | ') + '\n';
+            }
+            markdown += '\n';
+            break;
+          
+          case 'strong':
+          case 'b':
+            markdown += '**' + node.textContent.trim() + '**';
+            break;
+          
+          case 'em':
+          case 'i':
+            markdown += '*' + node.textContent.trim() + '*';
+            break;
+          
+          case 'br':
+            markdown += '\n';
+            break;
+          
+          default:
+            // For unhandled tags, process children
+            for (const child of node.childNodes) {
+              processNode(child);
+            }
+            break;
+        }
+      }
+    }
+    
+    // Process all top-level children
+    for (const child of tempDiv.childNodes) {
+      processNode(child);
+    }
+    
+    return markdown.trim();
+  }
+
   window.exportAllResultsToPDF = function(resultsArray, options = {}) {
-    // Handle both array input and mode-based export
+    // NEW: Handle HTML-based export from unified renderer
+    if (Array.isArray(resultsArray) && resultsArray.length > 0 && resultsArray[0]?.html) {
+      const item = resultsArray[0];
+      const htmlContent = item.html;
+      
+      // Convert HTML to markdown-like text for PDF rendering (preserves structure)
+      const markdownContent = htmlToMarkdown(htmlContent);
+      
+      // Use provided fileName or generate default
+      const customFilename = item.fileName || `CompliPilot_${Date.now()}.pdf`;
+      
+      // Export with custom filename handling
+      return exportSingleResultWithFilename(markdownContent, customFilename);
+    }
+    
+    // Legacy: array of strings
     if (Array.isArray(resultsArray) && resultsArray.length > 0 && typeof resultsArray[0] === 'string') {
-      // Legacy: array of strings
       const combined = resultsArray.join('\n\n---\n\n');
       return exportSingleResult(combined);
     }
     
-    // Modern: use mode-based export
+    // Fallback: use mode-based export from localStorage
     const mode = options.mode || 'all';
     return exportMultipleResults(mode);
   };
+  
+  // Helper: Export with custom filename
+  async function exportSingleResultWithFilename(text, filename) {
+    const jsPDF = await loadJsPDF();
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    
+    // Load icon
+    const iconDataUrl = await loadImageAsDataURL(getToolkitIcon());
+    
+    // Initialize writer
+    const writer = new PDFWriter(doc, iconDataUrl);
+    
+    // Apply safe body style
+    window.YBG_PDF.applyBodyStyle(doc);
+    
+    // Draw first page header
+    drawHeader(doc, 1, iconDataUrl);
+    
+    // Parse and write content
+    const blocks = parseContent(text);
+    
+    if (blocks.length === 0) {
+      writer.writeBlock({
+        type: 'paragraph',
+        content: 'No content available.'
+      });
+    } else {
+      for (const block of blocks) {
+        writer.writeBlock(block);
+      }
+    }
+    
+    // Finalize
+    writer.finalize();
+    
+    // Save with custom filename
+    doc.save(filename);
+  }
 
   // Additional API aliases (extend existing YBG_PDF object)
   Object.assign(window.YBG_PDF, {

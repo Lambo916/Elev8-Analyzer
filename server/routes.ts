@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import express from "express";
 import path from "path";
 import OpenAI from "openai";
+import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from public folder
@@ -105,7 +106,47 @@ CRITICAL FORMATTING RULES:
 REMEMBER: Your analysis should be data-driven yet strategic, helping business owners make informed decisions.`;
   };
 
-  // API endpoint for generating structured compliance data
+  // Helper: Compute timeline dates from deadline with validation
+  function computeTimelineDates(timeline: any[], deadline: string | null) {
+    if (!deadline) {
+      return timeline.map(item => ({
+        milestone: item.milestone,
+        owner: item.owner,
+        dueDate: `T${item.offsetDays}`,
+        notes: item.notes
+      }));
+    }
+    
+    // Validate deadline format
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      console.warn(`Invalid deadline format: ${deadline}, falling back to relative dates`);
+      return timeline.map(item => ({
+        milestone: item.milestone,
+        owner: item.owner,
+        dueDate: `T${item.offsetDays}`,
+        notes: item.notes
+      }));
+    }
+    
+    return timeline.map(item => {
+      const dueDate = new Date(deadlineDate);
+      dueDate.setDate(dueDate.getDate() + item.offsetDays);
+      
+      const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+      const day = String(dueDate.getDate()).padStart(2, '0');
+      const year = dueDate.getFullYear();
+      
+      return {
+        milestone: item.milestone,
+        owner: item.owner,
+        dueDate: `${month}/${day}/${year}`,
+        notes: item.notes
+      };
+    });
+  }
+
+  // API endpoint for generating structured compliance data (HYBRID APPROACH)
   app.post("/api/generate", async (req, res) => {
     const { formData } = req.body;
     
@@ -135,84 +176,99 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
         });
       }
 
-      console.log(`Generating structured compliance data for: ${filingType} - ${entityType} (${jurisdiction || 'General'})`);
+      console.log(`Generating hybrid compliance intelligence for: ${filingType} - ${entityType} (${jurisdiction || 'General'})`);
 
-      // Build context-aware prompt for AI to return structured JSON
-      const userPrompt = `Generate a compliance intelligence report for the following filing:
+      // STEP 1: Resolve filing profile (expert knowledge base)
+      const profile = resolveProfile(filingType, jurisdiction, entityType);
+      
+      if (!profile) {
+        return res.status(400).json({
+          error: `No knowledge base found for ${filingType} in ${jurisdiction}. Please contact support.`
+        });
+      }
 
-**Entity Information:**
-- Name: ${entityName || '[Not provided]'}
-- Type: ${entityType}
-- Jurisdiction: ${jurisdiction || '[General]'}
-- Filing Type: ${filingType}
-- Deadline: ${deadline || '[Not provided]'}
+      // STEP 2: Compute timeline with actual dates
+      const timelineWithDates = computeTimelineDates(profile.timeline, deadline);
 
-**User-Provided Context:**
-- Selected Requirements: ${requirements.length > 0 ? requirements.join(', ') : '[None selected]'}
-- Risk Concerns: ${risks || '[None provided]'}
-- Mitigation Plan: ${mitigation || '[None provided]'}
+      // STEP 3: Use AI to generate personalized summary and recommendations
+      const userContext = [];
+      if (requirements.length > 0) {
+        userContext.push(`Selected requirements: ${requirements.join(', ')}`);
+      }
+      if (risks) {
+        userContext.push(`Risk concerns: ${risks}`);
+      }
+      if (mitigation) {
+        userContext.push(`Mitigation plan: ${mitigation}`);
+      }
 
-You MUST return a valid JSON object with this exact structure:
+      const aiPrompt = `You are a compliance expert. Generate a professional executive summary and personalized recommendations for this filing:
+
+Entity: ${entityName || '[Entity Name]'} (${entityType})
+Jurisdiction: ${jurisdiction || 'General'}
+Filing Type: ${filingType}
+Deadline: ${deadline || '[Not provided]'}
+${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
+
+Generate ONLY a JSON object with these two fields:
 {
-  "summary": "2-3 paragraph executive summary explaining the filing requirement, its importance, and key deadlines",
-  "checklist": ["item 1", "item 2", ...],
-  "timeline": [
-    {"milestone": "Task name", "owner": "Responsible party", "dueDate": "YYYY-MM-DD or relative like T-30", "notes": "Additional context"}
-  ],
-  "riskMatrix": [
-    {"risk": "Risk description", "severity": "High/Medium/Low", "likelihood": "High/Medium/Low", "mitigation": "How to address"}
-  ],
-  "recommendations": ["recommendation 1", "recommendation 2", ...],
-  "references": ["Link to official portal: https://..."]
+  "summary": "A 2-3 paragraph executive summary explaining why this ${filingType} matters for ${entityName || 'this entity'}, what happens if filed late, and key compliance considerations specific to ${jurisdiction}. ${userContext.length > 0 ? 'Address the user context points.' : ''}",
+  "recommendations": [
+    "3-5 specific, actionable recommendations tailored to ${entityName || 'this business'} based on the filing type, jurisdiction${userContext.length > 0 ? ', and user concerns mentioned' : ''}"
+  ]
 }
 
-Guidelines:
-- Be specific to ${filingType} in ${jurisdiction || 'applicable jurisdictions'}
-- Include at least 5 checklist items (required documents/steps)
-- Include at least 4 timeline milestones (spanning from preparation to submission)
-- Include at least 3 risk items (late filing, missing docs, etc.)
-- Include at least 3 actionable recommendations
-- For timeline dates, use actual dates if deadline provided, otherwise use relative days like "T-30" (30 days before deadline)
-- Return ONLY valid JSON, no markdown formatting`;
+Make it professional, specific to the jurisdiction, and actionable. Return ONLY valid JSON.`;
 
-      // Call OpenAI to generate structured data
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are a compliance expert. You MUST respond with valid JSON only. No markdown, no explanations outside the JSON structure."
+            content: "You are a compliance expert. Return valid JSON only."
           },
           {
             role: "user",
-            content: userPrompt,
+            content: aiPrompt,
           },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2500,
+        max_tokens: 1000,
       });
 
-      const rawResponse = completion.choices[0].message.content || "{}";
-      let structuredData;
+      const aiResponse = JSON.parse(completion.choices[0].message.content || '{"summary":"","recommendations":[]}');
 
-      try {
-        structuredData = JSON.parse(rawResponse);
-      } catch (parseError) {
-        console.error("Failed to parse AI response as JSON:", parseError);
-        throw new Error("AI returned invalid JSON format");
-      }
+      // STEP 4: Merge profile data with AI enhancements
+      // Format checklist items as simple strings
+      const checklistItems = profile.checklist.map(item => 
+        `${item.label} - ${item.description}`
+      );
 
-      // Validate and ensure all required fields exist with defaults
+      // Format risk items  
+      const riskItems = profile.risks.map(r => ({
+        risk: r.risk,
+        severity: r.severity,
+        likelihood: r.likelihood,
+        mitigation: r.mitigation
+      }));
+
+      // Format reference links
+      const referenceLinks = profile.links.map(link => 
+        `${link.label}: ${link.url}`
+      );
+
       const response = {
-        summary: structuredData.summary || "Compliance summary unavailable",
-        checklist: Array.isArray(structuredData.checklist) ? structuredData.checklist : [],
-        timeline: Array.isArray(structuredData.timeline) ? structuredData.timeline : [],
-        riskMatrix: Array.isArray(structuredData.riskMatrix) ? structuredData.riskMatrix : [],
-        recommendations: Array.isArray(structuredData.recommendations) ? structuredData.recommendations : [],
-        references: Array.isArray(structuredData.references) ? structuredData.references : []
+        summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
+        checklist: checklistItems,
+        timeline: timelineWithDates,
+        riskMatrix: riskItems,
+        recommendations: aiResponse.recommendations && aiResponse.recommendations.length > 0 
+          ? aiResponse.recommendations 
+          : ["File well before deadline", "Set calendar reminders", "Consult with compliance advisor"],
+        references: referenceLinks
       };
 
-      console.log("Structured compliance data generated successfully");
+      console.log("Hybrid compliance intelligence generated successfully");
 
       res.json(response);
     } catch (error: any) {
