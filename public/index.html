@@ -227,34 +227,32 @@
             <!-- Results Panel (Right) -->
             <div class="results-panel panel" data-testid="panel-results">
                 <div class="panel-header">
-                    <h2 data-testid="text-results-header">Results</h2>
+                    <div class="results-header-content">
+                        <h2 data-testid="text-results-header">Results</h2>
+                        <small id="results-checksum" style="color: rgb(var(--text-muted)); font-size: 11px; margin-left: 8px;"></small>
+                    </div>
                     <div class="panel-actions">
-                        <label for="exportMode" class="sr-only">Export mode</label>
-                        <select id="exportMode" class="ybg-select" aria-label="Export mode" data-testid="select-export-mode">
-                            <option value="latest" selected>Latest only</option>
-                            <option value="all">All results</option>
-                        </select>
                         <button 
-                            id="exportAllBtn" 
+                            id="exportPdfBtn" 
                             class="action-btn"
-                            title="Export results as PDF (Ctrl+S)"
-                            data-testid="button-export-all"
+                            title="Export results as PDF"
+                            data-testid="button-export-pdf"
                         >
                             Export PDF
                         </button>
                         <button 
                             id="copyAllBtn" 
                             class="action-btn"
-                            title="Copy all results to clipboard (Ctrl+Shift+C)"
+                            title="Copy all results to clipboard"
                             data-testid="button-copy-all"
                         >
                             Copy All
                         </button>
                         <button 
-                            id="clearHistoryBtn" 
+                            id="clearBtn" 
                             class="clear-btn"
                             title="Clear all results"
-                            data-testid="button-clear-history"
+                            data-testid="button-clear"
                         >
                             Clear
                         </button>
@@ -298,16 +296,10 @@
         </div>
     </template>
 
-    <!-- Filing Profiles Library -->
-    <script src="filing-profiles.js"></script>
-    
-    <!-- Compliance Intelligence Generator -->
-    <script src="compliance-generator.js"></script>
-    
     <!-- PDF Export System -->
     <script src="pdf-export.js"></script>
     
-    <!-- App JavaScript -->
-    <script src="script.js"></script>
+    <!-- App JavaScript - Unified Rendering Architecture -->
+    <script src="script-new.js"></script>
 </body>
 </html>

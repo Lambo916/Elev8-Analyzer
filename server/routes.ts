@@ -105,79 +105,116 @@ CRITICAL FORMATTING RULES:
 REMEMBER: Your analysis should be data-driven yet strategic, helping business owners make informed decisions.`;
   };
 
-  // API endpoint for generating toolkit results
+  // API endpoint for generating structured compliance data
   app.post("/api/generate", async (req, res) => {
-    const { prompt: userPrompt, formData, toolkitType } = req.body;
+    const { formData } = req.body;
     
     try {
-
       // Input validation
-      if (!userPrompt || typeof userPrompt !== "string") {
+      if (!formData) {
         return res.status(400).json({
-          error: "Invalid request. Prompt is required and must be a string.",
+          error: "Form data is required.",
         });
       }
 
-      if (userPrompt.trim().length === 0) {
+      const {
+        entityName,
+        entityType,
+        jurisdiction,
+        filingType,
+        deadline,
+        requirements = [],
+        risks,
+        mitigation
+      } = formData;
+
+      // Validate required fields
+      if (!entityType || !filingType) {
         return res.status(400).json({
-          error: "Prompt cannot be empty.",
+          error: "Entity type and filing type are required.",
         });
       }
 
-      if (userPrompt.length > 5000) {
-        return res.status(400).json({
-          error: "Prompt is too long. Maximum 5000 characters allowed.",
-        });
-      }
+      console.log(`Generating structured compliance data for: ${filingType} - ${entityType} (${jurisdiction || 'General'})`);
 
-      // Check if OpenAI API key is configured
-      if (!process.env.OPENAI_API_KEY) {
-        console.error("OpenAI API key not configured");
-        return res.status(500).json({
-          error: "Service configuration error. Please contact support.",
-        });
-      }
+      // Build context-aware prompt for AI to return structured JSON
+      const userPrompt = `Generate a compliance intelligence report for the following filing:
 
-      // Select appropriate system prompt based on toolkit type
-      const systemPrompt = toolkitType === 'diagnostic' 
-        ? getDiagnosticSystemPrompt() 
-        : getComplianceSystemPrompt();
+**Entity Information:**
+- Name: ${entityName || '[Not provided]'}
+- Type: ${entityType}
+- Jurisdiction: ${jurisdiction || '[General]'}
+- Filing Type: ${filingType}
+- Deadline: ${deadline || '[Not provided]'}
 
-      const reportType = toolkitType === 'diagnostic' 
-        ? `${formData?.industry || 'business'} analysis` 
-        : `${formData?.filingType || 'compliance'} - ${formData?.entityType || 'filing'}`;
+**User-Provided Context:**
+- Selected Requirements: ${requirements.length > 0 ? requirements.join(', ') : '[None selected]'}
+- Risk Concerns: ${risks || '[None provided]'}
+- Mitigation Plan: ${mitigation || '[None provided]'}
 
-      console.log(
-        `Generating ${toolkitType || 'compliance'} report:`,
-        formData ? reportType : userPrompt.substring(0, 100)
-      );
+You MUST return a valid JSON object with this exact structure:
+{
+  "summary": "2-3 paragraph executive summary explaining the filing requirement, its importance, and key deadlines",
+  "checklist": ["item 1", "item 2", ...],
+  "timeline": [
+    {"milestone": "Task name", "owner": "Responsible party", "dueDate": "YYYY-MM-DD or relative like T-30", "notes": "Additional context"}
+  ],
+  "riskMatrix": [
+    {"risk": "Risk description", "severity": "High/Medium/Low", "likelihood": "High/Medium/Low", "mitigation": "How to address"}
+  ],
+  "recommendations": ["recommendation 1", "recommendation 2", ...],
+  "references": ["Link to official portal: https://..."]
+}
 
+Guidelines:
+- Be specific to ${filingType} in ${jurisdiction || 'applicable jurisdictions'}
+- Include at least 5 checklist items (required documents/steps)
+- Include at least 4 timeline milestones (spanning from preparation to submission)
+- Include at least 3 risk items (late filing, missing docs, etc.)
+- Include at least 3 actionable recommendations
+- For timeline dates, use actual dates if deadline provided, otherwise use relative days like "T-30" (30 days before deadline)
+- Return ONLY valid JSON, no markdown formatting`;
 
-      // Call OpenAI API with latest model  
+      // Call OpenAI to generate structured data
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: systemPrompt,
+            content: "You are a compliance expert. You MUST respond with valid JSON only. No markdown, no explanations outside the JSON structure."
           },
           {
             role: "user",
             content: userPrompt,
           },
         ],
+        response_format: { type: "json_object" },
         max_tokens: 2500,
       });
 
-      const result = completion.choices[0].message.content;
+      const rawResponse = completion.choices[0].message.content || "{}";
+      let structuredData;
 
-      console.log("Response generated successfully");
+      try {
+        structuredData = JSON.parse(rawResponse);
+      } catch (parseError) {
+        console.error("Failed to parse AI response as JSON:", parseError);
+        throw new Error("AI returned invalid JSON format");
+      }
 
-      res.json({
-        result,
-        timestamp: new Date().toISOString(),
-        model: "gpt-4o-mini",
-      });
+      // Validate and ensure all required fields exist with defaults
+      const response = {
+        summary: structuredData.summary || "Compliance summary unavailable",
+        checklist: Array.isArray(structuredData.checklist) ? structuredData.checklist : [],
+        timeline: Array.isArray(structuredData.timeline) ? structuredData.timeline : [],
+        riskMatrix: Array.isArray(structuredData.riskMatrix) ? structuredData.riskMatrix : [],
+        recommendations: Array.isArray(structuredData.recommendations) ? structuredData.recommendations : [],
+        references: Array.isArray(structuredData.references) ? structuredData.references : []
+      };
+
+      console.log("Structured compliance data generated successfully");
+
+      res.json(response);
     } catch (error: any) {
       console.error("Error in /api/generate:", error);
 
@@ -188,42 +225,6 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
         });
       }
 
-      if (error.code === "model_not_found") {
-        // Fallback to gpt-3.5-turbo if gpt-4o-mini not available
-        try {
-          const systemPrompt = toolkitType === 'diagnostic' 
-            ? getDiagnosticSystemPrompt() 
-            : getComplianceSystemPrompt();
-          
-          const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              {
-                role: "user", 
-                content: userPrompt,
-              },
-            ],
-            max_tokens: 2500,
-          });
-          
-          const result = completion.choices[0].message.content;
-          console.log("Response generated successfully with fallback model");
-          return res.json({
-            result,
-            timestamp: new Date().toISOString(),
-            model: "gpt-3.5-turbo"
-          });
-        } catch (fallbackError) {
-          return res.status(503).json({
-            error: "AI models temporarily unavailable. Please try again later.",
-          });
-        }
-      }
-
       if (error.status === 429) {
         return res.status(429).json({
           error: "Too many requests. Please wait a moment and try again.",
@@ -232,7 +233,7 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
 
       if (error.status === 401) {
         return res.status(401).json({
-          error: "Authentication failed",
+          error: "Authentication failed. Please check API configuration.",
         });
       }
 

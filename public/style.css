@@ -364,6 +364,12 @@ html.theme-dark .results-panel::before {
     border-bottom: 1px solid rgba(var(--border), 0.15);
 }
 
+.results-header-content {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+}
+
 /* Light theme panel header "Less White" polish */
 html.theme-light .panel-header,
 html:not(.theme-dark) .panel-header {
@@ -1027,6 +1033,32 @@ hr,
 /* ========================================
    COMPLIANCE RESULT STYLES
    ======================================== */
+
+/* Document metadata header */
+.doc-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: rgba(var(--card-header), 0.3);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-sm);
+}
+
+.doc-meta div {
+    display: flex;
+    flex-direction: column;
+}
+
+.doc-meta strong {
+    color: rgb(var(--text-secondary));
+    font-weight: 600;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
 
 /* Section containers */
 .compliance-section {
