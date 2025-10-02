@@ -295,6 +295,8 @@ html.theme-dark h3 {
     grid-template-columns: 40% 60%;
     gap: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
+    /* Ensure panels can grow to fill available height */
+    min-height: 0;
 }
 
 /* ========================================
@@ -310,6 +312,9 @@ html.theme-dark h3 {
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
     position: relative;
+    /* Make panel a flex container to allow content to fill height */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Light theme panel "Less White" polish */
@@ -398,6 +403,12 @@ html:not(.theme-dark) .panel-header {
 
 .panel-content {
     padding: var(--spacing-lg);
+    /* Allow panel content to grow and fill available space */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* ========================================
@@ -672,8 +683,18 @@ html.theme-dark .submit-btn:hover {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
-    max-height: 600px;
     overflow-y: auto;
+    /* On desktop: fill available height. On mobile: limit height */
+    flex: 1;
+    min-height: 0;
+}
+
+/* Mobile: keep reasonable max-height for better UX */
+@media (max-width: 767px) {
+    .results-container {
+        max-height: 600px;
+        flex: initial;
+    }
 }
 
 /* Custom scrollbar */
@@ -994,10 +1015,6 @@ hr,
     
     .panel-content {
         padding: var(--spacing-md);
-    }
-    
-    .results-container {
-        max-height: 400px;
     }
     
     .result-header {
