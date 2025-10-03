@@ -178,19 +178,16 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
 
       console.log(`Generating hybrid compliance intelligence for: ${filingType} - ${entityType} (${jurisdiction || 'General'})`);
 
-      // STEP 1: Resolve filing profile (expert knowledge base)
+      // STEP 1: Try to resolve filing profile (expert knowledge base)
+      // If no profile exists, fall back to super smart AI mode
       const profile = resolveProfile(filingType, jurisdiction, entityType);
+      const useAIMode = !profile;
       
-      if (!profile) {
-        return res.status(400).json({
-          error: `No knowledge base found for ${filingType} in ${jurisdiction}. Please contact support.`
-        });
+      if (useAIMode) {
+        console.log(`No pre-built profile found - using super smart AI mode for ${jurisdiction} ${filingType}`);
       }
 
-      // STEP 2: Compute timeline with actual dates
-      const timelineWithDates = computeTimelineDates(profile.timeline, deadline);
-
-      // STEP 3: Use AI to generate personalized summary and recommendations
+      // Build user context for AI
       const userContext = [];
       if (requirements.length > 0) {
         userContext.push(`Selected requirements: ${requirements.join(', ')}`);
@@ -202,7 +199,96 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
         userContext.push(`Mitigation plan: ${mitigation}`);
       }
 
-      const aiPrompt = `You are a compliance expert. Generate a professional executive summary and personalized recommendations for this filing:
+      let response;
+
+      if (useAIMode) {
+        // SUPER SMART AI MODE: Generate everything through AI
+        const superSmartPrompt = `You are a professional compliance intelligence system specializing in business filing requirements across all 50 US states.
+
+Generate a comprehensive compliance report for:
+- Entity: ${entityName || '[Entity Name]'} (${entityType})
+- Jurisdiction: ${jurisdiction || 'General'}
+- Filing Type: ${filingType}
+- Deadline: ${deadline || '[Not specified]'}
+${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
+
+CRITICAL: Research and provide ACCURATE, STATE-SPECIFIC information. Do not provide generic placeholder content.
+
+Generate a JSON object with these fields:
+{
+  "summary": "2-3 professional paragraphs explaining: (1) What this ${filingType} is and why it matters for ${entityName || 'this entity'} in ${jurisdiction}, (2) Specific ${jurisdiction} requirements and deadlines, (3) Real consequences of non-compliance (actual penalties, suspension risks, etc.)",
+  
+  "checklist": [
+    "List 5-7 specific filing requirements for ${filingType} in ${jurisdiction}. Include actual form numbers, fee amounts, and state-specific documents (e.g., 'Statement of Information Form SI-550' for California LLCs, not generic placeholders)"
+  ],
+  
+  "timeline": [
+    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -30, "notes": "Specific action required"},
+    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -14, "notes": "Specific action required"},
+    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -7, "notes": "Specific action required"},
+    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": 0, "notes": "Specific action required"}
+  ],
+  
+  "riskMatrix": [
+    {"risk": "Specific compliance risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"},
+    {"risk": "Another specific risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"}
+  ],
+  
+  "recommendations": [
+    "3-5 actionable recommendations specific to ${jurisdiction} ${filingType}"
+  ],
+  
+  "references": [
+    "Official ${jurisdiction} filing portal with actual URL",
+    "State agency website with actual URL", 
+    "Relevant government resources with actual URLs"
+  ]
+}
+
+IMPORTANT: 
+- Use actual ${jurisdiction} requirements, forms, fees, and portal URLs
+- Timeline offsetDays are relative to deadline: negative = before, 0 = deadline day
+- Include 4-6 timeline milestones covering preparation to filing
+- Provide real risk assessment with actual consequences
+- Return ONLY valid JSON, no explanations`;
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: "You are a compliance intelligence expert with deep knowledge of business filing requirements across all US states. Provide accurate, jurisdiction-specific information. Return valid JSON only."
+            },
+            {
+              role: "user",
+              content: superSmartPrompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 2500,
+        });
+
+        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+        
+        // Compute timeline dates
+        const timelineWithDates = aiResponse.timeline 
+          ? computeTimelineDates(aiResponse.timeline, deadline)
+          : [];
+
+        response = {
+          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
+          checklist: aiResponse.checklist || [],
+          timeline: timelineWithDates,
+          riskMatrix: aiResponse.riskMatrix || [],
+          recommendations: aiResponse.recommendations || ["File well before deadline", "Set calendar reminders"],
+          references: aiResponse.references || []
+        };
+
+      } else {
+        // PROFILE-BASED MODE: Use pre-built knowledge + AI enhancement
+        const timelineWithDates = computeTimelineDates(profile.timeline, deadline);
+
+        const aiPrompt = `Generate a personalized executive summary and recommendations for:
 
 Entity: ${entityName || '[Entity Name]'} (${entityType})
 Jurisdiction: ${jurisdiction || 'General'}
@@ -210,63 +296,59 @@ Filing Type: ${filingType}
 Deadline: ${deadline || '[Not provided]'}
 ${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
 
-Generate ONLY a JSON object with these two fields:
+Generate ONLY a JSON object:
 {
-  "summary": "A 2-3 paragraph executive summary explaining why this ${filingType} matters for ${entityName || 'this entity'}, what happens if filed late, and key compliance considerations specific to ${jurisdiction}. ${userContext.length > 0 ? 'Address the user context points.' : ''}",
+  "summary": "2-3 paragraphs explaining why this ${filingType} matters for ${entityName || 'this entity'}, consequences of late filing, and key compliance considerations specific to ${jurisdiction}. ${userContext.length > 0 ? 'Address user context.' : ''}",
   "recommendations": [
-    "3-5 specific, actionable recommendations tailored to ${entityName || 'this business'} based on the filing type, jurisdiction${userContext.length > 0 ? ', and user concerns mentioned' : ''}"
+    "3-5 specific actionable recommendations tailored to ${entityName || 'this business'}"
   ]
-}
+}`;
 
-Make it professional, specific to the jurisdiction, and actionable. Return ONLY valid JSON.`;
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a compliance expert. Return valid JSON only."
+            },
+            {
+              role: "user",
+              content: aiPrompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 1000,
+        });
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a compliance expert. Return valid JSON only."
-          },
-          {
-            role: "user",
-            content: aiPrompt,
-          },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 1000,
-      });
+        const aiResponse = JSON.parse(completion.choices[0].message.content || '{"summary":"","recommendations":[]}');
 
-      const aiResponse = JSON.parse(completion.choices[0].message.content || '{"summary":"","recommendations":[]}');
+        // Format profile data
+        const checklistItems = profile.checklist.map(item => 
+          `${item.label} - ${item.description}`
+        );
 
-      // STEP 4: Merge profile data with AI enhancements
-      // Format checklist items as simple strings
-      const checklistItems = profile.checklist.map(item => 
-        `${item.label} - ${item.description}`
-      );
+        const riskItems = profile.risks.map(r => ({
+          risk: r.risk,
+          severity: r.severity,
+          likelihood: r.likelihood,
+          mitigation: r.mitigation
+        }));
 
-      // Format risk items  
-      const riskItems = profile.risks.map(r => ({
-        risk: r.risk,
-        severity: r.severity,
-        likelihood: r.likelihood,
-        mitigation: r.mitigation
-      }));
+        const referenceLinks = profile.links.map(link => 
+          `${link.label}: ${link.url}`
+        );
 
-      // Format reference links
-      const referenceLinks = profile.links.map(link => 
-        `${link.label}: ${link.url}`
-      );
-
-      const response = {
-        summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
-        checklist: checklistItems,
-        timeline: timelineWithDates,
-        riskMatrix: riskItems,
-        recommendations: aiResponse.recommendations && aiResponse.recommendations.length > 0 
-          ? aiResponse.recommendations 
-          : ["File well before deadline", "Set calendar reminders", "Consult with compliance advisor"],
-        references: referenceLinks
-      };
+        response = {
+          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
+          checklist: checklistItems,
+          timeline: timelineWithDates,
+          riskMatrix: riskItems,
+          recommendations: aiResponse.recommendations && aiResponse.recommendations.length > 0 
+            ? aiResponse.recommendations 
+            : ["File well before deadline", "Set calendar reminders", "Consult with compliance advisor"],
+          references: referenceLinks
+        };
+      }
 
       console.log("Hybrid compliance intelligence generated successfully");
 
