@@ -1,6 +1,6 @@
 # Overview
 
-This is a YourBizGuru (YBG) Toolkit Template - a production-ready, reusable template for creating AI-powered business toolkits. The system creates brand-aligned mini-dashboards that can be developed in Replit, deployed to Vercel, and embedded in GoHighLevel via iframe. The template is designed to support 6 different customizable toolkits using placeholder tokens, with a clean vanilla JavaScript frontend and serverless backend architecture.
+CompliPilot is a production-grade Compliance Intelligence platform for small business entrepreneurs. It combines optional pre-built filing profiles (like California Annual Report) with AI-powered intelligence that dynamically handles all 50 states. The system delivers professional 6-section compliance reports with database-backed report management, Panel=PDF WYSIWYG parity, and a responsive desktop-first UX where the results panel fills available screen space.
 
 # User Preferences
 
@@ -24,8 +24,10 @@ Preferred communication style: Simple, everyday language.
 ## Database and Storage
 - **ORM**: Drizzle ORM with PostgreSQL dialect for type-safe database operations
 - **Schema Management**: Database migrations handled through drizzle-kit with proper connection configuration
-- **Local Storage**: Browser localStorage for caching toolkit results (last 5 results per toolkit)
-- **Session Management**: PostgreSQL sessions with connect-pg-simple for user authentication
+- **Report Persistence**: PostgreSQL compliance_reports table stores saved reports with name, entity details, jurisdiction, filing type, deadline, HTML content, checksum, metadata (JSON), and creation timestamp
+- **API Endpoints**: RESTful CRUD operations (/api/reports/save, /api/reports/list, /api/reports/:id) for report management
+- **Local Storage**: Browser localStorage for caching current working report
+- **Session Management**: PostgreSQL sessions with connect-pg-simple for user authentication (future feature)
 
 ## Authentication and Authorization
 - **User Management**: Basic user schema with username/password authentication
@@ -33,9 +35,11 @@ Preferred communication style: Simple, everyday language.
 - **API Security**: Environment variable protection for sensitive keys (OpenAI API, database URLs)
 
 ## AI Integration
-- **Provider**: OpenAI GPT-5 integration for content generation
+- **Provider**: OpenAI GPT-4o integration for content generation
+- **Super Smart AI Mode**: Enhanced AI system that dynamically handles ALL 50 states with state-specific forms, fees, deadlines, penalties, and official URLs
+- **Hybrid Architecture**: Tries pre-built filing profiles first (e.g., California Annual Report), falls back to super smart AI for all other jurisdictions
 - **API Management**: Centralized OpenAI client initialization with proper error handling and rate limiting
-- **Content Processing**: Structured prompt handling with input validation and response formatting
+- **Content Processing**: Structured 6-section JSON output (summary, checklist, timeline, riskMatrix, recommendations, references) with Panel=PDF WYSIWYG parity
 
 # External Dependencies
 
