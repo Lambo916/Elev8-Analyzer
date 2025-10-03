@@ -73,6 +73,7 @@ class ComplianceToolkit {
     init() {
         this.bindFormSubmit();
         this.bindActions();
+        this.bindDropdownMenus();
         this.loadCurrentResult();
     }
 
@@ -384,6 +385,46 @@ class ComplianceToolkit {
         if (loadBtn) {
             loadBtn.addEventListener('click', () => this.showLoadModal());
         }
+    }
+
+    bindDropdownMenus() {
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        
+        menuBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const dropdown = btn.parentElement;
+                const menuContent = dropdown.querySelector('.menu-content');
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.menu-content.show').forEach(menu => {
+                    if (menu !== menuContent) {
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                // Toggle this dropdown
+                menuContent.classList.toggle('show');
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.menu-dropdown')) {
+                document.querySelectorAll('.menu-content.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Close dropdown when clicking menu item
+        document.querySelectorAll('.menu-content button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.menu-content.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            });
+        });
     }
 
     async handleExport() {

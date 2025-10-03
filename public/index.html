@@ -232,38 +232,37 @@
                         <small id="results-checksum" style="color: rgb(var(--text-muted)); font-size: 11px; margin-left: 8px;"></small>
                     </div>
                     <div class="panel-actions">
-                        <button 
-                            id="saveReportBtn" 
-                            class="action-btn"
-                            title="Save report to database"
-                            data-testid="button-save-report"
-                        >
-                            Save
-                        </button>
-                        <button 
-                            id="loadReportBtn" 
-                            class="action-btn"
-                            title="Load saved reports"
-                            data-testid="button-load-report"
-                        >
-                            Load
-                        </button>
-                        <button 
-                            id="exportPdfBtn" 
-                            class="action-btn"
-                            title="Export results as PDF"
-                            data-testid="button-export-pdf"
-                        >
-                            Export PDF
-                        </button>
-                        <button 
-                            id="copyAllBtn" 
-                            class="action-btn"
-                            title="Copy all results to clipboard"
-                            data-testid="button-copy-all"
-                        >
-                            Copy All
-                        </button>
+                        <!-- File Menu -->
+                        <div class="menu-dropdown">
+                            <button class="action-btn menu-btn" data-testid="button-file-menu">
+                                File ▾
+                            </button>
+                            <div class="menu-content" data-testid="menu-file">
+                                <button id="saveReportBtn" data-testid="button-save-report">
+                                    Save Report
+                                </button>
+                                <button id="loadReportBtn" data-testid="button-load-report">
+                                    Load Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Export Menu -->
+                        <div class="menu-dropdown">
+                            <button class="action-btn menu-btn" data-testid="button-export-menu">
+                                Export ▾
+                            </button>
+                            <div class="menu-content" data-testid="menu-export">
+                                <button id="exportPdfBtn" data-testid="button-export-pdf">
+                                    Export PDF
+                                </button>
+                                <button id="copyAllBtn" data-testid="button-copy-all">
+                                    Copy All
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Clear Button (standalone) -->
                         <button 
                             id="clearBtn" 
                             class="clear-btn"

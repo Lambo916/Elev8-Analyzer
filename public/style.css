@@ -675,6 +675,68 @@ html.theme-dark .submit-btn:hover {
     box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.4);
 }
 
+/* Dropdown Menu Styles */
+.menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.menu-dropdown .menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.menu-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: rgb(var(--card));
+    border: 1px solid rgba(var(--border), 0.3);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.menu-content.show {
+    display: block;
+    animation: menuFadeIn 0.15s ease;
+}
+
+.menu-content button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    color: rgb(var(--text));
+    border: none;
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.menu-content button:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ========================================
    RESULTS
    ======================================== */
