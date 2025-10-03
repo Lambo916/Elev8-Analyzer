@@ -5,6 +5,9 @@ import express from "express";
 import path from "path";
 import OpenAI from "openai";
 import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
+import { db } from "./db";
+import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from public folder
@@ -378,6 +381,77 @@ Generate ONLY a JSON object:
       // Generic error response
       res.status(500).json({
         error: "An unexpected error occurred. Please try again.",
+      });
+    }
+  });
+
+  // Save a compliance report
+  app.post("/api/reports/save", async (req, res) => {
+    try {
+      const reportData = insertComplianceReportSchema.parse(req.body);
+      
+      const [savedReport] = await db
+        .insert(complianceReports)
+        .values(reportData)
+        .returning();
+
+      res.json(savedReport);
+    } catch (error: any) {
+      console.error("Error saving report:", error);
+      res.status(400).json({
+        error: "Failed to save report. Please check your input.",
+      });
+    }
+  });
+
+  // List all saved reports
+  app.get("/api/reports/list", async (req, res) => {
+    try {
+      const reports = await db
+        .select({
+          id: complianceReports.id,
+          name: complianceReports.name,
+          entityName: complianceReports.entityName,
+          entityType: complianceReports.entityType,
+          jurisdiction: complianceReports.jurisdiction,
+          filingType: complianceReports.filingType,
+          deadline: complianceReports.deadline,
+          checksum: complianceReports.checksum,
+          createdAt: complianceReports.createdAt,
+        })
+        .from(complianceReports)
+        .orderBy(desc(complianceReports.createdAt));
+
+      res.json(reports);
+    } catch (error: any) {
+      console.error("Error listing reports:", error);
+      res.status(500).json({
+        error: "Failed to retrieve reports.",
+      });
+    }
+  });
+
+  // Get a specific report by ID
+  app.get("/api/reports/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const [report] = await db
+        .select()
+        .from(complianceReports)
+        .where(eq(complianceReports.id, id));
+
+      if (!report) {
+        return res.status(404).json({
+          error: "Report not found.",
+        });
+      }
+
+      res.json(report);
+    } catch (error: any) {
+      console.error("Error retrieving report:", error);
+      res.status(500).json({
+        error: "Failed to retrieve report.",
       });
     }
   });
