@@ -360,12 +360,14 @@ class ComplianceToolkit {
     }
 
     // ========================================================
-    // ACTIONS (Export, Copy, Clear)
+    // ACTIONS (Export, Copy, Clear, Save, Load)
     // ========================================================
     bindActions() {
         const exportBtn = document.getElementById('exportPdfBtn');
         const copyBtn = document.getElementById('copyAllBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const saveBtn = document.getElementById('saveReportBtn');
+        const loadBtn = document.getElementById('loadReportBtn');
 
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.handleExport());
@@ -375,6 +377,12 @@ class ComplianceToolkit {
         }
         if (clearBtn) {
             clearBtn.addEventListener('click', () => this.handleClear());
+        }
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.showSaveModal());
+        }
+        if (loadBtn) {
+            loadBtn.addEventListener('click', () => this.showLoadModal());
         }
     }
 
@@ -516,6 +524,311 @@ class ComplianceToolkit {
             toast.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // ========================================================
+    // SAVE/LOAD FUNCTIONALITY
+    // ========================================================
+    showSaveModal() {
+        if (!this.currentResult) {
+            this.showError('No report to save. Generate a report first.');
+            return;
+        }
+
+        const modal = document.getElementById('saveModal');
+        const reportNameInput = document.getElementById('reportName');
+        const confirmBtn = document.getElementById('confirmSaveBtn');
+        const cancelBtn = document.getElementById('cancelSaveBtn');
+        const closeBtn = document.getElementById('saveModalClose');
+
+        if (!modal) return;
+
+        const suggestedName = this.generateReportName();
+        if (reportNameInput) {
+            reportNameInput.value = suggestedName;
+        }
+
+        modal.style.display = 'block';
+        if (reportNameInput) {
+            reportNameInput.focus();
+            reportNameInput.select();
+        }
+
+        const handleSave = async () => {
+            const name = reportNameInput?.value.trim();
+            if (!name) {
+                this.showError('Please enter a report name');
+                return;
+            }
+            await this.saveReportToDatabase(name);
+            modal.style.display = 'none';
+        };
+
+        const handleCancel = () => {
+            modal.style.display = 'none';
+        };
+
+        confirmBtn?.addEventListener('click', handleSave, { once: true });
+        cancelBtn?.addEventListener('click', handleCancel, { once: true });
+        closeBtn?.addEventListener('click', handleCancel, { once: true });
+
+        reportNameInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSave();
+            }
+        }, { once: true });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                handleCancel();
+            }
+        }, { once: true });
+    }
+
+    generateReportName() {
+        if (!this.currentResult?.payload) return 'Compliance Report';
+        
+        const { entityName, filingType, deadline } = this.currentResult.payload;
+        const parts = [];
+        
+        if (filingType) parts.push(filingType);
+        if (entityName) parts.push(entityName);
+        if (deadline) {
+            const date = new Date(deadline);
+            parts.push(date.toLocaleDateString());
+        }
+        
+        return parts.join(' - ') || 'Compliance Report';
+    }
+
+    async saveReportToDatabase(name) {
+        try {
+            if (!this.currentResult) {
+                throw new Error('No report to save');
+            }
+
+            const payload = {
+                name: name,
+                entityName: this.currentResult.payload?.entityName || '',
+                entityType: this.currentResult.payload?.entityType || '',
+                jurisdiction: this.currentResult.payload?.jurisdiction || '',
+                filingType: this.currentResult.payload?.filingType || '',
+                deadline: this.currentResult.payload?.deadline || '',
+                htmlContent: this.currentResult.structured?.html || '',
+                checksum: this.currentResult.checksum || '',
+                metadata: JSON.stringify(this.currentResult.payload || {})
+            };
+
+            const response = await fetch('/api/reports/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save report');
+            }
+
+            const result = await response.json();
+            this.showSuccess(`Report "${name}" saved successfully!`);
+            return result;
+
+        } catch (error) {
+            console.error('Save error:', error);
+            this.showError(error.message || 'Failed to save report');
+            throw error;
+        }
+    }
+
+    async showLoadModal() {
+        const modal = document.getElementById('loadModal');
+        const listContainer = document.getElementById('savedReportsList');
+        const closeBtn = document.getElementById('loadModalClose');
+
+        if (!modal || !listContainer) return;
+
+        modal.style.display = 'block';
+        listContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: rgb(var(--text-muted));">Loading saved reports...</div>';
+
+        closeBtn?.addEventListener('click', () => {
+            modal.style.display = 'none';
+        }, { once: true });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        }, { once: true });
+
+        try {
+            const response = await fetch('/api/reports/list');
+            if (!response.ok) {
+                throw new Error('Failed to load reports');
+            }
+
+            const reports = await response.json();
+
+            if (!reports || reports.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: rgb(var(--text-muted));" data-testid="text-no-reports">
+                        <p style="font-size: 18px; margin-bottom: 8px;">No saved reports yet</p>
+                        <p style="font-size: 14px;">Generate and save a report to see it here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const reportsHTML = reports.map(report => {
+                const createdDate = new Date(report.createdAt).toLocaleDateString();
+                const createdTime = new Date(report.createdAt).toLocaleTimeString();
+                
+                return `
+                    <div class="saved-report-item" data-report-id="${report.id}" data-testid="item-saved-report-${report.id}" 
+                         style="border: 1px solid rgb(var(--border)); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: rgb(var(--card));">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px;">
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: rgb(var(--text));" data-testid="text-report-name-${report.id}">
+                                    ${this.escapeHtml(report.name)}
+                                </h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: rgb(var(--text-secondary));">
+                                    <div data-testid="text-report-entity-${report.id}">
+                                        <strong>Entity:</strong> ${this.escapeHtml(report.entityName || 'N/A')}
+                                    </div>
+                                    <div data-testid="text-report-jurisdiction-${report.id}">
+                                        <strong>Jurisdiction:</strong> ${this.escapeHtml(report.jurisdiction || 'N/A')}
+                                    </div>
+                                    <div data-testid="text-report-filing-${report.id}">
+                                        <strong>Filing Type:</strong> ${this.escapeHtml(report.filingType || 'N/A')}
+                                    </div>
+                                    <div data-testid="text-report-date-${report.id}">
+                                        <strong>Created:</strong> ${createdDate} ${createdTime}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                <button 
+                                    class="action-btn load-report-btn" 
+                                    data-report-id="${report.id}"
+                                    data-testid="button-load-report-${report.id}"
+                                    title="Load this report"
+                                >
+                                    Load
+                                </button>
+                                <button 
+                                    class="clear-btn delete-report-btn" 
+                                    data-report-id="${report.id}"
+                                    data-testid="button-delete-report-${report.id}"
+                                    title="Delete this report"
+                                    style="padding: 8px 16px;"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            listContainer.innerHTML = reportsHTML;
+
+            listContainer.querySelectorAll('.load-report-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const reportId = e.target.getAttribute('data-report-id');
+                    await this.loadReportFromDatabase(reportId);
+                    modal.style.display = 'none';
+                });
+            });
+
+            listContainer.querySelectorAll('.delete-report-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const reportId = e.target.getAttribute('data-report-id');
+                    if (confirm('Are you sure you want to delete this report?')) {
+                        await this.deleteReport(reportId);
+                        await this.showLoadModal();
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error('Load modal error:', error);
+            listContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: rgb(var(--error));" data-testid="text-load-error">
+                    <p style="font-size: 16px; margin-bottom: 8px;">Failed to load reports</p>
+                    <p style="font-size: 14px;">${this.escapeHtml(error.message)}</p>
+                </div>
+            `;
+        }
+    }
+
+    async loadReportFromDatabase(id) {
+        try {
+            const response = await fetch(`/api/reports/${id}`);
+            if (!response.ok) {
+                throw new Error('Failed to load report');
+            }
+
+            const report = await response.json();
+
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (resultsContainer && report.htmlContent) {
+                resultsContainer.innerHTML = report.htmlContent;
+            }
+
+            const checksumEl = document.getElementById('results-checksum');
+            if (checksumEl && report.checksum) {
+                checksumEl.textContent = `checksum: ${report.checksum}`;
+            }
+
+            const noResults = document.getElementById('noResults');
+            if (noResults) {
+                noResults.style.display = 'none';
+            }
+
+            let metadata = {};
+            try {
+                metadata = JSON.parse(report.metadata || '{}');
+            } catch (e) {
+                console.warn('Failed to parse metadata:', e);
+            }
+
+            this.currentResult = {
+                id: report.id,
+                payload: metadata,
+                structured: { 
+                    html: report.htmlContent,
+                    text: this.stripHTML(report.htmlContent)
+                },
+                createdAt: report.createdAt,
+                checksum: report.checksum
+            };
+
+            this.saveCurrentResult();
+            this.showSuccess(`Report "${report.name}" loaded successfully!`);
+
+        } catch (error) {
+            console.error('Load error:', error);
+            this.showError(error.message || 'Failed to load report');
+        }
+    }
+
+    async deleteReport(id) {
+        try {
+            const response = await fetch(`/api/reports/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete report');
+            }
+
+            this.showSuccess('Report deleted successfully');
+
+        } catch (error) {
+            console.error('Delete error:', error);
+            this.showError(error.message || 'Failed to delete report');
+        }
     }
 }
 

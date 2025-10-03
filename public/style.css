@@ -1345,6 +1345,60 @@ hr,
 }
 
 /* ========================================
+   MODAL STYLES
+   ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    font-size: 32px;
+    line-height: 1;
+    color: rgb(var(--text-muted));
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.modal-close:hover {
+    color: rgb(var(--text));
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
    PRINT STYLES
    ======================================== */
 

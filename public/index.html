@@ -233,6 +233,22 @@
                     </div>
                     <div class="panel-actions">
                         <button 
+                            id="saveReportBtn" 
+                            class="action-btn"
+                            title="Save report to database"
+                            data-testid="button-save-report"
+                        >
+                            Save
+                        </button>
+                        <button 
+                            id="loadReportBtn" 
+                            class="action-btn"
+                            title="Load saved reports"
+                            data-testid="button-load-report"
+                        >
+                            Load
+                        </button>
+                        <button 
                             id="exportPdfBtn" 
                             class="action-btn"
                             title="Export results as PDF"
@@ -295,6 +311,68 @@
             <div class="result-content" data-testid="text-result-content"></div>
         </div>
     </template>
+
+    <!-- Save Modal -->
+    <div id="saveModal" class="modal-overlay" style="display: none;" data-testid="modal-save">
+        <div class="modal-content panel" style="max-width: 500px; margin: 100px auto;">
+            <div class="panel-header">
+                <h2 data-testid="text-save-modal-title">Save Report</h2>
+                <button class="modal-close" id="saveModalClose" data-testid="button-save-modal-close" aria-label="Close">×</button>
+            </div>
+            <div class="panel-content">
+                <div class="form-group">
+                    <label for="reportName" class="form-label" data-testid="label-report-name">
+                        Report Name <span class="required-marker">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="reportName" 
+                        class="form-input"
+                        placeholder="e.g., Q4 Annual Report - Acme Corp"
+                        data-testid="input-report-name"
+                        required
+                    />
+                    <small style="color: rgb(var(--text-muted)); font-size: 13px; display: block; margin-top: 4px;">
+                        Give this report a descriptive name for easy identification
+                    </small>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                    <button 
+                        class="action-btn" 
+                        id="cancelSaveBtn"
+                        data-testid="button-cancel-save"
+                        style="background: rgb(var(--border-strong)); color: rgb(var(--text));"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        class="submit-btn" 
+                        id="confirmSaveBtn"
+                        data-testid="button-confirm-save"
+                    >
+                        Save Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Modal -->
+    <div id="loadModal" class="modal-overlay" style="display: none;" data-testid="modal-load">
+        <div class="modal-content panel" style="max-width: 800px; margin: 100px auto; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="panel-header">
+                <h2 data-testid="text-load-modal-title">Load Saved Reports</h2>
+                <button class="modal-close" id="loadModalClose" data-testid="button-load-modal-close" aria-label="Close">×</button>
+            </div>
+            <div class="panel-content" style="overflow-y: auto; flex: 1;">
+                <div id="savedReportsList" data-testid="list-saved-reports">
+                    <div style="text-align: center; padding: 40px; color: rgb(var(--text-muted));" data-testid="text-loading-reports">
+                        Loading saved reports...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- PDF Export System -->
     <script src="pdf-export.js"></script>
