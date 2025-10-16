@@ -309,12 +309,6 @@ class ComplianceToolkit {
             // Compute checksum on exact HTML
             const cs = this.checksum(html);
 
-            // Update checksum display
-            const checksumEl = document.getElementById('results-checksum');
-            if (checksumEl) {
-                checksumEl.textContent = `checksum: ${cs}`;
-            }
-
             // Store result (single source of truth)
             this.currentResult = {
                 id: 'r_' + Date.now(),
@@ -362,10 +356,6 @@ class ComplianceToolkit {
                     const resultsContainer = document.getElementById('resultsContainer');
                     if (resultsContainer) {
                         resultsContainer.innerHTML = this.currentResult.structured.html;
-                    }
-                    const checksumEl = document.getElementById('results-checksum');
-                    if (checksumEl) {
-                        checksumEl.textContent = `checksum: ${this.currentResult.checksum}`;
                     }
                     const noResults = document.getElementById('noResults');
                     if (noResults) {
@@ -507,11 +497,6 @@ class ComplianceToolkit {
         const resultsContainer = document.getElementById('resultsContainer');
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
-        }
-        
-        const checksumEl = document.getElementById('results-checksum');
-        if (checksumEl) {
-            checksumEl.textContent = '';
         }
 
         const noResults = document.getElementById('noResults');
@@ -845,11 +830,6 @@ class ComplianceToolkit {
             const resultsContainer = document.getElementById('resultsContainer');
             if (resultsContainer && report.htmlContent) {
                 resultsContainer.innerHTML = report.htmlContent;
-            }
-
-            const checksumEl = document.getElementById('results-checksum');
-            if (checksumEl && report.checksum) {
-                checksumEl.textContent = `checksum: ${report.checksum}`;
             }
 
             const noResults = document.getElementById('noResults');
