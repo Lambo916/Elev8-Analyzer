@@ -28,7 +28,7 @@ export const complianceReports = pgTable("compliance_reports", {
   htmlContent: text("html_content").notNull(),
   checksum: text("checksum").notNull(),
   metadata: json("metadata"),
-  toolkitCode: text("toolkit_code").notNull(),
+  toolkitCode: text("toolkit_code").notNull().default('complipilot'),
   ownerId: text("owner_id").notNull().default(''),
   userId: varchar("user_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
