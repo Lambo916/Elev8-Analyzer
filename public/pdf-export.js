@@ -211,6 +211,12 @@ window.YBG_PDF = window.YBG_PDF || {};
     const dateStr = `${now.toLocaleDateString()} • ${now.toLocaleTimeString()}`;
     doc.text(dateStr, x + logoSize + 4, y + 12);
     
+    // Add subtle brand-colored divider line below header
+    const dividerY = y + 16;
+    doc.setDrawColor(79, 195, 247); // Light blue brand color
+    doc.setLineWidth(0.3);
+    doc.line(CONTENT.left, dividerY, CONTENT.right, dividerY);
+    
     // Reset to body typography
     applyGlobalTypography(doc);
   }
@@ -292,11 +298,20 @@ window.YBG_PDF = window.YBG_PDF || {};
     return blocks;
   }
 
+  // ---- Text Cleaning -------------------------------------------------------
+  function cleanMarkdown(text) {
+    // Remove markdown bold markers (**text** or __text__)
+    return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1');
+  }
+
   // ---- Word Wrapping Algorithm ---------------------------------------------
   function wrapText(doc, text, maxWidth, fontSize) {
     doc.setFontSize(fontSize);
     
-    const words = text.split(/\s+/);
+    // Clean markdown markers before wrapping
+    const cleanText = cleanMarkdown(text);
+    
+    const words = cleanText.split(/\s+/);
     const lines = [];
     let currentLine = '';
     
@@ -358,6 +373,17 @@ window.YBG_PDF = window.YBG_PDF || {};
           if (this.yPosition > CONTENT.top + 10) {
             this.yPosition += TYPOGRAPHY.paragraphSpacing;
           }
+          
+          // Add brand-colored left border accent for h2
+          this.doc.setDrawColor(79, 195, 247); // Light blue brand color
+          this.doc.setLineWidth(0.8);
+          const borderHeight = lineHeight * 0.8;
+          this.doc.line(
+            CONTENT.left - 3,
+            this.yPosition - borderHeight * 0.3,
+            CONTENT.left - 3,
+            this.yPosition + borderHeight * 0.7
+          );
           break;
           
         case 'h3':
