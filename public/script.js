@@ -92,7 +92,10 @@ class ComplianceToolkit {
         this.bindFormSubmit();
         this.bindActions();
         this.bindDropdownMenus();
+        this.bindKeyboardShortcuts();
+        this.bindTitleInput();
         this.loadCurrentResult();
+        this.startAutosave();
     }
 
     // ========================================================
@@ -403,6 +406,29 @@ class ComplianceToolkit {
         if (loadBtn) {
             loadBtn.addEventListener('click', () => this.showLoadModal());
         }
+
+        // Power Menu Actions
+        const validateBtn = document.getElementById('validateInputs');
+        const renameBtn = document.getElementById('renameReport');
+        const duplicateBtn = document.getElementById('duplicateReport');
+        const recalcBtn = document.getElementById('recalcChecksum');
+        const docsBtn = document.getElementById('openDocs');
+
+        if (validateBtn) {
+            validateBtn.addEventListener('click', () => this.validateInputs());
+        }
+        if (renameBtn) {
+            renameBtn.addEventListener('click', () => this.renameReport());
+        }
+        if (duplicateBtn) {
+            duplicateBtn.addEventListener('click', () => this.duplicateReport());
+        }
+        if (recalcBtn) {
+            recalcBtn.addEventListener('click', () => this.recalculateChecksum());
+        }
+        if (docsBtn) {
+            docsBtn.addEventListener('click', () => this.openDocumentation());
+        }
     }
 
     bindDropdownMenus() {
@@ -443,6 +469,65 @@ class ComplianceToolkit {
                 });
             });
         });
+    }
+
+    bindKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            const isMac = navigator.platform.toUpperCase().includes('MAC');
+            const cmd = isMac ? e.metaKey : e.ctrlKey;
+            
+            if (!cmd) return;
+            
+            switch (true) {
+                case (cmd && e.key === 's' && !e.shiftKey):
+                    e.preventDefault();
+                    this.showSaveModal();
+                    break;
+                case (cmd && e.key === 'S' && e.shiftKey):
+                    e.preventDefault();
+                    this.showSaveAsModal();
+                    break;
+                case (cmd && e.key.toLowerCase() === 'o'):
+                    e.preventDefault();
+                    this.showLoadModal();
+                    break;
+                case (cmd && e.key.toLowerCase() === 'n'):
+                    e.preventDefault();
+                    this.handleClear();
+                    break;
+            }
+        });
+    }
+
+    bindTitleInput() {
+        const titleInput = document.getElementById('reportTitle');
+        if (titleInput) {
+            titleInput.addEventListener('input', () => {
+                this.updateSaveStatus('Unsaved …');
+            });
+        }
+    }
+
+    startAutosave() {
+        // Autosave stub - check every 60s for unsaved changes
+        setInterval(() => {
+            const saveStatus = document.getElementById('saveStatus');
+            if (saveStatus && saveStatus.textContent === 'Unsaved …' && this.currentResult) {
+                // Future: auto-save logic here
+                console.log('Autosave stub: Would save here');
+            }
+        }, 60000);
+    }
+
+    updateSaveStatus(status) {
+        const saveStatus = document.getElementById('saveStatus');
+        if (saveStatus) {
+            saveStatus.textContent = status;
+            saveStatus.classList.add('fade-in');
+            setTimeout(() => {
+                saveStatus.classList.remove('fade-in');
+            }, 300);
+        }
     }
 
     async handleExport() {
@@ -513,6 +598,14 @@ class ComplianceToolkit {
         if (checksumEl) {
             checksumEl.textContent = '';
         }
+        
+        const titleInput = document.getElementById('reportTitle');
+        if (titleInput) {
+            titleInput.value = '';
+            titleInput.placeholder = 'Untitled Report';
+        }
+        
+        this.updateSaveStatus('Saved');
 
         const noResults = document.getElementById('noResults');
         if (noResults) {
@@ -696,6 +789,14 @@ class ComplianceToolkit {
 
             const result = await response.json();
             this.showSuccess(`Report "${name}" saved successfully!`);
+            
+            // Update title input and save status
+            const titleInput = document.getElementById('reportTitle');
+            if (titleInput) {
+                titleInput.value = name;
+            }
+            this.updateSaveStatus('Saved ✓');
+            
             return result;
 
         } catch (error) {
@@ -866,6 +967,7 @@ class ComplianceToolkit {
 
             this.currentResult = {
                 id: report.id,
+                name: report.name,
                 payload: metadata,
                 structured: { 
                     html: report.htmlContent,
@@ -876,6 +978,14 @@ class ComplianceToolkit {
             };
 
             this.saveCurrentResult();
+            
+            // Update title input and save status
+            const titleInput = document.getElementById('reportTitle');
+            if (titleInput) {
+                titleInput.value = report.name || 'Untitled Report';
+            }
+            this.updateSaveStatus('Saved ✓');
+            
             this.showSuccess(`Report "${report.name}" loaded successfully!`);
 
         } catch (error) {
@@ -903,6 +1013,102 @@ class ComplianceToolkit {
             console.error('Delete error:', error);
             this.showError(error.message || 'Failed to delete report');
         }
+    }
+
+    // ========================================================
+    // POWER MENU ACTIONS
+    // ========================================================
+    validateInputs() {
+        const requiredFields = [
+            { id: 'entityType', label: 'Business Entity Type' },
+            { id: 'filingType', label: 'Filing Type' },
+            { id: 'deadline', label: 'Filing Deadline' }
+        ];
+
+        let hasErrors = false;
+        requiredFields.forEach(field => {
+            const input = document.getElementById(field.id);
+            if (!input || !input.value.trim()) {
+                if (input) {
+                    input.style.border = '2px solid var(--primary)';
+                    setTimeout(() => {
+                        input.style.border = '';
+                    }, 2000);
+                }
+                hasErrors = true;
+            }
+        });
+
+        if (hasErrors) {
+            this.showError('Some required fields are empty. They have been highlighted.');
+        } else {
+            this.showSuccess('Validation complete. All required fields are filled.');
+        }
+    }
+
+    showSaveAsModal() {
+        if (!this.currentResult) {
+            this.showError('No report to save. Generate a report first.');
+            return;
+        }
+        this.showSaveModal();
+    }
+
+    renameReport() {
+        if (!this.currentResult || !this.currentResult.id) {
+            this.showError('No saved report to rename. Please save the report first.');
+            return;
+        }
+
+        const newName = prompt('Enter new report name:', this.currentResult.name || 'Compliance Report');
+        if (!newName || !newName.trim()) {
+            return;
+        }
+
+        this.showError('Rename functionality coming soon. Use Save As for now.');
+    }
+
+    async duplicateReport() {
+        if (!this.currentResult) {
+            this.showError('No report to duplicate. Generate a report first.');
+            return;
+        }
+
+        const originalName = this.currentResult.name || this.generateReportName();
+        const duplicateName = originalName + ' (copy)';
+        
+        try {
+            await this.saveReportToDatabase(duplicateName);
+        } catch (error) {
+            console.error('Duplicate error:', error);
+        }
+    }
+
+    recalculateChecksum() {
+        if (!this.currentResult?.structured?.html) {
+            this.showError('No report content to calculate checksum.');
+            return;
+        }
+
+        const payload = JSON.stringify(this.currentResult.payload || {});
+        const html = this.currentResult.structured.html;
+        const combined = payload + html;
+        const newChecksum = this.checksum(combined);
+
+        this.currentResult.checksum = newChecksum;
+        this.saveCurrentResult();
+
+        const checksumEl = document.getElementById('results-checksum');
+        if (checksumEl) {
+            checksumEl.textContent = `checksum: ${newChecksum}`;
+        }
+
+        this.showSuccess(`Checksum recalculated: ${newChecksum}`);
+    }
+
+    openDocumentation() {
+        window.open('https://yourbizguru.com/complipilot/help', '_blank');
+        this.showSuccess('Opening documentation in new tab...');
     }
 }
 
