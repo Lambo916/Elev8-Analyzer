@@ -657,6 +657,25 @@ class ComplianceToolkit {
                 throw new Error('No report to save');
             }
 
+            // Check for existing report with same name
+            const listResponse = await fetch('/api/reports/list?toolkit=complipilot', {
+                headers: {
+                    'X-Owner-Id': this.ownerId
+                }
+            });
+
+            if (listResponse.ok) {
+                const reports = await listResponse.json();
+                const existingReport = reports.find(r => r.name === name);
+                
+                if (existingReport) {
+                    const confirmOverwrite = confirm(`A report named "${name}" already exists. Do you want to overwrite it?`);
+                    if (!confirmOverwrite) {
+                        return; // User cancelled, don't save
+                    }
+                }
+            }
+
             const payload = {
                 name: name,
                 entityName: this.currentResult.payload?.entityName || '',
