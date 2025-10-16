@@ -466,10 +466,11 @@ Generate ONLY a JSON object:
     }
   });
 
-  // Get a specific report by ID
+  // Get a specific report by ID (with ownership validation)
   app.get("/api/reports/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const { ownerId, userId } = getCaller(req);
       
       const [report] = await db
         .select()
@@ -482,11 +483,61 @@ Generate ONLY a JSON object:
         });
       }
 
+      // Validate ownership
+      const hasAccess = (report.ownerId && report.ownerId === ownerId) || 
+                        (report.userId && report.userId === userId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: "Access denied.",
+        });
+      }
+
       res.json(report);
     } catch (error: any) {
       console.error("Error retrieving report:", error);
       res.status(500).json({
         error: "Failed to retrieve report.",
+      });
+    }
+  });
+
+  // Delete a specific report by ID (with ownership validation)
+  app.delete("/api/reports/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { ownerId, userId } = getCaller(req);
+      
+      const [report] = await db
+        .select()
+        .from(complianceReports)
+        .where(eq(complianceReports.id, id));
+
+      if (!report) {
+        return res.status(404).json({
+          error: "Report not found.",
+        });
+      }
+
+      // Validate ownership
+      const hasAccess = (report.ownerId && report.ownerId === ownerId) || 
+                        (report.userId && report.userId === userId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: "Access denied.",
+        });
+      }
+
+      await db
+        .delete(complianceReports)
+        .where(eq(complianceReports.id, id));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting report:", error);
+      res.status(500).json({
+        error: "Failed to delete report.",
       });
     }
   });
