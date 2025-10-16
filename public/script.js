@@ -67,7 +67,25 @@ class ThemeManager {
 class ComplianceToolkit {
     constructor() {
         this.currentResult = null;
+        this.ownerId = this.getOrCreateOwnerId();
         this.init();
+    }
+
+    // ========================================================
+    // OWNER ID MANAGEMENT (Guest Ownership)
+    // ========================================================
+    getOrCreateOwnerId() {
+        let ownerId = localStorage.getItem('ybg_owner_id');
+        if (!ownerId) {
+            // Generate UUID v4
+            ownerId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            localStorage.setItem('ybg_owner_id', ownerId);
+        }
+        return ownerId;
     }
 
     init() {
