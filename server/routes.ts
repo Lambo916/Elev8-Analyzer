@@ -433,11 +433,13 @@ Generate ONLY a JSON object:
       
       const reportData = insertComplianceReportSchema.parse(req.body);
       
-      // Add ownership information
+      // Add ownership information with clean separation:
+      // - Authenticated users: store userId, clear ownerId
+      // - Legacy users: store ownerId, no userId
       const dataToInsert = {
         ...reportData,
-        ownerId: ownerId || '',
         userId: userId || null,
+        ownerId: userId ? '' : (ownerId || ''),  // Clear ownerId for authenticated users
       };
       
       const [savedReport] = await db
@@ -466,10 +468,19 @@ Generate ONLY a JSON object:
 
       const { ownerId, userId } = getCaller(req);
       
-      // Build ownership filter: match owner_id OR user_id
-      const ownershipFilter = userId 
-        ? or(eq(complianceReports.ownerId, ownerId || ''), eq(complianceReports.userId, userId))
-        : eq(complianceReports.ownerId, ownerId || '');
+      // Build ownership filter: match user_id (preferred) OR owner_id (legacy)
+      // Only include ownerId predicate if it's truthy to prevent matching all empty strings
+      let ownershipFilter;
+      if (userId) {
+        // Authenticated user - filter by userId only
+        ownershipFilter = eq(complianceReports.userId, userId);
+      } else if (ownerId) {
+        // Legacy user - filter by ownerId only
+        ownershipFilter = eq(complianceReports.ownerId, ownerId);
+      } else {
+        // No identification - return empty results
+        return res.json([]);
+      }
 
       const reports = await db
         .select({
