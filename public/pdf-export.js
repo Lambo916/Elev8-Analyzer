@@ -283,8 +283,13 @@ window.YBG_PDF = window.YBG_PDF || {};
           text: ''
         });
       } else if (trimmed.length > 0) {
+        // Check if this is a metadata line (key: value pattern near the start)
+        const isMetadata = blocks.length < 15 && // Only in first few lines
+          (trimmed.match(/^(Generated|Entity|Type|Jurisdiction|Filing|Deadline):\s*.+/) ||
+           trimmed.startsWith('**Generated:'));
+        
         blocks.push({
-          type: 'paragraph',
+          type: isMetadata ? 'metadata' : 'paragraph',
           text: line  // Keep original spacing
         });
       } else {
@@ -397,6 +402,15 @@ window.YBG_PDF = window.YBG_PDF || {};
           }
           break;
           
+        case 'metadata':
+          fontSize = 9;
+          lineHeight = 4.5;
+          textColor = TYPOGRAPHY.colorMeta;
+          // Remove ** markers for bold metadata
+          block.text = block.text.replace(/\*\*/g, '');
+          isBold = block.text.includes('Generated:');
+          break;
+          
         case 'separator':
           // Check space for separator
           if (this.needsNewPage(10)) {
@@ -485,6 +499,8 @@ window.YBG_PDF = window.YBG_PDF || {};
       // Add paragraph spacing after block
       if (block.type === 'paragraph') {
         this.yPosition += TYPOGRAPHY.paragraphSpacing * 0.6;
+      } else if (block.type === 'metadata') {
+        this.yPosition += 1; // Minimal spacing for compact metadata
       }
       
       // Reset typography
@@ -700,6 +716,29 @@ window.YBG_PDF = window.YBG_PDF || {};
       // Element nodes
       if (node.nodeType === Node.ELEMENT_NODE) {
         const tagName = node.tagName.toLowerCase();
+        
+        // Special handling for metadata sections
+        if (node.classList && node.classList.contains('pdf-header')) {
+          // Extract Generated line and checksum
+          const tinyDiv = node.querySelector('.tiny');
+          if (tinyDiv) {
+            markdown += '\n**' + tinyDiv.textContent.trim() + '**\n\n';
+          }
+          return;
+        }
+        
+        if (node.classList && node.classList.contains('doc-meta')) {
+          // Format metadata as a clean table-like structure
+          const metaItems = node.querySelectorAll('div');
+          for (const item of metaItems) {
+            const text = item.textContent.trim();
+            if (text) {
+              markdown += text + '\n';
+            }
+          }
+          markdown += '\n';
+          return;
+        }
         
         switch (tagName) {
           case 'h2':
