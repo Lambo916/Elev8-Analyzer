@@ -236,14 +236,12 @@ window.YBG_PDF = window.YBG_PDF || {};
     const pageWidth = doc.getTextWidth(pageText);
     doc.text(pageText, CONTENT.right - pageWidth, mainFooterY);
     
-    // Disclaimer below (small, muted)
+    // Disclaimer below (small, muted, left-aligned)
     doc.setFont(TYPOGRAPHY.fontFamily, "normal");
     doc.setFontSize(7); // Smaller than footer size
     doc.setTextColor(120, 120, 120); // More muted gray
     const disclaimer = "Disclaimer: For informational purposes only. Not legal, tax, or financial advice.";
-    const disclaimerWidth = doc.getTextWidth(disclaimer);
-    const disclaimerX = (CONTENT.left + CONTENT.right - disclaimerWidth) / 2; // Center the disclaimer
-    doc.text(disclaimer, disclaimerX, disclaimerY);
+    doc.text(disclaimer, CONTENT.left, disclaimerY);
     
     // Reset to body typography
     applyGlobalTypography(doc);
