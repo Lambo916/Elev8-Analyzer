@@ -61,16 +61,18 @@
                 <div class="panel-content">
                     <form id="toolkitForm" class="toolkit-form compliance-form" data-testid="form-toolkit">
                         <div class="form-group">
-                            <label for="entityName" class="form-label" data-testid="label-entity-name">
-                                Entity Name
+                            <label for="entityName" class="form-label required" data-testid="label-entity-name">
+                                Entity Name <span class="required-marker">*</span>
                             </label>
                             <input 
                                 type="text" 
                                 id="entityName" 
                                 class="form-input"
                                 placeholder="Your Company Name LLC"
+                                required
                                 data-testid="input-entity-name"
                             />
+                            <span class="error-message" id="entityNameError"></span>
                         </div>
 
                         <div class="form-group">
@@ -97,16 +99,18 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="jurisdiction" class="form-label" data-testid="label-jurisdiction">
-                                Jurisdiction (State/Country)
+                            <label for="jurisdiction" class="form-label required" data-testid="label-jurisdiction">
+                                Jurisdiction (State/Country) <span class="required-marker">*</span>
                             </label>
                             <input 
                                 type="text" 
                                 id="jurisdiction" 
                                 class="form-input"
                                 placeholder="e.g., Delaware, California, etc."
+                                required
                                 data-testid="input-jurisdiction"
                             />
+                            <span class="error-message" id="jurisdictionError"></span>
                         </div>
 
                         <div class="form-group">
