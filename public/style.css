@@ -192,9 +192,8 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    width: 48px;
     height: 48px;
-    border-radius: 50%;
+    width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
 }
@@ -1096,8 +1095,8 @@ hr,
     }
     
     .logo {
-        width: 40px;
         height: 40px;
+        width: auto;
     }
     
     .app-title {
