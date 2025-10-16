@@ -342,6 +342,8 @@ html:not(.theme-dark) .panel::before {
     right: 0;
     height: 2px;
     background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.4), transparent);
+    /* Prevent overlay from blocking header clicks */
+    pointer-events: none;
 }
 
 /* Dark theme: enhanced yellow accent on results panel */
@@ -358,6 +360,8 @@ html.theme-dark .results-panel::before {
     right: 0;
     height: 3px;
     background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.5), transparent);
+    /* Prevent overlay from blocking header clicks */
+    pointer-events: none;
 }
 
 .panel-header {
@@ -370,6 +374,10 @@ html.theme-dark .results-panel::before {
     flex-wrap: wrap;
     gap: 10px;
     overflow: visible;
+    /* Ensure header sits above content and accepts clicks */
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .results-header-content {
@@ -405,6 +413,12 @@ html:not(.theme-dark) .panel-header {
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    /* Buttons explicitly clickable (protect against rogue pointer-events) */
+    pointer-events: auto;
+}
+
+.panel-actions * {
+    pointer-events: auto;
 }
 
 /* Ensure Clear button always has transparent background */

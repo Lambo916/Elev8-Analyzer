@@ -92,6 +92,7 @@ class ComplianceToolkit {
         this.bindFormSubmit();
         this.bindActions();
         this.bindDropdownMenus();
+        this.installGlobalDropdownGuards();
         this.bindKeyboardShortcuts();
         this.bindTitleInput();
         this.loadCurrentResult();
@@ -446,13 +447,21 @@ class ComplianceToolkit {
     }
 
     bindDropdownMenus() {
-        const menuBtns = document.querySelectorAll('.menu-btn');
-        
-        menuBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Use event delegation on panel-actions for resilience
+        const actions = document.querySelector('.panel-actions');
+        if (!actions) return;
+
+        // Single listener handles all dropdown clicks via delegation
+        actions.addEventListener('click', (e) => {
+            const menuBtn = e.target.closest('.menu-btn');
+            if (menuBtn) {
+                e.preventDefault();
                 e.stopPropagation();
-                const dropdown = btn.parentElement;
+                
+                const dropdown = menuBtn.parentElement;
                 const menuContent = dropdown.querySelector('.menu-content');
+                
+                if (!menuContent) return;
                 
                 // Close all other dropdowns
                 document.querySelectorAll('.menu-content.show').forEach(menu => {
@@ -463,9 +472,20 @@ class ComplianceToolkit {
                 
                 // Toggle this dropdown
                 menuContent.classList.toggle('show');
-            });
-        });
+                return;
+            }
 
+            // Close dropdown when clicking menu item
+            const menuItem = e.target.closest('.menu-content button');
+            if (menuItem) {
+                document.querySelectorAll('.menu-content.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+    }
+
+    installGlobalDropdownGuards() {
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.menu-dropdown')) {
@@ -475,13 +495,13 @@ class ComplianceToolkit {
             }
         });
 
-        // Close dropdown when clicking menu item
-        document.querySelectorAll('.menu-content button').forEach(btn => {
-            btn.addEventListener('click', () => {
+        // Close dropdowns on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
                 document.querySelectorAll('.menu-content.show').forEach(menu => {
                     menu.classList.remove('show');
                 });
-            });
+            }
         });
     }
 
