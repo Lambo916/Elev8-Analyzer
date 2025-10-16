@@ -7,7 +7,16 @@ import OpenAI from "openai";
 import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 import { db } from "./db";
 import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or, and } from "drizzle-orm";
+import type { Request } from "express";
+
+// Helper function to extract caller identity from request
+function getCaller(req: Request) {
+  return {
+    ownerId: (req.headers['x-owner-id'] as string) || null,
+    userId: (req as any).user?.id || null
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from public folder
