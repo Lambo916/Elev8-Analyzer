@@ -494,6 +494,11 @@ class ComplianceToolkit {
     }
 
     handleClear() {
+        // Confirmation dialog to prevent accidental data loss
+        if (!confirm('Are you sure you want to clear the current results? This cannot be undone.')) {
+            return;
+        }
+
         const resultsContainer = document.getElementById('resultsContainer');
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
@@ -507,7 +512,7 @@ class ComplianceToolkit {
         this.currentResult = null;
         localStorage.removeItem('currentResult');
         
-        this.showSuccess('History cleared');
+        this.showSuccess('Results cleared');
     }
 
     // ========================================================
