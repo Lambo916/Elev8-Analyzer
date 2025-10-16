@@ -229,21 +229,19 @@
                 <div class="panel-header">
                     <div class="results-header-content">
                         <h2 data-testid="text-results-header">Results</h2>
-                        <input id="reportTitle" class="title-input" placeholder="Untitled Report" data-testid="input-report-title" />
-                        <span id="saveStatus" class="status-tag" data-testid="text-save-status">Saved</span>
-                        <small id="results-checksum" class="checksum" style="color: rgb(var(--text-muted)); font-size: 11px; margin-left: 8px;"></small>
+                        <small id="results-checksum" style="color: rgb(var(--text-muted)); font-size: 11px; margin-left: 8px;"></small>
                     </div>
                     <div class="panel-actions">
                         <!-- File Menu -->
                         <div class="menu-dropdown">
-                            <button type="button" class="action-btn menu-btn" data-testid="button-file-menu">
+                            <button class="action-btn menu-btn" data-testid="button-file-menu">
                                 File ▾
                             </button>
                             <div class="menu-content" data-testid="menu-file">
-                                <button type="button" id="saveReportBtn" data-testid="button-save-report">
+                                <button id="saveReportBtn" data-testid="button-save-report">
                                     Save Report
                                 </button>
-                                <button type="button" id="loadReportBtn" data-testid="button-load-report">
+                                <button id="loadReportBtn" data-testid="button-load-report">
                                     Load Report
                                 </button>
                             </div>
@@ -251,46 +249,21 @@
 
                         <!-- Export Menu -->
                         <div class="menu-dropdown">
-                            <button type="button" class="action-btn menu-btn" data-testid="button-export-menu">
+                            <button class="action-btn menu-btn" data-testid="button-export-menu">
                                 Export ▾
                             </button>
                             <div class="menu-content" data-testid="menu-export">
-                                <button type="button" id="exportPdfBtn" data-testid="button-export-pdf">
+                                <button id="exportPdfBtn" data-testid="button-export-pdf">
                                     Export PDF
                                 </button>
-                                <button type="button" id="copyAllBtn" data-testid="button-copy-all">
+                                <button id="copyAllBtn" data-testid="button-copy-all">
                                     Copy All
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Power Menu -->
-                        <div class="menu-dropdown">
-                            <button type="button" class="action-btn menu-btn" data-testid="button-power-menu">
-                                ⋯ More ▾
-                            </button>
-                            <div class="menu-content" data-testid="menu-power">
-                                <button type="button" id="validateInputs" data-testid="button-validate-inputs">
-                                    Validate Inputs
-                                </button>
-                                <button type="button" id="renameReport" data-testid="button-rename-report">
-                                    Rename Report
-                                </button>
-                                <button type="button" id="duplicateReport" data-testid="button-duplicate-report">
-                                    Duplicate Report
-                                </button>
-                                <button type="button" id="recalcChecksum" data-testid="button-recalc-checksum">
-                                    Recalculate Checksum
-                                </button>
-                                <button type="button" id="openDocs" data-testid="button-open-docs">
-                                    Documentation / Help
                                 </button>
                             </div>
                         </div>
 
                         <!-- Clear Button (standalone) -->
                         <button 
-                            type="button"
                             id="clearBtn" 
                             class="clear-btn"
                             title="Clear all results"
@@ -303,8 +276,7 @@
                 <div class="panel-content">
                     <div id="resultsContainer" class="results-container" data-testid="container-results">
                         <div class="no-results" id="noResults" data-testid="text-no-results">
-                            <p style="font-size: 16px; margin-bottom: 12px;">Generate to begin your compliance guide</p>
-                            <p style="font-size: 14px; color: rgb(var(--text-muted));">Tip: ⌘+S to save • ⌘+O to open</p>
+                            No results yet. Enter your request and click Generate to get started.
                         </div>
                     </div>
                 </div>

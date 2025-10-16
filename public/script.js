@@ -92,12 +92,7 @@ class ComplianceToolkit {
         this.bindFormSubmit();
         this.bindActions();
         this.bindDropdownMenus();
-        this.installGlobalDropdownGuards();
-        this.bindKeyboardShortcuts();
-        this.bindTitleInput();
         this.loadCurrentResult();
-        this.startAutosave();
-        this.bindHeaderResize();
     }
 
     // ========================================================
@@ -311,9 +306,6 @@ class ComplianceToolkit {
                 resultsContainer.innerHTML = html;
             }
 
-            // Wrap tables for responsive scrolling
-            this.wrapTablesForResponsive();
-
             // Compute checksum on exact HTML
             const cs = this.checksum(html);
 
@@ -339,9 +331,6 @@ class ComplianceToolkit {
             if (noResults) {
                 noResults.style.display = 'none';
             }
-
-            // Ensure header fits after render
-            setTimeout(() => this.ensureHeaderFits(), 50);
 
             this.showSuccess('Compliance guide generated successfully!');
 
@@ -374,10 +363,6 @@ class ComplianceToolkit {
                     if (resultsContainer) {
                         resultsContainer.innerHTML = this.currentResult.structured.html;
                     }
-                    
-                    // Wrap tables for responsive scrolling
-                    this.wrapTablesForResponsive();
-                    
                     const checksumEl = document.getElementById('results-checksum');
                     if (checksumEl) {
                         checksumEl.textContent = `checksum: ${this.currentResult.checksum}`;
@@ -386,9 +371,6 @@ class ComplianceToolkit {
                     if (noResults) {
                         noResults.style.display = 'none';
                     }
-                    
-                    // Ensure header fits after render
-                    setTimeout(() => this.ensureHeaderFits(), 50);
                 }
             }
         } catch (e) {
@@ -421,47 +403,16 @@ class ComplianceToolkit {
         if (loadBtn) {
             loadBtn.addEventListener('click', () => this.showLoadModal());
         }
-
-        // Power Menu Actions
-        const validateBtn = document.getElementById('validateInputs');
-        const renameBtn = document.getElementById('renameReport');
-        const duplicateBtn = document.getElementById('duplicateReport');
-        const recalcBtn = document.getElementById('recalcChecksum');
-        const docsBtn = document.getElementById('openDocs');
-
-        if (validateBtn) {
-            validateBtn.addEventListener('click', () => this.validateInputs());
-        }
-        if (renameBtn) {
-            renameBtn.addEventListener('click', () => this.renameReport());
-        }
-        if (duplicateBtn) {
-            duplicateBtn.addEventListener('click', () => this.duplicateReport());
-        }
-        if (recalcBtn) {
-            recalcBtn.addEventListener('click', () => this.recalculateChecksum());
-        }
-        if (docsBtn) {
-            docsBtn.addEventListener('click', () => this.openDocumentation());
-        }
     }
 
     bindDropdownMenus() {
-        // Use event delegation on panel-actions for resilience
-        const actions = document.querySelector('.panel-actions');
-        if (!actions) return;
-
-        // Single listener handles all dropdown clicks via delegation
-        actions.addEventListener('click', (e) => {
-            const menuBtn = e.target.closest('.menu-btn');
-            if (menuBtn) {
-                e.preventDefault();
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        
+        menuBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                
-                const dropdown = menuBtn.parentElement;
+                const dropdown = btn.parentElement;
                 const menuContent = dropdown.querySelector('.menu-content');
-                
-                if (!menuContent) return;
                 
                 // Close all other dropdowns
                 document.querySelectorAll('.menu-content.show').forEach(menu => {
@@ -472,20 +423,9 @@ class ComplianceToolkit {
                 
                 // Toggle this dropdown
                 menuContent.classList.toggle('show');
-                return;
-            }
-
-            // Close dropdown when clicking menu item
-            const menuItem = e.target.closest('.menu-content button');
-            if (menuItem) {
-                document.querySelectorAll('.menu-content.show').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-            }
+            });
         });
-    }
 
-    installGlobalDropdownGuards() {
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.menu-dropdown')) {
@@ -495,122 +435,13 @@ class ComplianceToolkit {
             }
         });
 
-        // Close dropdowns on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+        // Close dropdown when clicking menu item
+        document.querySelectorAll('.menu-content button').forEach(btn => {
+            btn.addEventListener('click', () => {
                 document.querySelectorAll('.menu-content.show').forEach(menu => {
                     menu.classList.remove('show');
                 });
-            }
-        });
-    }
-
-    bindKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            const isMac = navigator.platform.toUpperCase().includes('MAC');
-            const cmd = isMac ? e.metaKey : e.ctrlKey;
-            
-            if (!cmd) return;
-            
-            switch (true) {
-                case (cmd && e.key === 's' && !e.shiftKey):
-                    e.preventDefault();
-                    this.showSaveModal();
-                    break;
-                case (cmd && e.key === 'S' && e.shiftKey):
-                    e.preventDefault();
-                    this.showSaveAsModal();
-                    break;
-                case (cmd && e.key.toLowerCase() === 'o'):
-                    e.preventDefault();
-                    this.showLoadModal();
-                    break;
-                case (cmd && e.key.toLowerCase() === 'n'):
-                    e.preventDefault();
-                    this.handleClear();
-                    break;
-            }
-        });
-    }
-
-    bindTitleInput() {
-        const titleInput = document.getElementById('reportTitle');
-        if (titleInput) {
-            titleInput.addEventListener('input', () => {
-                this.updateSaveStatus('Unsaved …');
             });
-        }
-    }
-
-    startAutosave() {
-        // Autosave stub - check every 60s for unsaved changes
-        setInterval(() => {
-            const saveStatus = document.getElementById('saveStatus');
-            if (saveStatus && saveStatus.textContent === 'Unsaved …' && this.currentResult) {
-                // Future: auto-save logic here
-                console.log('Autosave stub: Would save here');
-            }
-        }, 60000);
-    }
-
-    updateSaveStatus(status) {
-        const saveStatus = document.getElementById('saveStatus');
-        if (saveStatus) {
-            saveStatus.textContent = status;
-            saveStatus.classList.add('fade-in');
-            setTimeout(() => {
-                saveStatus.classList.remove('fade-in');
-            }, 300);
-        }
-    }
-
-    bindHeaderResize() {
-        // Bind resize event
-        window.addEventListener('resize', () => this.ensureHeaderFits());
-        // Initial check
-        setTimeout(() => this.ensureHeaderFits(), 100);
-    }
-
-    ensureHeaderFits() {
-        const header = document.querySelector('.panel-header');
-        const checksum = document.querySelector('.checksum');
-        const actions = document.querySelector('.panel-actions');
-        
-        if (!header || !actions) return;
-
-        // Helper to check if header is overflowing
-        const isOverflowing = () => header.scrollWidth > header.clientWidth + 2;
-
-        // If header is overflowing, hide checksum first (keeps actions visible)
-        if (isOverflowing() && checksum) {
-            checksum.style.display = 'none';
-        }
-
-        // If still overflowing, allow actions to take full row
-        if (isOverflowing()) {
-            actions.style.flexBasis = '100%';
-            actions.style.justifyContent = 'flex-start';
-        } else {
-            actions.style.flexBasis = '';
-            actions.style.justifyContent = '';
-        }
-    }
-
-    wrapTablesForResponsive() {
-        const resultsContainer = document.getElementById('resultsContainer');
-        if (!resultsContainer) return;
-
-        const tables = resultsContainer.querySelectorAll('table');
-        tables.forEach(table => {
-            // Skip if already wrapped
-            if (table.parentElement && table.parentElement.classList.contains('table-wrap')) {
-                return;
-            }
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'table-wrap';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
         });
     }
 
@@ -682,14 +513,6 @@ class ComplianceToolkit {
         if (checksumEl) {
             checksumEl.textContent = '';
         }
-        
-        const titleInput = document.getElementById('reportTitle');
-        if (titleInput) {
-            titleInput.value = '';
-            titleInput.placeholder = 'Untitled Report';
-        }
-        
-        this.updateSaveStatus('Saved');
 
         const noResults = document.getElementById('noResults');
         if (noResults) {
@@ -873,14 +696,6 @@ class ComplianceToolkit {
 
             const result = await response.json();
             this.showSuccess(`Report "${name}" saved successfully!`);
-            
-            // Update title input and save status
-            const titleInput = document.getElementById('reportTitle');
-            if (titleInput) {
-                titleInput.value = name;
-            }
-            this.updateSaveStatus('Saved ✓');
-            
             return result;
 
         } catch (error) {
@@ -1032,9 +847,6 @@ class ComplianceToolkit {
                 resultsContainer.innerHTML = report.htmlContent;
             }
 
-            // Wrap tables for responsive scrolling
-            this.wrapTablesForResponsive();
-
             const checksumEl = document.getElementById('results-checksum');
             if (checksumEl && report.checksum) {
                 checksumEl.textContent = `checksum: ${report.checksum}`;
@@ -1045,9 +857,6 @@ class ComplianceToolkit {
                 noResults.style.display = 'none';
             }
 
-            // Ensure header fits after render
-            setTimeout(() => this.ensureHeaderFits(), 50);
-
             let metadata = {};
             try {
                 metadata = JSON.parse(report.metadata || '{}');
@@ -1057,7 +866,6 @@ class ComplianceToolkit {
 
             this.currentResult = {
                 id: report.id,
-                name: report.name,
                 payload: metadata,
                 structured: { 
                     html: report.htmlContent,
@@ -1068,14 +876,6 @@ class ComplianceToolkit {
             };
 
             this.saveCurrentResult();
-            
-            // Update title input and save status
-            const titleInput = document.getElementById('reportTitle');
-            if (titleInput) {
-                titleInput.value = report.name || 'Untitled Report';
-            }
-            this.updateSaveStatus('Saved ✓');
-            
             this.showSuccess(`Report "${report.name}" loaded successfully!`);
 
         } catch (error) {
@@ -1103,102 +903,6 @@ class ComplianceToolkit {
             console.error('Delete error:', error);
             this.showError(error.message || 'Failed to delete report');
         }
-    }
-
-    // ========================================================
-    // POWER MENU ACTIONS
-    // ========================================================
-    validateInputs() {
-        const requiredFields = [
-            { id: 'entityType', label: 'Business Entity Type' },
-            { id: 'filingType', label: 'Filing Type' },
-            { id: 'deadline', label: 'Filing Deadline' }
-        ];
-
-        let hasErrors = false;
-        requiredFields.forEach(field => {
-            const input = document.getElementById(field.id);
-            if (!input || !input.value.trim()) {
-                if (input) {
-                    input.style.border = '2px solid var(--primary)';
-                    setTimeout(() => {
-                        input.style.border = '';
-                    }, 2000);
-                }
-                hasErrors = true;
-            }
-        });
-
-        if (hasErrors) {
-            this.showError('Some required fields are empty. They have been highlighted.');
-        } else {
-            this.showSuccess('Validation complete. All required fields are filled.');
-        }
-    }
-
-    showSaveAsModal() {
-        if (!this.currentResult) {
-            this.showError('No report to save. Generate a report first.');
-            return;
-        }
-        this.showSaveModal();
-    }
-
-    renameReport() {
-        if (!this.currentResult || !this.currentResult.id) {
-            this.showError('No saved report to rename. Please save the report first.');
-            return;
-        }
-
-        const newName = prompt('Enter new report name:', this.currentResult.name || 'Compliance Report');
-        if (!newName || !newName.trim()) {
-            return;
-        }
-
-        this.showError('Rename functionality coming soon. Use Save As for now.');
-    }
-
-    async duplicateReport() {
-        if (!this.currentResult) {
-            this.showError('No report to duplicate. Generate a report first.');
-            return;
-        }
-
-        const originalName = this.currentResult.name || this.generateReportName();
-        const duplicateName = originalName + ' (copy)';
-        
-        try {
-            await this.saveReportToDatabase(duplicateName);
-        } catch (error) {
-            console.error('Duplicate error:', error);
-        }
-    }
-
-    recalculateChecksum() {
-        if (!this.currentResult?.structured?.html) {
-            this.showError('No report content to calculate checksum.');
-            return;
-        }
-
-        const payload = JSON.stringify(this.currentResult.payload || {});
-        const html = this.currentResult.structured.html;
-        const combined = payload + html;
-        const newChecksum = this.checksum(combined);
-
-        this.currentResult.checksum = newChecksum;
-        this.saveCurrentResult();
-
-        const checksumEl = document.getElementById('results-checksum');
-        if (checksumEl) {
-            checksumEl.textContent = `checksum: ${newChecksum}`;
-        }
-
-        this.showSuccess(`Checksum recalculated: ${newChecksum}`);
-    }
-
-    openDocumentation() {
-        window.open('https://yourbizguru.com/complipilot/help', '_blank');
-        this.showSuccess('Opening documentation in new tab...');
     }
 }
 
