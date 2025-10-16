@@ -211,8 +211,8 @@ window.YBG_PDF = window.YBG_PDF || {};
     const dateStr = `${now.toLocaleDateString()} • ${now.toLocaleTimeString()}`;
     doc.text(dateStr, x + logoSize + 4, y + 12);
     
-    // Add subtle brand-colored divider line below header
-    const dividerY = y + 16;
+    // Add subtle brand-colored divider line below header with proper spacing
+    const dividerY = y + 18;  // Increased spacing from 16 to 18
     doc.setDrawColor(79, 195, 247); // Light blue brand color
     doc.setLineWidth(0.3);
     doc.line(CONTENT.left, dividerY, CONTENT.right, dividerY);
