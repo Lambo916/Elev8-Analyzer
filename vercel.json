@@ -1,7 +1,11 @@
 {
   "version": 2,
-  "name": "complipilot",
+  "builds": [
+    { "src": "dist/index.js", "use": "@vercel/node" },
+    { "src": "dist/client/**", "use": "@vercel/static" }
+  ],
   "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/api/(.*)", "dest": "/dist/index.js" },
+    { "src": "/(.*)", "dest": "/dist/client/index.html" }
   ]
 }
