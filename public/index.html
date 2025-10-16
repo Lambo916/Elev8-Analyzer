@@ -229,6 +229,8 @@
                 <div class="panel-header">
                     <div class="results-header-content">
                         <h2 data-testid="text-results-header">Results</h2>
+                        <input id="reportTitle" class="title-input" placeholder="Untitled Report" data-testid="input-report-title" />
+                        <span id="saveStatus" class="status-tag" data-testid="text-save-status">Saved</span>
                         <small id="results-checksum" style="color: rgb(var(--text-muted)); font-size: 11px; margin-left: 8px;"></small>
                     </div>
                     <div class="panel-actions">
@@ -258,6 +260,30 @@
                                 </button>
                                 <button id="copyAllBtn" data-testid="button-copy-all">
                                     Copy All
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Power Menu -->
+                        <div class="menu-dropdown">
+                            <button class="action-btn menu-btn" data-testid="button-power-menu">
+                                ⋯ More ▾
+                            </button>
+                            <div class="menu-content" data-testid="menu-power">
+                                <button id="validateInputs" data-testid="button-validate-inputs">
+                                    Validate Inputs
+                                </button>
+                                <button id="renameReport" data-testid="button-rename-report">
+                                    Rename Report
+                                </button>
+                                <button id="duplicateReport" data-testid="button-duplicate-report">
+                                    Duplicate Report
+                                </button>
+                                <button id="recalcChecksum" data-testid="button-recalc-checksum">
+                                    Recalculate Checksum
+                                </button>
+                                <button id="openDocs" data-testid="button-open-docs">
+                                    Documentation / Help
                                 </button>
                             </div>
                         </div>

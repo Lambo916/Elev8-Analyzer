@@ -697,7 +697,7 @@ html.theme-dark .submit-btn:hover {
     border: 1px solid rgba(var(--border), 0.3);
     border-radius: var(--border-radius-sm);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 160px;
+    min-width: 180px;
     z-index: 1000;
     overflow: hidden;
 }
@@ -734,6 +734,54 @@ html.theme-dark .submit-btn:hover {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Report Title Input & Save Status */
+.title-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: rgb(var(--text));
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    padding: 4px 8px;
+    margin-left: 12px;
+    max-width: 200px;
+    transition: all 0.2s ease;
+}
+
+.title-input:hover {
+    border-bottom-color: rgba(var(--border), 0.3);
+}
+
+.title-input:focus {
+    outline: none;
+    border-bottom-color: var(--primary);
+    background: rgba(var(--card), 0.3);
+}
+
+.status-tag {
+    font-size: var(--font-size-xs);
+    color: rgb(var(--text-muted));
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(var(--card), 0.5);
+    transition: opacity 0.3s ease;
+    font-weight: 500;
+}
+
+.status-tag.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 
