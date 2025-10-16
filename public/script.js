@@ -676,12 +676,16 @@ class ComplianceToolkit {
                 deadline: this.currentResult.payload?.deadline || '',
                 htmlContent: this.currentResult.structured?.html || '',
                 checksum: this.currentResult.checksum || '',
-                metadata: JSON.stringify(this.currentResult.payload || {})
+                metadata: JSON.stringify(this.currentResult.payload || {}),
+                toolkitCode: 'complipilot'
             };
 
             const response = await fetch('/api/reports/save', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Owner-Id': this.ownerId
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -722,7 +726,11 @@ class ComplianceToolkit {
         }, { once: true });
 
         try {
-            const response = await fetch('/api/reports/list');
+            const response = await fetch('/api/reports/list?toolkit=complipilot', {
+                headers: {
+                    'X-Owner-Id': this.ownerId
+                }
+            });
             if (!response.ok) {
                 throw new Error('Failed to load reports');
             }
@@ -823,7 +831,11 @@ class ComplianceToolkit {
 
     async loadReportFromDatabase(id) {
         try {
-            const response = await fetch(`/api/reports/${id}`);
+            const response = await fetch(`/api/reports/${id}`, {
+                headers: {
+                    'X-Owner-Id': this.ownerId
+                }
+            });
             if (!response.ok) {
                 throw new Error('Failed to load report');
             }
@@ -875,7 +887,10 @@ class ComplianceToolkit {
     async deleteReport(id) {
         try {
             const response = await fetch(`/api/reports/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'X-Owner-Id': this.ownerId
+                }
             });
 
             if (!response.ok) {
