@@ -413,9 +413,23 @@ Generate ONLY a JSON object:
     }
   });
 
-  // List all saved reports
+  // List all saved reports (filtered by toolkit and ownership)
   app.get("/api/reports/list", async (req, res) => {
     try {
+      const toolkit = req.query.toolkit as string;
+      if (!toolkit) {
+        return res.status(400).json({
+          error: "toolkit query parameter is required",
+        });
+      }
+
+      const { ownerId, userId } = getCaller(req);
+      
+      // Build ownership filter: match owner_id OR user_id
+      const ownershipFilter = userId 
+        ? or(eq(complianceReports.ownerId, ownerId || ''), eq(complianceReports.userId, userId))
+        : eq(complianceReports.ownerId, ownerId || '');
+
       const reports = await db
         .select({
           id: complianceReports.id,
@@ -429,6 +443,10 @@ Generate ONLY a JSON object:
           createdAt: complianceReports.createdAt,
         })
         .from(complianceReports)
+        .where(and(
+          eq(complianceReports.toolkitCode, toolkit),
+          ownershipFilter
+        ))
         .orderBy(desc(complianceReports.createdAt));
 
       res.json(reports);
