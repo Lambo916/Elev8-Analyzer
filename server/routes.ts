@@ -397,11 +397,19 @@ Generate ONLY a JSON object:
   // Save a compliance report
   app.post("/api/reports/save", async (req, res) => {
     try {
+      const { ownerId, userId } = getCaller(req);
       const reportData = insertComplianceReportSchema.parse(req.body);
+      
+      // Add ownership information
+      const dataToInsert = {
+        ...reportData,
+        ownerId: ownerId || '',
+        userId: userId || null,
+      };
       
       const [savedReport] = await db
         .insert(complianceReports)
-        .values(reportData)
+        .values(dataToInsert)
         .returning();
 
       res.json(savedReport);
