@@ -9,18 +9,43 @@ import { db } from "./db";
 import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
 import { eq, desc, or, and } from "drizzle-orm";
 import type { Request } from "express";
+import { getUserId, hasAccess } from "./auth";
 
 // Helper function to extract caller identity from request
 function getCaller(req: Request) {
+  // Get authenticated user ID from Supabase
+  const userId = (req as any).user?.id || null;
+  // Fallback to ownerId for backwards compatibility
+  const ownerId = (req.headers['x-owner-id'] as string) || null;
+  
   return {
-    ownerId: (req.headers['x-owner-id'] as string) || null,
-    userId: (req as any).user?.id || null
+    ownerId,
+    userId
   };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from public folder
   app.use(express.static(path.join(process.cwd(), "public")));
+  
+  // Auth config endpoint (public)
+  app.get("/api/auth/config", (req, res) => {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseAnonKey) {
+      res.json({
+        supabaseUrl,
+        supabaseAnonKey,
+        authEnabled: true
+      });
+    } else {
+      res.json({
+        authEnabled: false,
+        message: "Authentication service not configured"
+      });
+    }
+  });
   
   // Initialize OpenAI client
   const rawApiKey = process.env.OPENAI_API_KEY;

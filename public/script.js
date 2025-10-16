@@ -67,12 +67,26 @@ class ThemeManager {
 class ComplianceToolkit {
     constructor() {
         this.currentResult = null;
-        this.ownerId = this.getOrCreateOwnerId();
+        this.auth = window.supabaseAuth || null;
+        this.ownerId = this.getOrCreateOwnerId(); // Keep for backwards compatibility
         this.init();
     }
 
     // ========================================================
-    // OWNER ID MANAGEMENT (Guest Ownership)
+    // AUTHENTICATION HEADERS
+    // ========================================================
+    getAuthHeaders() {
+        // Use Supabase auth if available, fallback to ownerId
+        if (this.auth) {
+            return this.auth.getAuthHeaders();
+        }
+        
+        // Fallback for backwards compatibility
+        return this.ownerId ? { 'X-Owner-Id': this.ownerId } : {};
+    }
+
+    // ========================================================
+    // OWNER ID MANAGEMENT (Guest Ownership - Backwards Compatibility)
     // ========================================================
     getOrCreateOwnerId() {
         let ownerId = localStorage.getItem('ybg_owner_id');
@@ -660,7 +674,7 @@ class ComplianceToolkit {
             // Check for existing report with same name
             const listResponse = await fetch('/api/reports/list?toolkit=complipilot', {
                 headers: {
-                    'X-Owner-Id': this.ownerId
+                    ...this.getAuthHeaders()
                 }
             });
 
@@ -693,7 +707,7 @@ class ComplianceToolkit {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Owner-Id': this.ownerId
+                    ...this.getAuthHeaders()
                 },
                 body: JSON.stringify(payload)
             });
@@ -737,7 +751,7 @@ class ComplianceToolkit {
         try {
             const response = await fetch('/api/reports/list?toolkit=complipilot', {
                 headers: {
-                    'X-Owner-Id': this.ownerId
+                    ...this.getAuthHeaders()
                 }
             });
             if (!response.ok) {
@@ -842,7 +856,7 @@ class ComplianceToolkit {
         try {
             const response = await fetch(`/api/reports/${id}`, {
                 headers: {
-                    'X-Owner-Id': this.ownerId
+                    ...this.getAuthHeaders()
                 }
             });
             if (!response.ok) {
@@ -893,7 +907,7 @@ class ComplianceToolkit {
             const response = await fetch(`/api/reports/${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-Owner-Id': this.ownerId
+                    ...this.getAuthHeaders()
                 }
             });
 
