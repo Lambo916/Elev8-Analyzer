@@ -368,17 +368,6 @@ window.YBG_PDF = window.YBG_PDF || {};
           if (this.yPosition > CONTENT.top + 10) {
             this.yPosition += TYPOGRAPHY.paragraphSpacing;
           }
-          
-          // Add brand-colored left border accent for h2
-          this.doc.setDrawColor(79, 195, 247); // Light blue brand color
-          this.doc.setLineWidth(0.8);
-          const borderHeight = lineHeight * 0.8;
-          this.doc.line(
-            CONTENT.left - 3,
-            this.yPosition - borderHeight * 0.3,
-            CONTENT.left - 3,
-            this.yPosition + borderHeight * 0.7
-          );
           break;
           
         case 'h3':
