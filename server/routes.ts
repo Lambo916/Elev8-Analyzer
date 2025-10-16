@@ -398,6 +398,14 @@ Generate ONLY a JSON object:
   app.post("/api/reports/save", async (req, res) => {
     try {
       const { ownerId, userId } = getCaller(req);
+      
+      // Require at least one ownership identifier
+      if (!ownerId && !userId) {
+        return res.status(400).json({
+          error: "Owner identification required. Please refresh and try again.",
+        });
+      }
+      
       const reportData = insertComplianceReportSchema.parse(req.body);
       
       // Add ownership information
