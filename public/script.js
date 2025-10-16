@@ -292,7 +292,7 @@ class ComplianceToolkit {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || 'Generation failed');
+                throw new Error(error.error || 'We couldn\'t generate your compliance report. Please try again.');
             }
 
             const generated = await response.json();
@@ -437,7 +437,7 @@ class ComplianceToolkit {
 
     async handleExport() {
         if (!this.currentResult?.structured?.html) {
-            this.showError('No results to export');
+            this.showError('Please generate a compliance report first before exporting.');
             return;
         }
 
@@ -453,11 +453,11 @@ class ComplianceToolkit {
                 }], { mode: 'single' });
                 this.showSuccess('PDF exported successfully!');
             } else {
-                this.showError('PDF export not available');
+                this.showError('PDF export is temporarily unavailable. Please try again later.');
             }
         } catch (error) {
             console.error('Export error:', error);
-            this.showError('Failed to export PDF');
+            this.showError('We couldn\'t export your PDF. Please try again.');
         }
     }
 
@@ -484,13 +484,13 @@ class ComplianceToolkit {
 
     handleCopy() {
         if (!this.currentResult?.structured?.text) {
-            this.showError('No results to copy');
+            this.showError('Please generate a compliance report first before copying.');
             return;
         }
         
         navigator.clipboard.writeText(this.currentResult.structured.text)
             .then(() => this.showSuccess('Results copied to clipboard!'))
-            .catch(() => this.showError('Failed to copy results'));
+            .catch(() => this.showError('We couldn\'t copy to your clipboard. Please try again.'));
     }
 
     handleClear() {
@@ -700,7 +700,7 @@ class ComplianceToolkit {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || 'Failed to save report');
+                throw new Error(error.error || 'We couldn\'t save your report. Please try again.');
             }
 
             const result = await response.json();
@@ -709,7 +709,7 @@ class ComplianceToolkit {
 
         } catch (error) {
             console.error('Save error:', error);
-            this.showError(error.message || 'Failed to save report');
+            this.showError(error.message || 'We couldn\'t save your report. Please try again.');
             throw error;
         }
     }
@@ -741,7 +741,7 @@ class ComplianceToolkit {
                 }
             });
             if (!response.ok) {
-                throw new Error('Failed to load reports');
+                throw new Error('We couldn\'t load your saved reports. Please try again.');
             }
 
             const reports = await response.json();
@@ -831,8 +831,8 @@ class ComplianceToolkit {
             console.error('Load modal error:', error);
             listContainer.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: rgb(var(--error));" data-testid="text-load-error">
-                    <p style="font-size: 16px; margin-bottom: 8px;">Failed to load reports</p>
-                    <p style="font-size: 14px;">${this.escapeHtml(error.message)}</p>
+                    <p style="font-size: 16px; margin-bottom: 8px;">We couldn't load your saved reports</p>
+                    <p style="font-size: 14px;">Please check your connection and try again.</p>
                 </div>
             `;
         }
@@ -846,7 +846,7 @@ class ComplianceToolkit {
                 }
             });
             if (!response.ok) {
-                throw new Error('Failed to load report');
+                throw new Error('We couldn\'t load this report. Please try again.');
             }
 
             const report = await response.json();
@@ -884,7 +884,7 @@ class ComplianceToolkit {
 
         } catch (error) {
             console.error('Load error:', error);
-            this.showError(error.message || 'Failed to load report');
+            this.showError(error.message || 'We couldn\'t load this report. Please try again.');
         }
     }
 
@@ -898,14 +898,14 @@ class ComplianceToolkit {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to delete report');
+                throw new Error('We couldn\'t delete this report. Please try again.');
             }
 
             this.showSuccess('Report deleted successfully');
 
         } catch (error) {
             console.error('Delete error:', error);
-            this.showError(error.message || 'Failed to delete report');
+            this.showError(error.message || 'We couldn\'t delete this report. Please try again.');
         }
     }
 }
