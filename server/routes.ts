@@ -542,6 +542,23 @@ Generate ONLY a JSON object:
     }
   });
 
+  // Stub endpoint for merging guest owner to authenticated user (future feature)
+  app.post("/api/merge-owner", async (req, res) => {
+    try {
+      const { owner_id } = req.body;
+      
+      // No-op for now - will implement when authentication is added
+      // This will merge reports from owner_id to the authenticated user's userId
+      
+      res.json({ success: true, message: "Merge endpoint ready for future auth implementation" });
+    } catch (error: any) {
+      console.error("Error in merge-owner:", error);
+      res.status(500).json({
+        error: "Merge operation failed.",
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
