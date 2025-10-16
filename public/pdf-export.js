@@ -345,7 +345,7 @@ window.YBG_PDF = window.YBG_PDF || {};
       this.doc = doc;
       this.iconDataUrl = iconDataUrl;
       this.pageNum = 1;
-      this.yPosition = CONTENT.top;
+      this.yPosition = CONTENT.top + 2; // Add 2mm breathing room after header divider
       this.totalPages = 1;
     }
     
@@ -500,7 +500,12 @@ window.YBG_PDF = window.YBG_PDF || {};
       if (block.type === 'paragraph') {
         this.yPosition += TYPOGRAPHY.paragraphSpacing * 0.6;
       } else if (block.type === 'metadata') {
-        this.yPosition += 1; // Minimal spacing for compact metadata
+        // Tighter spacing for metadata, but add extra after Generated line
+        if (block.text.includes('Generated:')) {
+          this.yPosition += 2.5; // Extra space after Generated line
+        } else {
+          this.yPosition += 0.8; // Minimal spacing for other metadata
+        }
       }
       
       // Reset typography
