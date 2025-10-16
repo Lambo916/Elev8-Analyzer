@@ -203,16 +203,8 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.setTextColor(...TYPOGRAPHY.colorHeading);
     doc.text(getToolkitName(), x + logoSize + 4, y + 7);
     
-    // Date/time
-    doc.setFont(TYPOGRAPHY.fontFamily, "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...TYPOGRAPHY.colorMeta);
-    const now = new Date();
-    const dateStr = `${now.toLocaleDateString()} • ${now.toLocaleTimeString()}`;
-    doc.text(dateStr, x + logoSize + 4, y + 12);
-    
     // Add subtle brand-colored divider line below header
-    const dividerY = y + 15;  // Position between timestamp and content
+    const dividerY = y + 15;  // Position below title
     doc.setDrawColor(79, 195, 247); // Light blue brand color
     doc.setLineWidth(0.3);
     doc.line(CONTENT.left, dividerY, CONTENT.right, dividerY);
