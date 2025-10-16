@@ -96,6 +96,7 @@ class ComplianceToolkit {
         this.bindTitleInput();
         this.loadCurrentResult();
         this.startAutosave();
+        this.bindHeaderResize();
     }
 
     // ========================================================
@@ -309,6 +310,9 @@ class ComplianceToolkit {
                 resultsContainer.innerHTML = html;
             }
 
+            // Wrap tables for responsive scrolling
+            this.wrapTablesForResponsive();
+
             // Compute checksum on exact HTML
             const cs = this.checksum(html);
 
@@ -334,6 +338,9 @@ class ComplianceToolkit {
             if (noResults) {
                 noResults.style.display = 'none';
             }
+
+            // Ensure header fits after render
+            setTimeout(() => this.ensureHeaderFits(), 50);
 
             this.showSuccess('Compliance guide generated successfully!');
 
@@ -366,6 +373,10 @@ class ComplianceToolkit {
                     if (resultsContainer) {
                         resultsContainer.innerHTML = this.currentResult.structured.html;
                     }
+                    
+                    // Wrap tables for responsive scrolling
+                    this.wrapTablesForResponsive();
+                    
                     const checksumEl = document.getElementById('results-checksum');
                     if (checksumEl) {
                         checksumEl.textContent = `checksum: ${this.currentResult.checksum}`;
@@ -374,6 +385,9 @@ class ComplianceToolkit {
                     if (noResults) {
                         noResults.style.display = 'none';
                     }
+                    
+                    // Ensure header fits after render
+                    setTimeout(() => this.ensureHeaderFits(), 50);
                 }
             }
         } catch (e) {
@@ -528,6 +542,56 @@ class ComplianceToolkit {
                 saveStatus.classList.remove('fade-in');
             }, 300);
         }
+    }
+
+    bindHeaderResize() {
+        // Bind resize event
+        window.addEventListener('resize', () => this.ensureHeaderFits());
+        // Initial check
+        setTimeout(() => this.ensureHeaderFits(), 100);
+    }
+
+    ensureHeaderFits() {
+        const header = document.querySelector('.panel-header');
+        const checksum = document.querySelector('.checksum');
+        const actions = document.querySelector('.panel-actions');
+        
+        if (!header || !actions) return;
+
+        // Helper to check if header is overflowing
+        const isOverflowing = () => header.scrollWidth > header.clientWidth + 2;
+
+        // If header is overflowing, hide checksum first (keeps actions visible)
+        if (isOverflowing() && checksum) {
+            checksum.style.display = 'none';
+        }
+
+        // If still overflowing, allow actions to take full row
+        if (isOverflowing()) {
+            actions.style.flexBasis = '100%';
+            actions.style.justifyContent = 'flex-start';
+        } else {
+            actions.style.flexBasis = '';
+            actions.style.justifyContent = '';
+        }
+    }
+
+    wrapTablesForResponsive() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (!resultsContainer) return;
+
+        const tables = resultsContainer.querySelectorAll('table');
+        tables.forEach(table => {
+            // Skip if already wrapped
+            if (table.parentElement && table.parentElement.classList.contains('table-wrap')) {
+                return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrap';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
     }
 
     async handleExport() {
@@ -948,6 +1012,9 @@ class ComplianceToolkit {
                 resultsContainer.innerHTML = report.htmlContent;
             }
 
+            // Wrap tables for responsive scrolling
+            this.wrapTablesForResponsive();
+
             const checksumEl = document.getElementById('results-checksum');
             if (checksumEl && report.checksum) {
                 checksumEl.textContent = `checksum: ${report.checksum}`;
@@ -957,6 +1024,9 @@ class ComplianceToolkit {
             if (noResults) {
                 noResults.style.display = 'none';
             }
+
+            // Ensure header fits after render
+            setTimeout(() => this.ensureHeaderFits(), 50);
 
             let metadata = {};
             try {
