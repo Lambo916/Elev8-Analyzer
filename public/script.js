@@ -472,7 +472,7 @@ class ComplianceToolkit {
             <div class="pdf-wrapper">
                 <div class="pdf-header">
                     <div class="brand">CompliPilot</div>
-                    <div class="tiny">Generated: ${stamp} • checksum: ${r.checksum}</div>
+                    <div class="tiny">Generated: ${stamp}</div>
                 </div>
                 ${innerHTML}
                 <div class="footer">
