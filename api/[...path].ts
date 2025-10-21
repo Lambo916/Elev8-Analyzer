@@ -1,10 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+import sanitizeHtml from 'sanitize-html';
 import { getDb } from './db-serverless';
 import { validateEnv } from './config';
 import OpenAI from 'openai';
 import { resolveProfile } from '../shared/filing-profiles';
 import { complianceReports, insertComplianceReportSchema } from '../shared/schema';
-import { eq, desc, or, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Validate environment on cold start
 try {
@@ -12,6 +14,18 @@ try {
 } catch (error: any) {
   console.error('Environment validation failed:', error.message);
 }
+
+// Initialize Supabase client (fail hard if not configured)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('CRITICAL: SUPABASE_URL and SUPABASE_ANON_KEY must be set in production');
+}
+
+const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Initialize OpenAI
 let openai: OpenAI | null = null;
@@ -26,23 +40,88 @@ function getOpenAI() {
   return openai;
 }
 
-// Helper to get caller identity
-function getCaller(req: VercelRequest) {
-  const userId = (req.headers['x-user-id'] as string) || null;
-  const ownerId = (req.headers['x-owner-id'] as string) || null;
-  return { userId, ownerId };
+// Sanitize HTML content to prevent XSS
+function sanitizeHtmlContent(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      '*': ['style', 'class'],
+    },
+  });
 }
 
-// Helper for CORS
-function setCORS(res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+// Authenticate request and extract user ID (fail hard on errors)
+async function authenticateRequest(req: VercelRequest): Promise<string> {
+  const authHeader = req.headers.authorization as string;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!supabase) {
+    // Fail hard if Supabase is not configured
+    console.error('CRITICAL: Supabase client not initialized');
+    throw new Error('AUTH_SERVICE_UNAVAILABLE');
+  }
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.warn('Invalid auth token:', error?.message);
+      throw new Error('UNAUTHORIZED');
+    }
+
+    return user.id;
+  } catch (error: any) {
+    console.error('Auth error:', error);
+    if (error.message === 'UNAUTHORIZED' || error.message === 'AUTH_SERVICE_UNAVAILABLE') {
+      throw error;
+    }
+    throw new Error('UNAUTHORIZED');
+  }
+}
+
+// Helper for CORS (production-locked with development support)
+function setCORS(res: VercelResponse, origin: string | undefined) {
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  const allowedOrigins = [
+    'https://compli.yourbizguru.com',
+    /https:\/\/.*\.vercel\.app$/,
+  ];
+
+  // In development, also allow localhost
+  if (isDevelopment && origin?.startsWith('http://localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    return;
+  }
+
+  let allowOrigin = false;
+  if (origin) {
+    allowOrigin = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      }
+      return allowed.test(origin);
+    });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://compli.yourbizguru.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-id, x-owner-id');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
 // Main handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCORS(res);
+  const origin = req.headers.origin as string | undefined;
+  setCORS(res, origin);
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -53,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = url.split('?')[0];
 
   try {
-    // Route: /api/db/ping (Database health check)
+    // Route: /api/db/ping (Database health check - public)
     if (path.endsWith('/api/db/ping') && method === 'GET') {
       try {
         const db = getDb();
@@ -67,22 +146,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error("Database health check failed:", error);
         return res.status(500).json({ 
           ok: false, 
-          error: error.message,
+          error: 'Database connection failed',
           database: 'disconnected'
         });
       }
     }
 
-    // Route: /api/auth/config
+    // Route: /api/auth/config (public - anon key is meant to be public)
     if (path.endsWith('/api/auth/config') && method === 'GET') {
-      return res.json({
-        supabaseUrl: process.env.SUPABASE_URL,
-        supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-        authEnabled: !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY)
-      });
+      if (supabaseUrl && supabaseAnonKey) {
+        return res.json({
+          supabaseUrl,
+          supabaseAnonKey,
+          authEnabled: true
+        });
+      } else {
+        return res.json({
+          authEnabled: false,
+          message: "Authentication service not configured"
+        });
+      }
     }
 
-    // Route: /api/generate (POST)
+    // Route: /api/generate (POST) - public (for report generation)
     if (path.endsWith('/api/generate') && method === 'POST') {
       const { formData } = req.body as any;
       
@@ -136,119 +222,108 @@ Deadline: ${formData.deadline || 'Not specified'}`;
       return res.json({ reportHtml });
     }
 
-    // Route: /api/reports/save (POST)
-    if (path.endsWith('/api/reports/save') && method === 'POST') {
-      const { userId, ownerId } = getCaller(req);
-      
-      // Require at least one identifier
-      if (!userId && !ownerId) {
-        return res.status(401).json({ error: 'Authentication required. Please provide x-user-id or x-owner-id header.' });
+    // All routes below require authentication
+    let userId: string;
+    try {
+      userId = await authenticateRequest(req);
+    } catch (error: any) {
+      if (error.message === 'AUTH_SERVICE_UNAVAILABLE') {
+        return res.status(503).json({ error: 'Authentication service temporarily unavailable.' });
       }
+      return res.status(401).json({ error: 'Authentication required.' });
+    }
 
-      const data = {
-        ...req.body,
-        userId: userId || undefined,
-        ownerId: ownerId || undefined,
+    // Route: /api/reports/save (POST) - requires authentication
+    if (path.endsWith('/api/reports/save') && method === 'POST') {
+      // Strip any user-controlled fields that should be server-controlled
+      const { userId: _, ownerId: __, ...sanitizedBody } = req.body as any;
+      
+      // Validate request body
+      const reportData = insertComplianceReportSchema.parse(sanitizedBody);
+      
+      // Sanitize HTML content and enforce ownership
+      const finalData = {
+        ...reportData,
+        htmlContent: sanitizeHtmlContent(reportData.htmlContent),
+        userId: userId, // Always use authenticated user ID
+        ownerId: '', // Clear ownerId in production
       };
 
-      const validated = insertComplianceReportSchema.parse(data);
       const db = getDb();
-      const [report] = await db.insert(complianceReports).values(validated).returning();
+      const [report] = await db.insert(complianceReports).values(finalData).returning();
       
       return res.json(report);
     }
 
-    // Route: /api/reports/list (GET)
+    // Route: /api/reports/list (GET) - requires authentication
     if (path.endsWith('/api/reports/list') && method === 'GET') {
-      const { userId, ownerId } = getCaller(req);
       const toolkitCode = req.query.toolkit as string;
 
-      // Require toolkit parameter
       if (!toolkitCode) {
         return res.status(400).json({ error: 'toolkit query parameter is required' });
       }
 
-      // Require at least one identifier
-      if (!userId && !ownerId) {
-        return res.status(401).json({ error: 'Authentication required. Please provide x-user-id or x-owner-id header.' });
-      }
-
       const db = getDb();
       
-      // Build WHERE clause dynamically without undefined values
-      const whereConditions: any[] = [eq(complianceReports.toolkitCode, toolkitCode)];
-      
-      // Add ownership filter
-      if (userId && ownerId) {
-        whereConditions.push(or(
-          eq(complianceReports.userId, userId),
-          eq(complianceReports.ownerId, ownerId)
-        ));
-      } else if (userId) {
-        whereConditions.push(eq(complianceReports.userId, userId));
-      } else if (ownerId) {
-        whereConditions.push(eq(complianceReports.ownerId, ownerId));
-      }
-
       const reports = await db
-        .select()
+        .select({
+          id: complianceReports.id,
+          name: complianceReports.name,
+          entityName: complianceReports.entityName,
+          entityType: complianceReports.entityType,
+          jurisdiction: complianceReports.jurisdiction,
+          filingType: complianceReports.filingType,
+          deadline: complianceReports.deadline,
+          checksum: complianceReports.checksum,
+          createdAt: complianceReports.createdAt,
+        })
         .from(complianceReports)
-        .where(and(...whereConditions))
+        .where(and(
+          eq(complianceReports.toolkitCode, toolkitCode),
+          eq(complianceReports.userId, userId)
+        ))
         .orderBy(desc(complianceReports.createdAt));
 
       return res.json(reports);
     }
 
-    // Route: /api/reports/:id (GET)
+    // Route: /api/reports/:id (GET) - requires authentication
     if (path.match(/\/api\/reports\/[^/]+$/) && method === 'GET') {
-      const { userId, ownerId } = getCaller(req);
       const id = path.split('/').pop() as string;
-
       const db = getDb();
+      
       const [report] = await db
         .select()
         .from(complianceReports)
-        .where(eq(complianceReports.id, id));
+        .where(and(
+          eq(complianceReports.id, id),
+          eq(complianceReports.userId, userId)
+        ));
 
       if (!report) {
         return res.status(404).json({ error: 'Report not found' });
-      }
-
-      // Verify ownership
-      if (report.userId !== userId && report.ownerId !== ownerId) {
-        return res.status(403).json({ error: 'Access denied' });
       }
 
       return res.json(report);
     }
 
-    // Route: /api/reports/:id (DELETE)
+    // Route: /api/reports/:id (DELETE) - requires authentication
     if (path.match(/\/api\/reports\/[^/]+$/) && method === 'DELETE') {
-      const { userId, ownerId } = getCaller(req);
       const id = path.split('/').pop() as string;
-
-      // Require authentication
-      if (!userId && !ownerId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
       const db = getDb();
       
-      // First verify ownership
-      const [report] = await db
-        .select()
-        .from(complianceReports)
-        .where(eq(complianceReports.id, id));
+      const result = await db
+        .delete(complianceReports)
+        .where(and(
+          eq(complianceReports.id, id),
+          eq(complianceReports.userId, userId)
+        ))
+        .returning();
 
-      if (!report) {
-        return res.status(404).json({ error: 'Report not found' });
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Report not found or access denied' });
       }
 
-      if (report.userId !== userId && report.ownerId !== ownerId) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-
-      await db.delete(complianceReports).where(eq(complianceReports.id, id));
       return res.json({ success: true });
     }
 
@@ -257,8 +332,10 @@ Deadline: ${formData.deadline || 'Not specified'}`;
 
   } catch (error: any) {
     console.error('API error:', error);
+    
+    // Production-safe error response
     return res.status(500).json({ 
-      error: error.message || 'Internal server error' 
+      error: 'Something went wrong. Please try again later.' 
     });
   }
 }
