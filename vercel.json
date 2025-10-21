@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npx vite build",
-  "outputDirectory": "dist/client",
+  "buildCommand": "echo 'No build required for static HTML'",
+  "outputDirectory": "public",
   "framework": null,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
 }
