@@ -1,11 +1,12 @@
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as schema from '../shared/schema';
 
 // Serverless-compatible database client for Vercel
-// Uses HTTP-based Neon driver optimized for edge/serverless environments
+// Uses PostgreSQL connection pool optimized for serverless environments
 
 let db: ReturnType<typeof drizzle> | null = null;
+let pool: Pool | null = null;
 
 export function getDb() {
   if (!db) {
@@ -15,11 +16,31 @@ export function getDb() {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
-    const sql = neon(databaseUrl);
-    db = drizzle(sql, { schema });
+    // Create PostgreSQL connection pool for Supabase
+    // Configuration optimized for serverless/edge environments
+    pool = new Pool({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false // Required for Supabase connections
+      },
+      max: 1, // Serverless functions should use minimal connections
+      idleTimeoutMillis: 10000, // Close idle connections quickly in serverless
+      connectionTimeoutMillis: 10000, // Timeout after 10 seconds if can't connect
+    });
+
+    db = drizzle(pool, { schema });
   }
 
   return db;
+}
+
+// Cleanup function for serverless environments
+export async function closeDb() {
+  if (pool) {
+    await pool.end();
+    pool = null;
+    db = null;
+  }
 }
 
 // Export for direct use
