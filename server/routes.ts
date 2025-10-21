@@ -4,24 +4,23 @@ import { storage } from "./storage";
 import express from "express";
 import path from "path";
 import OpenAI from "openai";
+import sanitizeHtml from "sanitize-html";
 import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 import { db } from "./db";
 import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
 import { eq, desc, or, and, sql } from "drizzle-orm";
 import type { Request } from "express";
-import { getUserId, hasAccess } from "./auth";
+import { getUserId, hasAccess, requireAuth } from "./auth";
 
-// Helper function to extract caller identity from request
-function getCaller(req: Request) {
-  // Get authenticated user ID from Supabase
-  const userId = (req as any).user?.id || null;
-  // Fallback to ownerId for backwards compatibility
-  const ownerId = (req.headers['x-owner-id'] as string) || null;
-  
-  return {
-    ownerId,
-    userId
-  };
+// Sanitize HTML content to prevent XSS
+function sanitizeHtmlContent(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      '*': ['style', 'class'],
+    },
+  });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -438,45 +437,52 @@ Generate ONLY a JSON object:
     }
   });
 
-  // Save a compliance report
-  app.post("/api/reports/save", async (req, res) => {
+  // Save a compliance report (requires authentication)
+  app.post("/api/reports/save", requireAuth, async (req, res) => {
     try {
-      const { ownerId, userId } = getCaller(req);
+      const userId = getUserId(req);
       
-      // Require at least one ownership identifier
-      if (!ownerId && !userId) {
-        return res.status(400).json({
-          error: "Owner identification required. Please refresh and try again.",
+      if (!userId) {
+        return res.status(401).json({
+          error: "Authentication required.",
         });
       }
       
       const reportData = insertComplianceReportSchema.parse(req.body);
       
-      // Add ownership information with clean separation:
-      // - Authenticated users: store userId, clear ownerId
-      // - Legacy users: store ownerId, no userId
-      const dataToInsert = {
+      // Sanitize HTML content before saving
+      const sanitizedData = {
         ...reportData,
-        userId: userId || null,
-        ownerId: userId ? '' : (ownerId || ''),  // Clear ownerId for authenticated users
+        htmlContent: sanitizeHtmlContent(reportData.htmlContent),
+        userId: userId, // Force ownership to authenticated user
+        ownerId: '', // Clear legacy ownerId field
       };
       
       const [savedReport] = await db
         .insert(complianceReports)
-        .values(dataToInsert)
+        .values(sanitizedData)
         .returning();
 
       res.json(savedReport);
     } catch (error: any) {
       console.error("Error saving report:", error);
-      res.status(400).json({
-        error: "Failed to save report. Please check your input.",
-      });
+      
+      // Production-safe error response
+      if (process.env.NODE_ENV === 'production') {
+        res.status(400).json({
+          error: "Failed to save report. Please try again.",
+        });
+      } else {
+        res.status(400).json({
+          error: "Failed to save report. Please check your input.",
+          details: error.message,
+        });
+      }
     }
   });
 
-  // List all saved reports (filtered by toolkit and ownership)
-  app.get("/api/reports/list", async (req, res) => {
+  // List all saved reports (filtered by toolkit and ownership) - requires authentication
+  app.get("/api/reports/list", requireAuth, async (req, res) => {
     try {
       const toolkit = req.query.toolkit as string;
       if (!toolkit) {
@@ -485,22 +491,15 @@ Generate ONLY a JSON object:
         });
       }
 
-      const { ownerId, userId } = getCaller(req);
+      const userId = getUserId(req);
       
-      // Build ownership filter: match user_id (preferred) OR owner_id (legacy)
-      // Only include ownerId predicate if it's truthy to prevent matching all empty strings
-      let ownershipFilter;
-      if (userId) {
-        // Authenticated user - filter by userId only
-        ownershipFilter = eq(complianceReports.userId, userId);
-      } else if (ownerId) {
-        // Legacy user - filter by ownerId only
-        ownershipFilter = eq(complianceReports.ownerId, ownerId);
-      } else {
-        // No identification - return empty results
-        return res.json([]);
+      if (!userId) {
+        return res.status(401).json({
+          error: "Authentication required.",
+        });
       }
 
+      // Filter by authenticated user's ID only
       const reports = await db
         .select({
           id: complianceReports.id,
@@ -516,92 +515,114 @@ Generate ONLY a JSON object:
         .from(complianceReports)
         .where(and(
           eq(complianceReports.toolkitCode, toolkit),
-          ownershipFilter
+          eq(complianceReports.userId, userId)
         ))
         .orderBy(desc(complianceReports.createdAt));
 
       res.json(reports);
     } catch (error: any) {
       console.error("Error listing reports:", error);
-      res.status(500).json({
-        error: "Failed to retrieve reports.",
-      });
+      
+      // Production-safe error response
+      if (process.env.NODE_ENV === 'production') {
+        res.status(500).json({
+          error: "Failed to retrieve reports. Please try again.",
+        });
+      } else {
+        res.status(500).json({
+          error: "Failed to retrieve reports.",
+          details: error.message,
+        });
+      }
     }
   });
 
-  // Get a specific report by ID (with ownership validation)
-  app.get("/api/reports/:id", async (req, res) => {
+  // Get a specific report by ID (with ownership validation) - requires authentication
+  app.get("/api/reports/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { ownerId, userId } = getCaller(req);
+      const userId = getUserId(req);
+      
+      if (!userId) {
+        return res.status(401).json({
+          error: "Authentication required.",
+        });
+      }
       
       const [report] = await db
         .select()
         .from(complianceReports)
-        .where(eq(complianceReports.id, id));
+        .where(and(
+          eq(complianceReports.id, id),
+          eq(complianceReports.userId, userId) // Enforce ownership
+        ));
 
       if (!report) {
         return res.status(404).json({
           error: "Report not found.",
-        });
-      }
-
-      // Validate ownership
-      const hasAccess = (report.ownerId && report.ownerId === ownerId) || 
-                        (report.userId && report.userId === userId);
-      
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: "Access denied.",
         });
       }
 
       res.json(report);
     } catch (error: any) {
       console.error("Error retrieving report:", error);
-      res.status(500).json({
-        error: "Failed to retrieve report.",
-      });
+      
+      // Production-safe error response
+      if (process.env.NODE_ENV === 'production') {
+        res.status(500).json({
+          error: "Failed to retrieve report. Please try again.",
+        });
+      } else {
+        res.status(500).json({
+          error: "Failed to retrieve report.",
+          details: error.message,
+        });
+      }
     }
   });
 
-  // Delete a specific report by ID (with ownership validation)
-  app.delete("/api/reports/:id", async (req, res) => {
+  // Delete a specific report by ID (with ownership validation) - requires authentication
+  app.delete("/api/reports/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { ownerId, userId } = getCaller(req);
+      const userId = getUserId(req);
       
-      const [report] = await db
-        .select()
-        .from(complianceReports)
-        .where(eq(complianceReports.id, id));
-
-      if (!report) {
-        return res.status(404).json({
-          error: "Report not found.",
+      if (!userId) {
+        return res.status(401).json({
+          error: "Authentication required.",
         });
       }
-
-      // Validate ownership
-      const hasAccess = (report.ownerId && report.ownerId === ownerId) || 
-                        (report.userId && report.userId === userId);
       
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: "Access denied.",
-        });
-      }
-
-      await db
+      // Delete only if owned by the authenticated user
+      const result = await db
         .delete(complianceReports)
-        .where(eq(complianceReports.id, id));
+        .where(and(
+          eq(complianceReports.id, id),
+          eq(complianceReports.userId, userId) // Enforce ownership
+        ))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          error: "Report not found or access denied.",
+        });
+      }
 
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error deleting report:", error);
-      res.status(500).json({
-        error: "Failed to delete report.",
-      });
+      
+      // Production-safe error response
+      if (process.env.NODE_ENV === 'production') {
+        res.status(500).json({
+          error: "Failed to delete report. Please try again.",
+        });
+      } else {
+        res.status(500).json({
+          error: "Failed to delete report.",
+          details: error.message,
+        });
+      }
     }
   });
 

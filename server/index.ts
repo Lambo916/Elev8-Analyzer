@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { authenticateToken } from "./auth";
@@ -6,6 +8,50 @@ import { authenticateToken } from "./auth";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// CORS Configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = isProduction 
+  ? [
+      'https://compli.yourbizguru.com',
+      /\.vercel\.app$/, // Allow Vercel preview deployments
+    ]
+  : ['http://localhost:5000', 'http://localhost:5173']; // Development
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      }
+      return allowed.test(origin);
+    });
+    
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Owner-Id'],
+  credentials: true,
+}));
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // 60 requests per minute
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes
+app.use('/api/', apiLimiter);
 
 // Add authentication middleware
 app.use(authenticateToken);
@@ -43,12 +89,28 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Production-safe error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    // Log full error server-side
+    console.error('Server error:', {
+      message: err.message,
+      stack: err.stack,
+      status,
+    });
+    
+    // Return generic message in production, detailed in development
+    if (process.env.NODE_ENV === 'production') {
+      res.status(status).json({ 
+        error: 'Something went wrong. Please try again later.' 
+      });
+    } else {
+      res.status(status).json({ 
+        error: err.message || 'Internal Server Error',
+        stack: err.stack 
+      });
+    }
   });
 
   // importantly only setup vite in development and after
@@ -71,6 +133,8 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    log(`CORS: ${isProduction ? 'Production (locked)' : 'Development (permissive)'}`);
     
     // Log API key detection (masked)
     const apiKey = process.env.OPENAI_API_KEY;

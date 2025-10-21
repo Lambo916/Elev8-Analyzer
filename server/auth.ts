@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -20,8 +19,24 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+    // In development, allow bypass for testing
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
     if (!token) {
-      // No token provided - user is anonymous
+      if (isDevelopment) {
+        // Development bypass: allow anonymous requests with x-owner-id
+        const ownerId = req.headers['x-owner-id'] as string;
+        if (ownerId) {
+          (req as any).user = {
+            id: ownerId,
+            email: null,
+            metadata: { dev_bypass: true }
+          };
+          return next();
+        }
+      }
+      
+      // No token and not dev bypass - anonymous
       (req as any).user = null;
       return next();
     }
@@ -36,7 +51,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      // Invalid token - treat as anonymous
+      // Invalid token
       console.warn('Invalid auth token:', error?.message);
       (req as any).user = null;
       return next();
@@ -67,29 +82,16 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-// Get user ID from request (Supabase user or fallback to ownerId)
+// Get user ID from request (production-ready)
 export function getUserId(req: Request): string | null {
   const user = (req as any).user;
-  if (user?.id) {
-    return user.id;
-  }
-  
-  // Fallback to ownerId for backwards compatibility during migration
-  const ownerId = req.headers['x-owner-id'] as string;
-  return ownerId || null;
+  return user?.id || null;
 }
 
 // Check if user has access to a resource
-export function hasAccess(resourceUserId: string | null, resourceOwnerId: string | null, currentUserId: string | null, currentOwnerId: string | null): boolean {
-  // If resource has a userId, check against current user
-  if (resourceUserId && currentUserId) {
-    return resourceUserId === currentUserId;
+export function hasAccess(resourceUserId: string | null, currentUserId: string | null): boolean {
+  if (!resourceUserId || !currentUserId) {
+    return false;
   }
-  
-  // Fallback to ownerId check for backwards compatibility
-  if (resourceOwnerId && currentOwnerId) {
-    return resourceOwnerId === currentOwnerId;
-  }
-  
-  return false;
+  return resourceUserId === currentUserId;
 }
