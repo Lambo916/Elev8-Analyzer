@@ -7,7 +7,7 @@ import OpenAI from "openai";
 import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 import { db } from "./db";
 import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
-import { eq, desc, or, and } from "drizzle-orm";
+import { eq, desc, or, and, sql } from "drizzle-orm";
 import type { Request } from "express";
 import { getUserId, hasAccess } from "./auth";
 
@@ -28,6 +28,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from public folder
   app.use(express.static(path.join(process.cwd(), "public")));
   
+  // Database health check endpoint
+  app.get("/api/db/ping", async (req, res) => {
+    try {
+      const result = await db.execute(sql`SELECT 1 as ping`);
+      res.json({ 
+        ok: true, 
+        result: result.rows[0],
+        database: 'connected'
+      });
+    } catch (error: any) {
+      console.error("Database health check failed:", error);
+      res.status(500).json({ 
+        ok: false, 
+        error: error.message,
+        database: 'disconnected'
+      });
+    }
+  });
+
   // Auth config endpoint (public)
   app.get("/api/auth/config", (req, res) => {
     const supabaseUrl = process.env.SUPABASE_URL;

@@ -4,7 +4,7 @@ import { validateEnv } from './config';
 import OpenAI from 'openai';
 import { resolveProfile } from '../shared/filing-profiles';
 import { complianceReports, insertComplianceReportSchema } from '../shared/schema';
-import { eq, desc, or, and } from 'drizzle-orm';
+import { eq, desc, or, and, sql } from 'drizzle-orm';
 
 // Validate environment on cold start
 try {
@@ -53,6 +53,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = url.split('?')[0];
 
   try {
+    // Route: /api/db/ping (Database health check)
+    if (path.endsWith('/api/db/ping') && method === 'GET') {
+      try {
+        const db = getDb();
+        const result = await db.execute(sql`SELECT 1 as ping`);
+        return res.json({ 
+          ok: true, 
+          result: result.rows[0],
+          database: 'connected'
+        });
+      } catch (error: any) {
+        console.error("Database health check failed:", error);
+        return res.status(500).json({ 
+          ok: false, 
+          error: error.message,
+          database: 'disconnected'
+        });
+      }
+    }
+
     // Route: /api/auth/config
     if (path.endsWith('/api/auth/config') && method === 'GET') {
       return res.json({
