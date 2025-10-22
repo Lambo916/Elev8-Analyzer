@@ -16,7 +16,11 @@ const allowedOrigins = isProduction
       'https://compli.yourbizguru.com',
       /\.vercel\.app$/, // Allow Vercel preview deployments
     ]
-  : ['http://localhost:5000', 'http://localhost:5173']; // Development
+  : [
+      'http://localhost:5000', 
+      'http://localhost:5173',
+      /\.replit\.dev$/, // Allow Replit development domains
+    ];
 
 app.use(cors({
   origin: (origin, callback) => {
