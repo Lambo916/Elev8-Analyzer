@@ -118,10 +118,14 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
-// Main handler
+// Main handler - wrapped in comprehensive error handling
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // ALWAYS set CORS headers first
   const origin = req.headers.origin as string | undefined;
   setCORS(res, origin);
+
+  // Ensure JSON content type for all responses
+  res.setHeader('Content-Type', 'application/json');
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -130,6 +134,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { url = '', method = 'GET' } = req;
   const path = url.split('?')[0];
+
+  // Log incoming request for debugging
+  console.log(`[Vercel] ${method} ${path}`);
 
   try {
     // Route: /api/db/ping (Database health check - public)
@@ -170,11 +177,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Route: /api/generate (POST) - public (for report generation)
     if (path.endsWith('/api/generate') && method === 'POST') {
+      console.log('[Vercel] /api/generate - Starting report generation');
+      
       const { formData } = req.body as any;
       
       if (!formData) {
+        console.error('[Vercel] /api/generate - Missing formData');
         return res.status(400).json({ error: 'formData is required' });
       }
+
+      console.log('[Vercel] /api/generate - Form data:', {
+        filingType: formData.filingType,
+        jurisdiction: formData.jurisdiction,
+        entityType: formData.entityType
+      });
 
       // Try pre-built profile first
       const profile = resolveProfile(
@@ -186,6 +202,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let reportHtml = '';
       
       if (profile) {
+        console.log('[Vercel] /api/generate - Using pre-built profile:', profile.name);
+        
         // Generate HTML from profile
         const checklistHtml = profile.checklist.map(item => 
           `<li><strong>${item.label}:</strong> ${item.description}</li>`
@@ -195,30 +213,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 <h3>Requirements Checklist</h3>
 <ul>${checklistHtml}</ul>`;
       } else {
-        // Use AI
-        const ai = getOpenAI();
-        const prompt = `Generate a compliance report for:
+        console.log('[Vercel] /api/generate - Using OpenAI for report generation');
+        
+        try {
+          const ai = getOpenAI();
+          const prompt = `Generate a compliance report for:
 Entity: ${formData.entityName}
 Type: ${formData.entityType}
 Jurisdiction: ${formData.jurisdiction}
 Filing Type: ${formData.filingType}
 Deadline: ${formData.deadline || 'Not specified'}`;
 
-        const completion = await ai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{
-            role: "system",
-            content: "You are CompliPilot, a compliance assistant. Generate professional compliance reports in HTML format with structured sections."
-          }, {
-            role: "user",
-            content: prompt
-          }],
-          max_tokens: 4000,
-        });
+          console.log('[Vercel] /api/generate - Calling OpenAI API...');
+          
+          // Add timeout protection for OpenAI call (9 seconds to be safe)
+          const completion = await Promise.race([
+            ai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [{
+                role: "system",
+                content: "You are CompliPilot, a compliance assistant. Generate professional compliance reports in HTML format with structured sections."
+              }, {
+                role: "user",
+                content: prompt
+              }],
+              max_tokens: 4000,
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('OpenAI API timeout')), 9000)
+            )
+          ]) as any;
 
-        reportHtml = completion.choices[0].message.content || '';
+          console.log('[Vercel] /api/generate - OpenAI API call completed');
+          reportHtml = completion.choices[0].message.content || '';
+        } catch (error: any) {
+          console.error('[Vercel] /api/generate - OpenAI error:', error.message);
+          
+          // Return a friendly error instead of crashing
+          return res.status(500).json({ 
+            error: 'Failed to generate report. Please try again.',
+            details: error.message 
+          });
+        }
       }
 
+      console.log('[Vercel] /api/generate - Report generated successfully');
       return res.json({ reportHtml });
     }
 
@@ -331,11 +370,28 @@ Deadline: ${formData.deadline || 'Not specified'}`;
     return res.status(404).json({ error: 'Not found' });
 
   } catch (error: any) {
-    console.error('API error:', error);
-    
-    // Production-safe error response
-    return res.status(500).json({ 
-      error: 'Something went wrong. Please try again later.' 
+    console.error('[Vercel] API error:', error);
+    console.error('[Vercel] Error stack:', error.stack);
+    console.error('[Vercel] Error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code
     });
+    
+    // ALWAYS return JSON, never let Vercel show HTML error page
+    try {
+      return res.status(500).json({ 
+        error: 'Something went wrong. Please try again later.',
+        ...(process.env.NODE_ENV !== 'production' && { 
+          debug: error.message,
+          stack: error.stack 
+        })
+      });
+    } catch (jsonError) {
+      // Last resort: if JSON serialization fails, send plain text JSON
+      res.status(500).send(JSON.stringify({ 
+        error: 'Internal server error' 
+      }));
+    }
   }
 }
