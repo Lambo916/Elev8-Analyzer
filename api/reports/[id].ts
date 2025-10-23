@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { getDb } from '../db-serverless';
-import { complianceReports } from '../../shared/schema';
+import { complianceReports } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 // Initialize Supabase client

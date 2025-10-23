@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import sanitizeHtml from 'sanitize-html';
 import { getDb } from '../db-serverless';
-import { complianceReports, insertComplianceReportSchema } from '../../shared/schema';
+import { complianceReports, insertComplianceReportSchema } from '../shared/schema';
 import crypto from 'crypto';
 
 // Initialize Supabase client

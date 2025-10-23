@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { resolveProfile } from '../shared/filing-profiles';
+import { resolveProfile } from './shared/filing-profiles';
 
 // Initialize OpenAI
 let openai: OpenAI | null = null;

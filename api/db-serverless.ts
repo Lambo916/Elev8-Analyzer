@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from '../shared/schema';
+import * as schema from './shared/schema';
 
 // Serverless-compatible database client for Vercel
 // Uses PostgreSQL connection pool optimized for serverless environments

@@ -4,8 +4,8 @@ import sanitizeHtml from 'sanitize-html';
 import { getDb } from './db-serverless';
 import { validateEnv } from './config';
 import OpenAI from 'openai';
-import { resolveProfile } from '../shared/filing-profiles';
-import { complianceReports, insertComplianceReportSchema } from '../shared/schema';
+import { resolveProfile } from './shared/filing-profiles';
+import { complianceReports, insertComplianceReportSchema } from './shared/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Validate environment on cold start
