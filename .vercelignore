@@ -1,0 +1,23 @@
+# Source code files (keep shared/ for API imports)
+server/
+client/
+
+# Documentation
+*.md
+!public/*.md
+
+# Environment files (secrets are in Vercel dashboard)
+.env
+.env.*
+
+# Node modules (Vercel installs these)
+node_modules/
+
+# Build artifacts
+.vercel/
+dist/
+build/
+
+# Development files
+.replit
+replit.nix
