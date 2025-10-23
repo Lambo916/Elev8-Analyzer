@@ -1,6 +1,7 @@
-# Source code files (keep shared/ for API imports)
+# Source code files
 server/
 client/
+/shared/
 
 # Documentation
 *.md
