@@ -24,26 +24,13 @@ function sanitizeHtmlContent(html: string): string {
   });
 }
 
-// Authenticate request and extract user ID
-async function authenticateRequest(req: VercelRequest): Promise<string> {
-  const authHeader = req.headers.authorization as string;
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    throw new Error('UNAUTHORIZED');
+// Get anonymous user ID from browser-provided client ID
+function getAnonymousUserId(req: VercelRequest): string {
+  const clientId = req.headers['x-client-id'] as string;
+  if (!clientId) {
+    throw new Error('X-Client-Id header is required');
   }
-
-  if (!supabase) {
-    throw new Error('AUTH_SERVICE_UNAVAILABLE');
-  }
-
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) {
-    throw new Error('UNAUTHORIZED');
-  }
-
-  return user.id;
+  return `anon_${clientId}`;
 }
 
 // Helper for CORS
@@ -59,7 +46,7 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
   if (isDevelopment && origin?.startsWith('http://localhost')) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Client-Id');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     return;
   }
@@ -76,7 +63,7 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
 
   res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://compli.yourbizguru.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Client-Id');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
@@ -95,8 +82,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Authenticate
-    const userId = await authenticateRequest(req);
+    // Get anonymous user ID from IP (until full auth is implemented)
+    const userId = getAnonymousUserId(req);
 
     const body = req.body as any;
 
@@ -144,17 +131,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('[Vercel] /api/reports/save - Error:', error);
-
-    if (error.message === 'UNAUTHORIZED') {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    if (error.message === 'AUTH_SERVICE_UNAVAILABLE') {
-      return res.status(503).json({ error: 'Authentication service unavailable' });
-    }
     
     return res.status(500).json({ 
-      error: 'Something went wrong. Please try again later.' 
+      error: 'Something went wrong. Please try again later.',
+      ...(process.env.NODE_ENV !== 'production' && { debug: error.message })
     });
   }
 }
