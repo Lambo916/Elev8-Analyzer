@@ -62,8 +62,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Get anonymous user ID from IP (until full auth is implemented)
-    const userId = getAnonymousUserId(req);
+    // Get anonymous user ID from browser client ID (until full auth is implemented)
+    let userId;
+    try {
+      userId = getAnonymousUserId(req);
+    } catch (error: any) {
+      if (error.message === 'X-Client-Id header is required') {
+        return res.status(400).json({ error: 'X-Client-Id header is required' });
+      }
+      throw error;
+    }
 
     // Extract ID from query (Vercel provides it as query parameter for dynamic routes)
     const id = req.query.id as string;
