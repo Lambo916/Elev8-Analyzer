@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import sanitizeHtml from 'sanitize-html';
-import { getDb } from './db-serverless';
-import { validateEnv } from './config';
+import { getDb } from './db-serverless.js';
+import { validateEnv } from './config.js';
 import OpenAI from 'openai';
-import { resolveProfile } from './shared/filing-profiles';
-import { complianceReports, insertComplianceReportSchema } from './shared/schema';
+import { resolveProfile } from './shared/filing-profiles.js';
+import { complianceReports, insertComplianceReportSchema } from './shared/schema.js';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Validate environment on cold start
