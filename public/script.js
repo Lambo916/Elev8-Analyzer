@@ -110,6 +110,112 @@ class ComplianceToolkit {
     }
 
     // ========================================================
+    // USAGE TRACKING (30-report soft launch limit)
+    // ========================================================
+    async checkUsageLimit() {
+        try {
+            const response = await fetch('/api/usage/check');
+            if (!response.ok) {
+                console.warn('[Usage] Check failed, allowing generation');
+                return { allowed: true, count: 0 };
+            }
+            const data = await response.json();
+            console.log(`[Usage] Current count: ${data.reportCount}/${data.limit}`);
+            return {
+                allowed: !data.hasReachedLimit,
+                count: data.reportCount,
+                limit: data.limit
+            };
+        } catch (error) {
+            console.error('[Usage] Check error:', error);
+            return { allowed: true, count: 0 }; // Fail open
+        }
+    }
+
+    async incrementUsage() {
+        try {
+            const response = await fetch('/api/usage/increment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`[Usage] Incremented to ${data.reportCount}/${data.limit}`);
+                return data;
+            }
+        } catch (error) {
+            console.error('[Usage] Increment error:', error);
+        }
+    }
+
+    showLimitReachedAlert(count, limit) {
+        const message = `You've reached your ${limit}-report limit for the CompliPilot soft launch.`;
+        const upgradeUrl = 'https://yourbizguru.com/checkout-complipilot'; // TODO: Replace with actual GoHighLevel checkout URL
+        
+        // Create modal alert
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 32px;
+                max-width: 500px;
+                text-align: center;
+            ">
+                <h2 style="color: var(--text-primary); margin-bottom: 16px;">Report Limit Reached</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">${message}</p>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                    Please upgrade or purchase additional access to continue generating compliance reports.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <a href="${upgradeUrl}" target="_blank" style="
+                        background: var(--ybg-brand-primary);
+                        color: white;
+                        padding: 12px 24px;
+                        border-radius: 6px;
+                        text-decoration: none;
+                        font-weight: 600;
+                    ">Upgrade Now ($97)</a>
+                    <button id="closeLimit" style="
+                        background: transparent;
+                        border: 1px solid var(--border-color);
+                        color: var(--text-primary);
+                        padding: 12px 24px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                    ">Close</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const closeBtn = modal.querySelector('#closeLimit');
+        const handleClose = () => {
+            document.body.removeChild(modal);
+        };
+        
+        closeBtn?.addEventListener('click', handleClose);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) handleClose();
+        });
+    }
+
+    // ========================================================
     // CHECKSUM (djb2 hash for Panel=PDF verification)
     // ========================================================
     checksum(str) {
@@ -312,6 +418,13 @@ class ComplianceToolkit {
 
     async handleGenerate() {
         try {
+            // Check usage limit before generating
+            const usageCheck = await this.checkUsageLimit();
+            if (!usageCheck.allowed) {
+                this.showLimitReachedAlert(usageCheck.count, usageCheck.limit);
+                return;
+            }
+
             // Show loading state
             this.setLoadingState(true);
 
@@ -372,6 +485,9 @@ class ComplianceToolkit {
             }
 
             this.showSuccess('Compliance guide generated successfully!');
+
+            // Increment usage counter after successful generation
+            await this.incrementUsage();
 
         } catch (error) {
             console.error('Generation error:', error);
