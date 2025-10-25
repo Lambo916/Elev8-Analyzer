@@ -123,6 +123,18 @@ app.use((req, res, next) => {
     }
   });
 
+  // Add no-cache headers for JavaScript files in development to prevent cache issues
+  if (app.get("env") === "development") {
+    app.use((req, res, next) => {
+      if (req.url.endsWith('.js') || req.url.includes('.js?')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+      next();
+    });
+  }
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
