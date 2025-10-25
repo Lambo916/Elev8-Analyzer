@@ -42,7 +42,7 @@ function getClientIp(req: Request): string {
 }
 
 // Check usage limit (read-only check before generation)
-async function checkUsageLimit(req: Request): Promise<{ allowed: boolean; count: number }> {
+async function checkUsageLimit(req: Request, tool: string = 'grantgenie'): Promise<{ allowed: boolean; count: number }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -51,22 +51,25 @@ async function checkUsageLimit(req: Request): Promise<{ allowed: boolean; count:
       return { allowed: false, count: 30 }; // Treat as limit reached to block generation
     }
 
-    // Check current usage
+    // Check current usage for this specific tool
     const existing = await db
       .select()
       .from(usageTracking)
-      .where(eq(usageTracking.ipAddress, ipAddress))
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
       .limit(1);
 
     const currentCount = existing.length > 0 ? existing[0].reportCount : 0;
 
-    // Check against 30-report limit
+    // Check against 30-report limit per tool
     if (currentCount >= 30) {
-      console.log(`[Usage] IP ${ipAddress} has reached limit: ${currentCount}/30`);
+      console.log(`[Usage] IP ${ipAddress} has reached limit for ${tool}: ${currentCount}/30`);
       return { allowed: false, count: currentCount };
     }
 
-    console.log(`[Usage] IP ${ipAddress} current usage: ${currentCount}/30`);
+    console.log(`[Usage] IP ${ipAddress} current usage for ${tool}: ${currentCount}/30`);
     return { allowed: true, count: currentCount };
   } catch (error) {
     console.error('[Usage] Check error:', error);
@@ -76,7 +79,7 @@ async function checkUsageLimit(req: Request): Promise<{ allowed: boolean; count:
 }
 
 // Increment usage after successful generation (atomic with limit enforcement)
-async function incrementUsage(req: Request): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
+async function incrementUsage(req: Request, tool: string = 'grantgenie'): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -85,7 +88,7 @@ async function incrementUsage(req: Request): Promise<{ success: boolean; count: 
       return { success: false, count: 30, limitReached: true }; // Fail closed to prevent bypass
     }
 
-    // Atomic increment with strict limit enforcement
+    // Atomic increment with strict limit enforcement per tool
     // Only increments if count < 30 (prevents race conditions)
     const updated = await db
       .update(usageTracking)
@@ -93,12 +96,16 @@ async function incrementUsage(req: Request): Promise<{ success: boolean; count: 
         reportCount: sql`${usageTracking.reportCount} + 1`,
         lastUpdated: new Date(),
       })
-      .where(sql`${usageTracking.ipAddress} = ${ipAddress} AND ${usageTracking.reportCount} < 30`)
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool),
+        sql`${usageTracking.reportCount} < 30`
+      ))
       .returning();
 
     if (updated.length > 0) {
       // Successfully incremented
-      console.log(`[Usage] IP ${ipAddress} incremented to ${updated[0].reportCount}/30`);
+      console.log(`[Usage] IP ${ipAddress} incremented ${tool} to ${updated[0].reportCount}/30`);
       return { success: true, count: updated[0].reportCount };
     }
 
@@ -106,25 +113,29 @@ async function incrementUsage(req: Request): Promise<{ success: boolean; count: 
     const existing = await db
       .select()
       .from(usageTracking)
-      .where(eq(usageTracking.ipAddress, ipAddress))
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
       .limit(1);
 
     if (existing.length > 0) {
       // Record exists and is at/over limit
-      console.log(`[Usage] IP ${ipAddress} already at limit: ${existing[0].reportCount}/30`);
+      console.log(`[Usage] IP ${ipAddress} already at limit for ${tool}: ${existing[0].reportCount}/30`);
       return { success: false, count: existing[0].reportCount, limitReached: true };
     }
 
-    // First report for this IP - insert with count 1
+    // First report for this IP and tool - insert with count 1
     const inserted = await db
       .insert(usageTracking)
       .values({
         ipAddress,
+        tool,
         reportCount: 1,
       })
       .returning();
     
-    console.log(`[Usage] IP ${ipAddress} first report: 1/30`);
+    console.log(`[Usage] IP ${ipAddress} first ${tool} report: 1/30`);
     return { success: true, count: inserted[0].reportCount };
   } catch (error) {
     console.error('[Usage] Increment error - CRITICAL:', error);
@@ -316,15 +327,20 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
 
   // API endpoint for generating structured compliance data (HYBRID APPROACH)
   app.post("/api/generate", async (req, res) => {
+    // Determine which tool is being used (default: grantgenie for this app)
+    const tool = req.body.tool || 'grantgenie';
+    const toolName = tool === 'grantgenie' ? 'GrantGenie' : 'CompliPilot';
+    
     // Check 30-report usage limit BEFORE generation (soft launch protection)
-    const usageCheck = await checkUsageLimit(req);
+    const usageCheck = await checkUsageLimit(req, tool);
     if (!usageCheck.allowed) {
-      console.log(`[Express] /api/generate - Request blocked: usage limit reached (${usageCheck.count}/30)`);
+      console.log(`[Express] /api/generate - Request blocked: usage limit reached for ${tool} (${usageCheck.count}/30)`);
       return res.status(429).json({
-        error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+        error: `You have reached your 30-report limit for the ${toolName} soft launch. Please upgrade to continue.`,
         limitReached: true,
         count: usageCheck.count,
-        limit: 30
+        limit: 30,
+        tool
       });
     }
 
@@ -446,16 +462,17 @@ IMPORTANT:
       console.log("Grant proposal generated successfully");
 
       // Increment usage counter AFTER successful generation (atomic operation with limit enforcement)
-      const incrementResult = await incrementUsage(req);
+      const incrementResult = await incrementUsage(req, tool);
       
       // If increment failed due to limit (race condition), reject the request
       if (!incrementResult.success && incrementResult.limitReached) {
-        console.log(`[Express] /api/generate - Request completed but limit reached during increment: ${incrementResult.count}/30`);
+        console.log(`[Express] /api/generate - Request completed but limit reached during increment for ${tool}: ${incrementResult.count}/30`);
         return res.status(429).json({
-          error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+          error: `You have reached your 30-report limit for the ${toolName} soft launch. Please upgrade to continue.`,
           limitReached: true,
           count: incrementResult.count,
-          limit: 30
+          limit: 30,
+          tool
         });
       }
 
