@@ -139,7 +139,7 @@ window.YBG_PDF = window.YBG_PDF || {};
     colorBody: [51, 51, 51],      // #333
     colorHeading: [17, 17, 17],   // #111  
     colorMeta: [102, 102, 102],   // #666
-    colorAccent: [79, 195, 247]   // Brand blue
+    colorAccent: [245, 192, 74]   // Gold accent (#F5C04A)
   };
 
   // ---- Global Typography Application ---------------------------------------
@@ -177,6 +177,30 @@ window.YBG_PDF = window.YBG_PDF || {};
     }
   }
 
+  // ---- Watermark Drawing ---------------------------------------------------
+  function drawWatermark(doc, iconDataUrl) {
+    if (!iconDataUrl) return;
+    
+    try {
+      // Calculate center position for watermark
+      const watermarkSize = 80; // mm - large but subtle watermark
+      const centerX = PAGE.width / 2 - watermarkSize / 2;
+      const centerY = PAGE.height / 2 - watermarkSize / 2;
+      
+      // Set opacity to 6% (0.06) for subtle watermark
+      doc.setGState(new doc.GState({ opacity: 0.06 }));
+      
+      // Draw the logo centered on page
+      doc.addImage(iconDataUrl, "PNG", centerX, centerY, watermarkSize, watermarkSize, "", "FAST");
+      
+      // Restore full opacity for content
+      doc.setGState(new doc.GState({ opacity: 1.0 }));
+    } catch (e) {
+      // Silent fail for watermark
+      console.warn('Failed to add watermark:', e);
+    }
+  }
+
   // ---- Header Drawing ------------------------------------------------------
   function drawHeader(doc, pageNum, iconDataUrl) {
     const x = MARGINS.left;
@@ -203,9 +227,9 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.setTextColor(...TYPOGRAPHY.colorHeading);
     doc.text(getToolkitName(), x + logoSize + 4, y + 7);
     
-    // Add subtle brand-colored divider line below header
+    // Add subtle gold divider line below header
     const dividerY = y + 15;  // Position below title
-    doc.setDrawColor(79, 195, 247); // Light blue brand color
+    doc.setDrawColor(245, 192, 74); // Gold accent (#F5C04A)
     doc.setLineWidth(0.3);
     doc.line(CONTENT.left, dividerY, CONTENT.right, dividerY);
     
@@ -346,6 +370,7 @@ window.YBG_PDF = window.YBG_PDF || {};
     addNewPage() {
       this.totalPages++;
       this.pageNum = window.YBG_PDF.safeAddPage(this.doc, this.pageNum, (pageNum) => {
+        drawWatermark(this.doc, this.iconDataUrl);
         drawHeader(this.doc, pageNum, this.iconDataUrl);
       });
       this.yPosition = window.YBG_PDF.PDF_MARGINS.top;
@@ -396,7 +421,7 @@ window.YBG_PDF = window.YBG_PDF || {};
             this.addNewPage();
           }
           this.yPosition += 5;
-          this.doc.setDrawColor(230, 230, 230);
+          this.doc.setDrawColor(245, 192, 74); // Gold accent separator
           this.doc.setLineWidth(0.3);
           this.doc.line(CONTENT.left, this.yPosition, CONTENT.right, this.yPosition);
           this.yPosition += 5;
@@ -542,7 +567,8 @@ window.YBG_PDF = window.YBG_PDF || {};
     // Apply safe body style for consistent typography
     window.YBG_PDF.applyBodyStyle(doc);
     
-    // Draw first page header
+    // Draw watermark and header on first page
+    drawWatermark(doc, iconDataUrl);
     drawHeader(doc, 1, iconDataUrl);
     
     // Parse and write content
@@ -586,7 +612,8 @@ window.YBG_PDF = window.YBG_PDF || {};
     // Apply safe body style for consistent typography
     window.YBG_PDF.applyBodyStyle(doc);
     
-    // Draw first page header
+    // Draw watermark and header on first page
+    drawWatermark(doc, iconDataUrl);
     drawHeader(doc, 1, iconDataUrl);
     
     // Collect results from storage
@@ -846,7 +873,8 @@ window.YBG_PDF = window.YBG_PDF || {};
     // Apply safe body style
     window.YBG_PDF.applyBodyStyle(doc);
     
-    // Draw first page header
+    // Draw watermark and header on first page
+    drawWatermark(doc, iconDataUrl);
     drawHeader(doc, 1, iconDataUrl);
     
     // Parse and write content

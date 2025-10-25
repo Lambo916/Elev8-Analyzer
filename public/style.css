@@ -1170,6 +1170,17 @@ hr,
 }
 
 /* Checklist styles */
+.compliance-section .checklist li[title] {
+    cursor: help;
+    border-bottom: 1px dotted rgba(var(--primary-rgb), 0.3);
+    padding-bottom: 2px;
+    transition: border-color 0.2s ease;
+}
+
+.compliance-section .checklist li[title]:hover {
+    border-bottom-color: rgba(var(--primary-rgb), 0.6);
+}
+
 .checklist-container {
     display: flex;
     flex-direction: column;

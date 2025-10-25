@@ -168,11 +168,40 @@ class ComplianceToolkit {
             <hr/>
         `;
 
+        // Tooltip mapping for common checklist items
+        const tooltipMap = {
+            'EIN': 'Employer Identification Number issued by the IRS for tax purposes',
+            'Employer Identification Number': 'Federal tax ID number issued by the IRS',
+            'Articles of Incorporation': 'Original formation documents filed with the state',
+            'Articles of Organization': 'Original formation documents filed with the state for LLCs',
+            'Statement of Information': 'Required periodic filing to keep state records current',
+            'Franchise Tax': 'Annual state tax for the privilege of doing business',
+            'Registered Agent': 'Person or entity designated to receive legal documents',
+            'Operating Agreement': 'Internal document governing LLC operations and member rights',
+            'Bylaws': 'Internal rules governing corporation operations',
+            'Board Resolutions': 'Official decisions and actions recorded by the board of directors',
+            'Financial Statements': 'Documents showing the financial position of the business',
+            'Beneficial Ownership': 'Information about individuals who own or control the entity',
+            'BOI Report': 'Beneficial Ownership Information filing required by FinCEN'
+        };
+
+        // Helper function to extract tooltip from item text
+        const getTooltip = (item) => {
+            for (const [key, description] of Object.entries(tooltipMap)) {
+                if (item.includes(key)) {
+                    return description;
+                }
+            }
+            return null; // No tooltip if no match
+        };
+
         // Build sections
         const checklistItems = checklist && checklist.length > 0 ? checklist : ['[No checklist items provided]'];
-        const checklistHTML = checklistItems.map(item => 
-            `<li>${this.escapeHtml(item)}</li>`
-        ).join('');
+        const checklistHTML = checklistItems.map(item => {
+            const tooltip = getTooltip(item);
+            const titleAttr = tooltip ? ` title="${this.escapeHtml(tooltip)}"` : '';
+            return `<li${titleAttr}>${this.escapeHtml(item)}</li>`;
+        }).join('');
 
         const timelineItems = timeline && timeline.length > 0 ? timeline : [{
             milestone: '[Pending Input]', 
