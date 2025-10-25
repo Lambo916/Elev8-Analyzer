@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import express from "express";
@@ -9,8 +9,16 @@ import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 import { db } from "./db";
 import { complianceReports, insertComplianceReportSchema, type ComplianceReport } from "@shared/schema";
 import { eq, desc, or, and, sql } from "drizzle-orm";
-import type { Request } from "express";
 import { getUserId, hasAccess, requireAuth } from "./auth";
+
+// Get anonymous user ID from browser-provided client ID
+function getAnonymousUserId(req: Request): string {
+  const clientId = req.headers['x-client-id'] as string;
+  if (!clientId) {
+    throw new Error('X-Client-Id header is required');
+  }
+  return `anon_${clientId}`;
+}
 
 // Sanitize HTML content to prevent XSS
 function sanitizeHtmlContent(html: string): string {
@@ -437,15 +445,18 @@ Generate ONLY a JSON object:
     }
   });
 
-  // Save a compliance report (requires authentication)
-  app.post("/api/reports/save", requireAuth, async (req, res) => {
+  // Save a compliance report (uses browser client ID)
+  app.post("/api/reports/save", async (req, res) => {
     try {
-      const userId = getUserId(req);
-      
-      if (!userId) {
-        return res.status(401).json({
-          error: "Authentication required.",
-        });
+      // Get anonymous user ID from browser client ID
+      let userId;
+      try {
+        userId = getAnonymousUserId(req);
+      } catch (error: any) {
+        if (error.message === 'X-Client-Id header is required') {
+          return res.status(400).json({ error: 'X-Client-Id header is required' });
+        }
+        throw error;
       }
       
       const reportData = insertComplianceReportSchema.parse(req.body);
@@ -481,21 +492,24 @@ Generate ONLY a JSON object:
     }
   });
 
-  // List all saved reports (filtered by toolkit and ownership) - requires authentication
-  app.get("/api/reports/list", requireAuth, async (req, res) => {
+  // List all saved reports (filtered by toolkit and ownership) - uses browser client ID
+  app.get("/api/reports/list", async (req, res) => {
     try {
+      // Get anonymous user ID from browser client ID
+      let userId;
+      try {
+        userId = getAnonymousUserId(req);
+      } catch (error: any) {
+        if (error.message === 'X-Client-Id header is required') {
+          return res.status(400).json({ error: 'X-Client-Id header is required' });
+        }
+        throw error;
+      }
+
       const toolkit = req.query.toolkit as string;
       if (!toolkit) {
         return res.status(400).json({
           error: "toolkit query parameter is required",
-        });
-      }
-
-      const userId = getUserId(req);
-      
-      if (!userId) {
-        return res.status(401).json({
-          error: "Authentication required.",
         });
       }
 
@@ -537,17 +551,21 @@ Generate ONLY a JSON object:
     }
   });
 
-  // Get a specific report by ID (with ownership validation) - requires authentication
-  app.get("/api/reports/:id", requireAuth, async (req, res) => {
+  // Get a specific report by ID (with ownership validation) - uses browser client ID
+  app.get("/api/reports/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      const userId = getUserId(req);
-      
-      if (!userId) {
-        return res.status(401).json({
-          error: "Authentication required.",
-        });
+      // Get anonymous user ID from browser client ID
+      let userId;
+      try {
+        userId = getAnonymousUserId(req);
+      } catch (error: any) {
+        if (error.message === 'X-Client-Id header is required') {
+          return res.status(400).json({ error: 'X-Client-Id header is required' });
+        }
+        throw error;
       }
+
+      const { id } = req.params;
       
       const [report] = await db
         .select()
@@ -581,17 +599,21 @@ Generate ONLY a JSON object:
     }
   });
 
-  // Delete a specific report by ID (with ownership validation) - requires authentication
-  app.delete("/api/reports/:id", requireAuth, async (req, res) => {
+  // Delete a specific report by ID (with ownership validation) - uses browser client ID
+  app.delete("/api/reports/:id", async (req, res) => {
     try {
-      const { id } = req.params;
-      const userId = getUserId(req);
-      
-      if (!userId) {
-        return res.status(401).json({
-          error: "Authentication required.",
-        });
+      // Get anonymous user ID from browser client ID
+      let userId;
+      try {
+        userId = getAnonymousUserId(req);
+      } catch (error: any) {
+        if (error.message === 'X-Client-Id header is required') {
+          return res.status(400).json({ error: 'X-Client-Id header is required' });
+        }
+        throw error;
       }
+
+      const { id } = req.params;
       
       // Delete only if owned by the authenticated user
       const result = await db
