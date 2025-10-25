@@ -778,7 +778,7 @@ class ComplianceToolkit {
             }
 
             // Check for existing report with same name
-            const listResponse = await fetch('/api/reports/list?toolkit=complipilot', {
+            const listResponse = await fetch('/api/reports/list?toolkit=grantgenie', {
                 headers: {
                     ...this.getAuthHeaders()
                 }

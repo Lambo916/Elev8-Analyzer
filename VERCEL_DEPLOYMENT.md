@@ -5,7 +5,7 @@
 ### ✅ Implemented in Code
 1. **JWT Authentication** - All protected routes require valid Supabase JWT tokens
 2. **HTML Sanitization** - XSS protection via sanitize-html library
-3. **CORS Protection** - Locked to compli.yourbizguru.com and *.vercel.app
+3. **CORS Protection** - Locked to grant.yourbizguru.com and *.vercel.app
 4. **Ownership Enforcement** - Users can only access their own reports
 5. **Production Error Handling** - Generic error messages, no stack traces
 6. **Row-Level Security** - Supabase RLS policies enforce user_id = auth.uid()
@@ -64,13 +64,13 @@ OPENAI_API_KEY=sk-proj-...
 ## CORS Configuration
 
 Currently configured for:
-- `https://compli.yourbizguru.com` (production)
+- `https://grant.yourbizguru.com` (production)
 - `https://*.vercel.app` (preview deployments)
 
 To modify, edit `api/[...path].ts`:
 ```typescript
 const allowedOrigins = [
-  'https://compli.yourbizguru.com',
+  'https://grant.yourbizguru.com',
   /https:\/\/.*\.vercel\.app$/,
   // Add more domains here
 ];
@@ -109,13 +109,13 @@ const allowedOrigins = [
 ```bash
 # Get JWT token from Supabase (after user login in frontend)
 curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  https://compli.yourbizguru.com/api/reports/list?toolkit=complipilot
+  https://grant.yourbizguru.com/api/reports/list?toolkit=grantgenie
 ```
 
 ### 2. Test CORS
 ```javascript
-// Should work from compli.yourbizguru.com
-fetch('https://compli.yourbizguru.com/api/reports/list?toolkit=complipilot', {
+// Should work from grant.yourbizguru.com
+fetch('https://grant.yourbizguru.com/api/reports/list?toolkit=grantgenie', {
   headers: { 'Authorization': 'Bearer YOUR_JWT_TOKEN' }
 });
 

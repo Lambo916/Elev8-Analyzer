@@ -222,7 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!usageCheck.allowed) {
     console.log(`[Vercel] /api/generate - Request blocked: usage limit reached (${usageCheck.count}/30)`);
     return res.status(429).json({
-      error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+      error: 'You have reached your 30-report limit for the GrantGenie soft launch. Please upgrade to continue.',
       limitReached: true,
       count: usageCheck.count,
       limit: 30
@@ -480,7 +480,7 @@ Generate ONLY a JSON object:
     if (!incrementResult.success && incrementResult.limitReached) {
       console.log(`[Vercel] /api/generate - Request completed but limit reached during increment: ${incrementResult.count}/30`);
       return res.status(429).json({
-        error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+        error: 'You have reached your 30-report limit for the GrantGenie soft launch. Please upgrade to continue.',
         limitReached: true,
         count: incrementResult.count,
         limit: 30

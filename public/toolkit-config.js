@@ -2,7 +2,7 @@
 // This file defines multiple toolkits that can be swapped with minimal changes
 
 const TOOLKIT_CONFIGS = {
-    complipilot: {
+    grantgenie: {
         name: "GrantGenie",
         tagline: "Unlock grant opportunities with AI-powered assistance",
         icon: "/favicon-32x32.png",
@@ -118,7 +118,7 @@ const TOOLKIT_CONFIGS = {
 
 // Toolkit switcher - returns active toolkit config
 function getActiveToolkit() {
-    const activeToolkitKey = window.ACTIVE_TOOLKIT || 'complipilot';
+    const activeToolkitKey = window.ACTIVE_TOOLKIT || 'grantgenie';
     return TOOLKIT_CONFIGS[activeToolkitKey];
 }
 
