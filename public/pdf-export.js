@@ -156,7 +156,7 @@ window.YBG_PDF = window.YBG_PDF || {};
   }
 
   function getToolkitIcon() {
-    return window.currentToolkitIcon || "/complipilot-logo.png";
+    return window.currentToolkitIcon || "/favicon-32x32.png";
   }
 
   // ---- Image Loading -------------------------------------------------------
