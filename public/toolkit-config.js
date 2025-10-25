@@ -6,7 +6,7 @@ const TOOLKIT_CONFIGS = {
         name: "GrantGenie",
         tagline: "Unlock grant opportunities with AI-powered assistance",
         icon: "/favicon-32x32.png",
-        logo: "complipilot-logo.png",
+        logo: "grantgenie-logo.png",
         themeColor: "#4DB6E7", // Light Blue
         primaryColorRGB: "79, 195, 247",
         
