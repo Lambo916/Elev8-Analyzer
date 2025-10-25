@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = isProduction 
   ? [
-      'https://compli.yourbizguru.com',
+      'https://grant.yourbizguru.com',
       /\.vercel\.app$/, // Allow Vercel preview deployments
     ]
   : [
