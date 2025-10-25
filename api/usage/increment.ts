@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDb } from '../_lib/db-serverless.js';
 import { usageTracking } from '../_lib/schema.js';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 // Get client IP address from request
 function getClientIp(req: VercelRequest): string {
@@ -68,13 +68,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Unable to determine client IP address' });
     }
 
+    // Get tool parameter from request body (default: grantgenie)
+    const tool = req.body?.tool || 'grantgenie';
+    const toolName = tool === 'grantgenie' ? 'GrantGenie' : 'CompliPilot';
+
     const db = getDb();
     
-    // Check if usage record exists for this IP
+    // Check if usage record exists for this IP and tool
     const existingRecord = await db
       .select()
       .from(usageTracking)
-      .where(eq(usageTracking.ipAddress, ipAddress))
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
       .limit(1);
 
     let newCount: number;
@@ -82,12 +89,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existingRecord.length > 0) {
       // Check if already at limit
       if (existingRecord[0].reportCount >= 30) {
-        console.log(`[Usage Increment] IP ${ipAddress} already at limit: ${existingRecord[0].reportCount}/30`);
+        console.log(`[Usage Increment] IP ${ipAddress} already at limit for ${tool}: ${existingRecord[0].reportCount}/30`);
         return res.status(429).json({
           reportCount: existingRecord[0].reportCount,
           hasReachedLimit: true,
           limit: 30,
-          error: 'Usage limit already reached'
+          tool,
+          error: `You have reached your 30-report limit for the ${toolName} soft launch. Please upgrade to continue.`
         });
       }
       
@@ -98,7 +106,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           reportCount: sql`${usageTracking.reportCount} + 1`,
           lastUpdated: new Date(),
         })
-        .where(eq(usageTracking.ipAddress, ipAddress))
+        .where(and(
+          eq(usageTracking.ipAddress, ipAddress),
+          eq(usageTracking.tool, tool)
+        ))
         .returning();
       
       newCount = updated[0].reportCount;
@@ -108,6 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .insert(usageTracking)
         .values({
           ipAddress,
+          tool,
           reportCount: 1,
         })
         .returning();
@@ -117,12 +129,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const hasReachedLimit = newCount >= 30;
 
-    console.log(`[Usage Tracking] IP: ${ipAddress}, Count: ${newCount}, Limit Reached: ${hasReachedLimit}`);
+    console.log(`[Usage Tracking] IP: ${ipAddress}, Tool: ${tool}, Count: ${newCount}, Limit Reached: ${hasReachedLimit}`);
 
     return res.status(200).json({
       reportCount: newCount,
       hasReachedLimit,
-      limit: 30
+      limit: 30,
+      tool
     });
 
   } catch (error: any) {

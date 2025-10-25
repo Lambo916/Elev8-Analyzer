@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, json, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, json, integer, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -44,10 +44,13 @@ export type ComplianceReport = typeof complianceReports.$inferSelect;
 
 export const usageTracking = pgTable("usage_tracking", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  ipAddress: text("ip_address").notNull().unique(),
+  ipAddress: text("ip_address").notNull(),
+  tool: text("tool").notNull().default('complipilot'),
   reportCount: integer("report_count").notNull().default(0),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-});
+}, (table) => ({
+  uniqueIpTool: unique().on(table.ipAddress, table.tool),
+}));
 
 export const insertUsageTrackingSchema = createInsertSchema(usageTracking).omit({
   id: true,

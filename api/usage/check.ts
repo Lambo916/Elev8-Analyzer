@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDb } from '../_lib/db-serverless.js';
 import { usageTracking } from '../_lib/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Get client IP address from request
 function getClientIp(req: VercelRequest): string {
@@ -68,13 +68,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Unable to determine client IP address' });
     }
 
+    // Get tool parameter from query string (default: grantgenie)
+    const tool = (req.query.tool as string) || 'grantgenie';
+
     const db = getDb();
     
-    // Check if usage record exists for this IP
+    // Check if usage record exists for this IP and tool
     const usageRecord = await db
       .select()
       .from(usageTracking)
-      .where(eq(usageTracking.ipAddress, ipAddress))
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
       .limit(1);
 
     const reportCount = usageRecord.length > 0 ? usageRecord[0].reportCount : 0;
@@ -83,7 +89,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       reportCount,
       hasReachedLimit,
-      limit: 30
+      limit: 30,
+      tool
     });
 
   } catch (error: any) {
