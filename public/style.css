@@ -36,24 +36,24 @@
     
     /* Light Theme Tokens (Default) */
     --bg: 248, 250, 253;                /* Very pale blue-gray */
-    --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #f0f4f8 50%, #f8fafc 100%);
-    --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(var(--ybg-brand-accent), 0.15), rgba(255, 255, 255, 0) 58%);
-    --bg-accent-wash-2: radial-gradient(900px 700px at -10% 110%, rgba(var(--ybg-brand-primary), 0.10), rgba(255, 255, 255, 0) 60%);
+    --bg-gradient: linear-gradient(180deg, #f3f8ff 0%, #ffffff 55%, #f7fbff 100%);
+    --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(var(--ybg-brand-accent), 0.18), rgba(255, 255, 255, 0) 58%);
+    --bg-accent-wash-2: radial-gradient(900px 700px at -10% 110%, rgba(var(--ybg-brand-primary), 0.12), rgba(255, 255, 255, 0) 60%);
     --card: 255, 255, 255;              /* Pure white cards */
     --card-gradient: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
     --card-header: 245, 247, 250;       /* Slightly tinted header */
-    --card-border: rgba(17, 24, 39, 0.12);  /* More visible border */
+    --card-border: rgba(17, 24, 39, 0.08);  /* Subtle slate border */
     --panel: 255, 255, 255;              /* Panel background */
     --panel-tint: linear-gradient(180deg, rgba(79, 195, 247, 0.06) 0%, rgba(255, 255, 255, 0.0) 38%);
     --panel-sheen: linear-gradient(0deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65));
-    --panel-border: rgba(17, 24, 39, 0.15);
-    --panel-shadow: 0 8px 32px rgba(16, 24, 40, 0.10);
+    --panel-border: rgba(17, 24, 39, 0.10);
+    --panel-shadow: 0 8px 28px rgba(16, 24, 40, 0.06);
     --rim-gradient: linear-gradient(180deg, rgba(79, 195, 247, 0.18), rgba(79, 195, 247, 0.00));
-    --text: 30, 41, 59;                  /* Darker slate #1e293b for better contrast */
-    --text-secondary: 71, 85, 105;      /* Medium slate gray #475569 */
+    --text: 51, 51, 51;                  /* Darker gray #333 for better contrast */
+    --text-secondary: 100, 116, 139;    /* Slate gray */
     --text-muted: 148, 163, 184;        /* Light slate */
-    --border: 203, 213, 225;             /* More visible border #cbd5e1 */
-    --border-strong: 148, 163, 184;      /* Stronger border #94a3b8 */
+    --border: 226, 232, 240;             /* Soft border */
+    --border-strong: 203, 213, 225;      /* Stronger border */
     --divider-fade: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(17, 24, 39, 0.10), rgba(0, 0, 0, 0));
     --panel-header-glow: 0 0 12px rgba(79, 195, 247, 0.12);
     
@@ -174,19 +174,9 @@ html:not(.theme-dark) body {
 
 .app-header {
     padding: var(--spacing-lg) 0;
-    border-bottom: 1px solid rgba(var(--border), 0.3);
+    border-bottom: 1px solid rgba(var(--border), 0.2);
     margin-bottom: var(--spacing-xl);
     position: relative;
-}
-
-/* Light theme header gradient with YBG colors */
-html.theme-light .app-header,
-html:not(.theme-dark) .app-header {
-    background: linear-gradient(135deg, 
-        rgba(79, 195, 247, 0.04) 0%, 
-        rgba(255, 235, 59, 0.03) 50%, 
-        rgba(79, 195, 247, 0.02) 100%);
-    border-bottom: 1px solid rgba(var(--border), 0.5);
 }
 
 .header-content {
@@ -285,18 +275,6 @@ html.theme-dark h3 {
     transform: scale(0.98);
 }
 
-/* Light theme - visible border on theme toggle */
-html.theme-light .theme-toggle,
-html:not(.theme-dark) .theme-toggle {
-    border: 1.5px solid rgba(var(--border), 1);
-    background: rgba(var(--card), 0.95);
-}
-
-html.theme-light .theme-toggle:hover,
-html:not(.theme-dark) .theme-toggle:hover {
-    border-color: rgba(var(--primary-rgb), 0.6);
-}
-
 .theme-icon {
     font-size: 20px;
     transition: transform 0.3s ease;
@@ -323,10 +301,10 @@ html:not(.theme-dark) .theme-toggle:hover {
    ======================================== */
 
 .panel {
-    background: rgba(var(--card), 0.98);
-    border: 1px solid rgba(var(--border), 0.6);
+    background: rgba(var(--card), 0.95);
+    border: 1px solid rgba(var(--border), 0.2);
     border-radius: var(--border-radius);
-    box-shadow: var(--panel-shadow);
+    box-shadow: var(--shadow);
     overflow: hidden;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
@@ -475,13 +453,13 @@ html:not(.theme-dark) .panel-header {
 .form-textarea {
     width: 100%;
     padding: 12px;
-    border: 1.5px solid rgba(var(--border), 1);
+    border: 1px solid rgba(var(--border), 0.3);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
     font-size: var(--font-size-base);
     line-height: 1.5;
     color: rgb(var(--text));
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--bg), 0.5);
     resize: vertical;
     min-height: 120px;
     transition: all 0.3s ease;
@@ -495,12 +473,12 @@ html:not(.theme-dark) .panel-header {
 .form-select {
     width: 100%;
     padding: 10px 12px;
-    border: 1.5px solid rgba(var(--border), 1);
+    border: 1px solid rgba(var(--border), 0.3);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
     font-size: var(--font-size-base);
     color: rgb(var(--text));
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--bg), 0.5);
     transition: all 0.3s ease;
 }
 
@@ -535,16 +513,9 @@ html:not(.theme-dark) .panel-header {
     flex-direction: column;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(var(--card), 0.5);
     border-radius: var(--border-radius-sm);
-    border: 1px solid rgba(var(--border), 0.6);
-}
-
-/* Light theme checkbox group with light blue tint */
-html.theme-light .checkbox-group,
-html:not(.theme-dark) .checkbox-group {
-    background: linear-gradient(135deg, rgba(79, 195, 247, 0.04), rgba(255, 255, 255, 0.8));
-    border: 1px solid rgba(var(--border), 0.7);
+    border: 1px solid rgba(var(--border), 0.2);
 }
 
 .checkbox-label {
@@ -570,14 +541,13 @@ html:not(.theme-dark) .checkbox-group {
     accent-color: var(--primary);
 }
 
-/* Enhanced focus states with light blue core and gold halo */
+/* Enhanced focus states with blue core and yellow halo */
 .form-textarea:focus,
 .form-input:focus,
 .form-select:focus {
     outline: none;
     border-color: var(--primary);
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25), 0 0 0 6px rgba(var(--accent-rgb), 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.3), 0 0 0 5px rgba(var(--accent-rgb), 0.1);
 }
 
 /* Dark theme input enhancements */
