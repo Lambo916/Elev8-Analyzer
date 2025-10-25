@@ -242,9 +242,9 @@ window.YBG_PDF = window.YBG_PDF || {};
     const mainFooterY = PAGE.height - MARGINS.bottom - 12;
     const disclaimerY = PAGE.height - MARGINS.bottom - 4;
     
-    // Faint divider line above footer
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.15);
+    // Gold accent line above footer (brand accent)
+    doc.setDrawColor(...TYPOGRAPHY.colorAccent); // Gold #F5C04A
+    doc.setLineWidth(0.4);
     doc.line(CONTENT.left, CONTENT.bottom + 6, CONTENT.right, CONTENT.bottom + 6);
     
     // Main footer row
@@ -272,21 +272,244 @@ window.YBG_PDF = window.YBG_PDF || {};
   }
 
   // ---- Text Processing -----------------------------------------------------
+  function parseChecklistTable(lines, startIdx) {
+    const rows = [];
+    let i = startIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Stop at next heading or separator
+      if (line.startsWith('##') || line.startsWith('---')) {
+        break;
+      }
+      
+      // Skip blank lines (don't stop, just continue)
+      if (line === '') {
+        i++;
+        continue;
+      }
+      
+      // Parse checklist items (bullet points or numbered)
+      if (line.match(/^[•✓\-\*\d\.]/)) {
+        const cleanText = line.replace(/^[•✓\-\*\d\.\s]+/, '').trim();
+        rows.push([cleanText, '☐ Pending', '']);
+      }
+      
+      i++;
+    }
+    
+    return {
+      endIdx: i,
+      table: {
+        headers: ['Requirement', 'Status/Action', 'Notes'],
+        columns: [
+          { width: 0.55, align: 'left' },
+          { width: 0.25, align: 'left' },
+          { width: 0.20, align: 'left' }
+        ],
+        rows
+      }
+    };
+  }
+  
+  function parseTimelineTable(lines, startIdx) {
+    const rows = [];
+    let i = startIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Stop at next heading or separator
+      if (line.startsWith('##') || line.startsWith('---')) {
+        break;
+      }
+      
+      // Skip blank lines (don't stop, just continue)
+      if (line === '') {
+        i++;
+        continue;
+      }
+      
+      // Try to parse as table row (pipe-separated)
+      if (line.includes('|')) {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c && c !== '---');
+        if (cells.length >= 3 && !cells[0].match(/^(Milestone|Phase|Task)/i)) {
+          rows.push(cells.slice(0, 4)); // Take first 4 columns
+        }
+      }
+      // Parse as list item
+      else if (line.match(/^[•\-\*\d\.]/)) {
+        const cleanText = line.replace(/^[•\-\*\d\.\s]+/, '').trim();
+        rows.push([cleanText, 'TBD', 'TBD', '']);
+      }
+      
+      i++;
+    }
+    
+    return {
+      endIdx: i,
+      table: {
+        headers: ['Milestone', 'Owner', 'Due Date', 'Notes'],
+        columns: [
+          { width: 0.35, align: 'left' },
+          { width: 0.20, align: 'left' },
+          { width: 0.20, align: 'left' },
+          { width: 0.25, align: 'left' }
+        ],
+        rows
+      }
+    };
+  }
+  
+  function parseRiskMatrixTable(lines, startIdx) {
+    const rows = [];
+    let i = startIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Stop at next heading or separator
+      if (line.startsWith('##') || line.startsWith('---')) {
+        break;
+      }
+      
+      // Skip blank lines (don't stop, just continue)
+      if (line === '') {
+        i++;
+        continue;
+      }
+      
+      // Try to parse as table row (pipe-separated)
+      if (line.includes('|')) {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c && c !== '---');
+        if (cells.length >= 3 && !cells[0].match(/^(Risk|Consequence)/i)) {
+          rows.push(cells.slice(0, 4)); // Take first 4 columns
+        }
+      }
+      
+      i++;
+    }
+    
+    return {
+      endIdx: i,
+      table: {
+        headers: ['Risk', 'Severity', 'Likelihood', 'Mitigation'],
+        columns: [
+          { width: 0.25, align: 'left' },
+          { width: 0.15, align: 'left', isSeverity: true },
+          { width: 0.15, align: 'left' },
+          { width: 0.45, align: 'left' }
+        ],
+        rows
+      }
+    };
+  }
+  
+  function parseReferencesTable(lines, startIdx) {
+    const rows = [];
+    let i = startIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Stop at next heading or separator
+      if (line.startsWith('##') || line.startsWith('---')) {
+        break;
+      }
+      
+      // Skip blank lines (don't stop, just continue)
+      if (line === '') {
+        i++;
+        continue;
+      }
+      
+      // Parse links or list items
+      if (line.match(/^[•\-\*\d\.]/)) {
+        const cleanText = line.replace(/^[•\-\*\d\.\s]+/, '').trim();
+        
+        // Try to extract URL
+        const urlMatch = cleanText.match(/(https?:\/\/[^\s]+)/);
+        if (urlMatch) {
+          const url = urlMatch[1];
+          const source = cleanText.replace(url, '').replace(/[:\-\(\)]/g, '').trim();
+          rows.push([source || 'Reference', url]);
+        } else {
+          rows.push([cleanText, '']);
+        }
+      }
+      
+      i++;
+    }
+    
+    return {
+      endIdx: i,
+      table: {
+        headers: ['Source', 'URL/Notes'],
+        columns: [
+          { width: 0.35, align: 'left' },
+          { width: 0.65, align: 'left' }
+        ],
+        rows
+      }
+    };
+  }
+  
   function parseContent(text) {
     if (!text) return [];
     
     const lines = text.split(/\r?\n/);
     const blocks = [];
+    let i = 0;
     
-    for (const line of lines) {
+    while (i < lines.length) {
+      const line = lines[i];
       const trimmed = line.trim();
       
+      // Check for table sections based on heading
       if (trimmed.startsWith('## ')) {
+        const heading = trimmed.substring(3).trim().toLowerCase();
+        
         blocks.push({
           type: 'h2',
           text: trimmed.substring(3).trim()
         });
-      } else if (trimmed.startsWith('### ')) {
+        i++;
+        
+        // Detect and parse table sections
+        if (heading.includes('checklist') || heading.includes('requirements')) {
+          const result = parseChecklistTable(lines, i);
+          if (result.table.rows.length > 0) {
+            blocks.push({ type: 'table', data: result.table });
+            i = result.endIdx;
+            continue;
+          }
+        } else if (heading.includes('timeline') || heading.includes('roadmap') || heading.includes('schedule')) {
+          const result = parseTimelineTable(lines, i);
+          if (result.table.rows.length > 0) {
+            blocks.push({ type: 'table', data: result.table });
+            i = result.endIdx;
+            continue;
+          }
+        } else if (heading.includes('risk') || heading.includes('matrix')) {
+          const result = parseRiskMatrixTable(lines, i);
+          if (result.table.rows.length > 0) {
+            blocks.push({ type: 'table', data: result.table });
+            i = result.endIdx;
+            continue;
+          }
+        } else if (heading.includes('reference') || heading.includes('resource') || heading.includes('source')) {
+          const result = parseReferencesTable(lines, i);
+          if (result.table.rows.length > 0) {
+            blocks.push({ type: 'table', data: result.table });
+            i = result.endIdx;
+            continue;
+          }
+        }
+        
+        continue;
+      }
+      else if (trimmed.startsWith('### ')) {
         blocks.push({
           type: 'h3', 
           text: trimmed.substring(4).trim()
@@ -297,14 +520,14 @@ window.YBG_PDF = window.YBG_PDF || {};
           text: ''
         });
       } else if (trimmed.length > 0) {
-        // Check if this is a metadata line (key: value pattern near the start)
-        const isMetadata = blocks.length < 15 && // Only in first few lines
+        // Check if this is a metadata line
+        const isMetadata = blocks.length < 15 &&
           (trimmed.match(/^(Generated|Entity|Type|Jurisdiction|Filing|Deadline):\s*.+/) ||
            trimmed.startsWith('**Generated:'));
         
         blocks.push({
           type: isMetadata ? 'metadata' : 'paragraph',
-          text: line  // Keep original spacing
+          text: line
         });
       } else {
         blocks.push({
@@ -312,6 +535,8 @@ window.YBG_PDF = window.YBG_PDF || {};
           text: ''
         });
       }
+      
+      i++;
     }
     
     return blocks;
@@ -353,6 +578,122 @@ window.YBG_PDF = window.YBG_PDF || {};
     return lines.length > 0 ? lines : [''];
   }
 
+  // ---- Table Rendering Functions ------------------------------------------
+  const TABLE_STYLES = {
+    headerBg: [245, 192, 74],      // Gold #F5C04A
+    headerText: [0, 0, 0],          // Black
+    borderColor: [200, 200, 200],   // Light gray
+    zebraColor: [248, 248, 248],    // Very light gray for alternate rows
+    cellPadding: 2,                 // mm
+    rowHeight: 8,                   // mm minimum row height
+    headerHeight: 9,                // mm
+    fontSize: 10,                   // pt
+    headerFontSize: 10,             // pt
+    borderWidth: 0.2,               // mm
+    
+    // Severity badge colors
+    severityHigh: [220, 38, 38],    // Red
+    severityMedium: [234, 88, 12],  // Orange
+    severityLow: [22, 163, 74]      // Green
+  };
+
+  function getSeverityColor(severity) {
+    const sev = severity.toLowerCase().trim();
+    if (sev === 'high') return TABLE_STYLES.severityHigh;
+    if (sev === 'medium') return TABLE_STYLES.severityMedium;
+    if (sev === 'low') return TABLE_STYLES.severityLow;
+    return TABLE_STYLES.headerText; // Default black
+  }
+
+  function calculateCellHeight(doc, text, width, fontSize = TABLE_STYLES.fontSize) {
+    const maxTextWidth = width - (TABLE_STYLES.cellPadding * 2);
+    doc.setFontSize(fontSize);
+    const wrappedLines = wrapText(doc, text, maxTextWidth, fontSize);
+    const lineHeight = 4; // mm per line
+    const padding = TABLE_STYLES.cellPadding * 2 + 1; // Top + bottom padding
+    return Math.max(TABLE_STYLES.rowHeight, (wrappedLines.length * lineHeight) + padding);
+  }
+
+  function drawTableCell(doc, text, x, y, width, height, options = {}) {
+    const {
+      isHeader = false,
+      align = 'left',
+      isSeverity = false,
+      severity = null,
+      isLink = false
+    } = options;
+    
+    // Draw cell background
+    if (isHeader) {
+      doc.setFillColor(...TABLE_STYLES.headerBg);
+      doc.rect(x, y, width, height, 'F');
+    } else if (options.zebra) {
+      doc.setFillColor(...TABLE_STYLES.zebraColor);
+      doc.rect(x, y, width, height, 'F');
+    }
+    
+    // Draw cell border
+    doc.setDrawColor(...TABLE_STYLES.borderColor);
+    doc.setLineWidth(TABLE_STYLES.borderWidth);
+    doc.rect(x, y, width, height, 'S');
+    
+    // Set text style
+    if (isHeader) {
+      doc.setFont(TYPOGRAPHY.fontFamily, 'bold');
+      doc.setFontSize(TABLE_STYLES.headerFontSize);
+      doc.setTextColor(...TABLE_STYLES.headerText);
+    } else if (isSeverity && severity) {
+      doc.setFont(TYPOGRAPHY.fontFamily, 'bold');
+      doc.setFontSize(TABLE_STYLES.fontSize);
+      doc.setTextColor(...getSeverityColor(severity));
+    } else if (isLink) {
+      doc.setFont(TYPOGRAPHY.fontFamily, 'normal');
+      doc.setFontSize(TABLE_STYLES.fontSize);
+      doc.setTextColor(0, 0, 238); // Blue for links
+    } else {
+      doc.setFont(TYPOGRAPHY.fontFamily, 'normal');
+      doc.setFontSize(TABLE_STYLES.fontSize);
+      doc.setTextColor(...TYPOGRAPHY.colorBody);
+    }
+    
+    // Wrap text to fit cell
+    const maxTextWidth = width - (TABLE_STYLES.cellPadding * 2);
+    const wrappedLines = wrapText(doc, text, maxTextWidth, TABLE_STYLES.fontSize);
+    
+    // Calculate text position
+    let textY = y + TABLE_STYLES.cellPadding + 3;
+    
+    for (const line of wrappedLines) {
+      let textX;
+      if (align === 'center') {
+        const textWidth = doc.getTextWidth(line);
+        textX = x + (width - textWidth) / 2;
+      } else if (align === 'right') {
+        const textWidth = doc.getTextWidth(line);
+        textX = x + width - TABLE_STYLES.cellPadding - textWidth;
+      } else {
+        textX = x + TABLE_STYLES.cellPadding;
+      }
+      
+      // Render clickable link if this is a URL
+      if (isLink && text.startsWith('http')) {
+        doc.textWithLink(line, textX, textY, { url: text });
+        // Underline the link
+        const linkWidth = doc.getTextWidth(line);
+        doc.setDrawColor(0, 0, 238);
+        doc.setLineWidth(0.1);
+        doc.line(textX, textY + 0.5, textX + linkWidth, textY + 0.5);
+      } else {
+        doc.text(line, textX, textY);
+      }
+      
+      textY += 4; // Line spacing within cell
+    }
+    
+    // Reset to body typography
+    applyGlobalTypography(doc);
+  }
+
   // ---- Content Writing with Pagination ------------------------------------
   class PDFWriter {
     constructor(doc, iconDataUrl) {
@@ -376,7 +717,119 @@ window.YBG_PDF = window.YBG_PDF || {};
       this.yPosition = window.YBG_PDF.PDF_MARGINS.top;
     }
     
+    drawTableHeader(columnWidths, headers, columns) {
+      let xPos = CONTENT.left;
+      for (let i = 0; i < headers.length; i++) {
+        drawTableCell(
+          this.doc,
+          headers[i],
+          xPos,
+          this.yPosition,
+          columnWidths[i],
+          TABLE_STYLES.headerHeight,
+          { isHeader: true, align: columns[i].align || 'left' }
+        );
+        xPos += columnWidths[i];
+      }
+      this.yPosition += TABLE_STYLES.headerHeight;
+    }
+
+    writeTable(table) {
+      // Calculate column widths
+      const totalWidth = CONTENT.width;
+      const columnWidths = table.columns.map(col => (totalWidth * col.width));
+      
+      // Add spacing before table
+      if (this.yPosition > CONTENT.top + 10) {
+        this.yPosition += TYPOGRAPHY.paragraphSpacing;
+      }
+      
+      // Pre-calculate first row height for accurate space check
+      let firstRowHeight = TABLE_STYLES.rowHeight;
+      if (table.rows.length > 0) {
+        const firstRow = table.rows[0];
+        for (let colIdx = 0; colIdx < firstRow.length; colIdx++) {
+          const cellText = firstRow[colIdx] || '';
+          const cellHeight = calculateCellHeight(this.doc, cellText, columnWidths[colIdx]);
+          firstRowHeight = Math.max(firstRowHeight, cellHeight);
+        }
+      }
+      
+      // Check if we have room for header + first row (with actual height)
+      const minTableHeight = TABLE_STYLES.headerHeight + firstRowHeight;
+      if (this.needsNewPage(minTableHeight)) {
+        this.addNewPage();
+      }
+      
+      // Draw initial header
+      this.drawTableHeader(columnWidths, table.headers, table.columns);
+      
+      // Draw data rows with dynamic heights
+      for (let rowIdx = 0; rowIdx < table.rows.length; rowIdx++) {
+        const row = table.rows[rowIdx];
+        
+        // Calculate row height based on tallest cell
+        let rowHeight = TABLE_STYLES.rowHeight;
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+          const cellText = row[colIdx] || '';
+          const cellHeight = calculateCellHeight(this.doc, cellText, columnWidths[colIdx]);
+          rowHeight = Math.max(rowHeight, cellHeight);
+        }
+        
+        // Check if we need a new page for this row
+        if (this.needsNewPage(rowHeight)) {
+          this.addNewPage();
+          // Redraw header on new page
+          this.drawTableHeader(columnWidths, table.headers, table.columns);
+        }
+        
+        let xPos = CONTENT.left;
+        const isZebra = rowIdx % 2 === 1;
+        
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+          const cellText = row[colIdx] || '';
+          const column = table.columns[colIdx];
+          
+          // Check if this is a severity column for Risk Matrix
+          const isSeverityCol = column.isSeverity === true;
+          
+          // Check if this is a link column (URL detection)
+          const isLinkCol = cellText.startsWith('http://') || cellText.startsWith('https://');
+          
+          drawTableCell(
+            this.doc,
+            cellText,
+            xPos,
+            this.yPosition,
+            columnWidths[colIdx],
+            rowHeight, // Use calculated dynamic height
+            {
+              zebra: isZebra,
+              align: column.align || 'left',
+              isSeverity: isSeverityCol,
+              severity: isSeverityCol ? cellText : null,
+              isLink: isLinkCol
+            }
+          );
+          xPos += columnWidths[colIdx];
+        }
+        
+        this.yPosition += rowHeight; // Use calculated height
+      }
+      
+      // Add spacing after table
+      this.yPosition += TYPOGRAPHY.paragraphSpacing;
+      
+      // Reset typography
+      applyGlobalTypography(this.doc);
+    }
+    
     writeBlock(block) {
+      // Handle table blocks
+      if (block.type === 'table') {
+        this.writeTable(block.data);
+        return;
+      }
       let fontSize = TYPOGRAPHY.bodySize;
       let lineHeight = TYPOGRAPHY.lineHeight;
       let isBold = false;
