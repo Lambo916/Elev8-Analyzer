@@ -6,6 +6,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import { authenticateToken } from "./auth";
 
 const app = express();
+
+// Trust proxy - Required for accurate IP detection behind Vercel/Replit proxies
+// Set to 1 to trust the first proxy (Vercel/Replit edge) but prevent header spoofing
+// This allows Express to read X-Forwarded-For headers securely
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
