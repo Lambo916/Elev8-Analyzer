@@ -189,46 +189,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiKey: apiKey,
   });
 
-  // GrantGenie compliance system prompt template
-  const getComplianceSystemPrompt = () => {
-    return `You are GrantGenie, an expert compliance assistant with AI-powered assistance.
+  // GrantGenie grant proposal system prompt template
+  const getGrantProposalSystemPrompt = () => {
+    return `You are GrantGenie, an expert grant writing assistant with AI-powered capabilities.
 
-Your role is to generate professional, submission-ready compliance documents that help businesses navigate regulatory requirements with confidence.
+Your role is to generate professional, compelling grant proposal components that help organizations secure funding for their projects.
 
 CRITICAL FORMATTING RULES:
-1. ALWAYS structure your response with these exact 5 sections using markdown headings:
-   # Executive Compliance Summary
-   ## Filing Requirements Checklist
-   ## Compliance Roadmap
-   ## Risk Matrix
-   ## Next Steps & Recommendations
+1. ALWAYS structure your response with these exact 6 sections using markdown headings:
+   # Executive Summary
+   ## Needs Statement
+   ## Program Description
+   ## Outcomes & Evaluation
+   ## Budget Narrative
+   ## Implementation Timeline
 
 2. Format each section as follows:
-   - Executive Summary: Write 1-2 clear, professional paragraphs (120-150 words)
-   - Filing Requirements: Use bulleted list with ✓ symbols for each requirement
-   - Compliance Roadmap: Create a markdown table with columns: Phase | Task | Deadline
-   - Risk Matrix: Create a markdown table with columns: Risk | Consequence | Mitigation
-   - Next Steps: Use numbered list (1., 2., 3., etc.) with specific, actionable items
+   - Executive Summary: Write 2-3 compelling paragraphs (200-250 words) that capture the essence of the project, the need it addresses, and expected impact
+   - Needs Statement: Write 2-3 paragraphs (250-300 words) that clearly articulate the problem, include relevant data and community context
+   - Program Description: Write 3-4 paragraphs (300-400 words) detailing activities, methods, target population, and implementation approach
+   - Outcomes & Evaluation: Write 2-3 paragraphs (200-250 words) with specific measurable outcomes and evaluation methodology
+   - Budget Narrative: Use bulleted list explaining major budget categories and justifying key expenses
+   - Implementation Timeline: Create a markdown table with columns: Phase | Activity | Timeframe | Milestone
 
 3. PLACEHOLDER HANDLING:
-   - If information is missing, insert clean placeholders like [Pending Input] or [ADD DATE]
-   - NEVER leave blank sections or break table structure
-   - For empty Risk Matrix, include at least one row: "[Pending Input] | [Pending Input] | [Pending Input]"
+   - If information is missing, insert clean placeholders like [Pending Details] or [INSERT DATA]
+   - NEVER leave blank sections or break structure
+   - For incomplete tables, include at least one placeholder row
 
 4. WRITING STYLE:
-   - Use plain English, avoid legalese
-   - Be specific and actionable
-   - Do NOT invent deadlines, legal codes, or specific regulations you're unsure about
-   - Do NOT use ALL-CAPS text (except for proper acronyms like LLC, EIN, BOIR)
-   - Maintain professional tone throughout
+   - Match the requested tone (professional, passionate, data-driven, community-focused, or academic)
+   - Be specific and compelling without exaggeration
+   - Use clear, persuasive language that demonstrates impact
+   - Include relevant data and evidence when available
+   - Maintain consistent voice throughout
+   - Avoid jargon unless it's industry-standard terminology
 
 5. TABLE FORMATTING:
    - Always use proper markdown table syntax with | separators
    - Include header row with column names
    - Include separator row with dashes
-   - Add at least 2-3 data rows (use placeholders if needed)
+   - Add at least 3-4 data rows showing project phases
    
-REMEMBER: Consistency and structure are critical. Every document must have all 5 sections in the exact format specified.`;
+REMEMBER: Every grant proposal must tell a compelling story with all 6 sections. Focus on impact, feasibility, and measurable outcomes.`;
   };
 
   // Elev8 Analyzer diagnostic system prompt template (SCAFFOLD)
@@ -338,198 +341,109 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
       }
 
       const {
-        entityName,
-        entityType,
-        jurisdiction,
-        filingType,
-        deadline,
-        requirements = [],
-        risks,
-        mitigation
+        projectName,
+        organizationType,
+        problemNeed,
+        solutionActivities,
+        outcomesImpact,
+        budgetAmount,
+        grantType,
+        tone = 'Professional'
       } = formData;
 
       // Validate required fields
-      if (!entityType || !filingType) {
+      if (!projectName || !organizationType || !problemNeed || !solutionActivities || !outcomesImpact || !budgetAmount || !grantType) {
         return res.status(400).json({
-          error: "Entity type and filing type are required.",
+          error: "All required fields must be completed.",
         });
       }
 
-      console.log(`Generating hybrid compliance intelligence for: ${filingType} - ${entityType} (${jurisdiction || 'General'})`);
+      console.log(`Generating grant proposal for: ${projectName} - ${grantType} (${organizationType})`);
 
-      // STEP 1: Try to resolve filing profile (expert knowledge base)
-      // If no profile exists, fall back to super smart AI mode
-      const profile = resolveProfile(filingType, jurisdiction, entityType);
-      const useAIMode = !profile;
-      
-      if (useAIMode) {
-        console.log(`No pre-built profile found - using super smart AI mode for ${jurisdiction} ${filingType}`);
-      }
+      // Build grant proposal prompt with all user inputs
+      const grantProposalPrompt = `You are a professional grant writing expert specializing in compelling, fundable proposals.
 
-      // Build user context for AI
-      const userContext = [];
-      if (requirements.length > 0) {
-        userContext.push(`Selected requirements: ${requirements.join(', ')}`);
-      }
-      if (risks) {
-        userContext.push(`Risk concerns: ${risks}`);
-      }
-      if (mitigation) {
-        userContext.push(`Mitigation plan: ${mitigation}`);
-      }
+Generate a comprehensive grant proposal for:
+- Project/Organization: ${projectName}
+- Organization Type: ${organizationType}
+- Grant Type: ${grantType}
+- Budget: ${budgetAmount}
+- Writing Tone: ${tone}
 
-      let response;
+PROJECT DETAILS:
+Problem/Need Statement:
+${problemNeed}
 
-      if (useAIMode) {
-        // SUPER SMART AI MODE: Generate everything through AI
-        const superSmartPrompt = `You are a professional compliance intelligence system specializing in business filing requirements across all 50 US states.
+Proposed Solution/Activities:
+${solutionActivities}
 
-Generate a comprehensive compliance report for:
-- Entity: ${entityName || '[Entity Name]'} (${entityType})
-- Jurisdiction: ${jurisdiction || 'General'}
-- Filing Type: ${filingType}
-- Deadline: ${deadline || '[Not specified]'}
-${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
-
-CRITICAL: Research and provide ACCURATE, STATE-SPECIFIC information. Do not provide generic placeholder content.
+Expected Outcomes & Impact:
+${outcomesImpact}
 
 Generate a JSON object with these fields:
 {
-  "summary": "2-3 professional paragraphs explaining: (1) What this ${filingType} is and why it matters for ${entityName || 'this entity'} in ${jurisdiction}, (2) Specific ${jurisdiction} requirements and deadlines, (3) Real consequences of non-compliance (actual penalties, suspension risks, etc.)",
+  "executiveSummary": "Write 2-3 compelling paragraphs (200-250 words) that capture the project's essence, the critical need it addresses, and the transformative impact it will have. Hook the reader immediately.",
   
-  "checklist": [
-    "List 5-7 specific filing requirements for ${filingType} in ${jurisdiction}. Include actual form numbers, fee amounts, and state-specific documents (e.g., 'Statement of Information Form SI-550' for California LLCs, not generic placeholders)"
+  "needsStatement": "Write 2-3 detailed paragraphs (250-300 words) that clearly articulate the problem. Include relevant data, demographics, community context, and why this issue is urgent and significant.",
+  
+  "programDescription": "Write 3-4 detailed paragraphs (300-400 words) explaining the proposed activities, implementation approach, target population, methods, and how activities directly address the stated need.",
+  
+  "outcomesEvaluation": "Write 2-3 paragraphs (200-250 words) with specific, measurable outcomes (SMART goals), evaluation methodology, success metrics, and how you'll demonstrate impact to funders.",
+  
+  "budgetNarrative": [
+    "List 5-8 major budget categories with clear justifications. For example: 'Personnel (${budgetAmount ? '$' + (parseInt(budgetAmount.replace(/[^0-9]/g, '')) * 0.6).toLocaleString() : '$XX,XXX'}): Program Director and Staff - Salaries for experienced team members who will...'",
+    "Include categories like: Personnel, Programs/Activities, Equipment, Facilities, Evaluation, Administrative Costs"
   ],
   
   "timeline": [
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -30, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -14, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -7, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": 0, "notes": "Specific action required"}
-  ],
-  
-  "riskMatrix": [
-    {"risk": "Specific compliance risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"},
-    {"risk": "Another specific risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"}
+    {"phase": "Phase 1: Planning", "activity": "Specific activity", "timeframe": "Months 1-2", "milestone": "Deliverable/outcome"},
+    {"phase": "Phase 2: Implementation", "activity": "Specific activity", "timeframe": "Months 3-8", "milestone": "Deliverable/outcome"},
+    {"phase": "Phase 3: Evaluation", "activity": "Specific activity", "timeframe": "Months 9-12", "milestone": "Deliverable/outcome"}
   ],
   
   "recommendations": [
-    "3-5 actionable recommendations specific to ${jurisdiction} ${filingType}"
-  ],
-  
-  "references": [
-    "Official ${jurisdiction} filing portal with actual URL",
-    "State agency website with actual URL", 
-    "Relevant government resources with actual URLs"
+    "3-5 strategic recommendations for strengthening this proposal before submission"
   ]
 }
 
 IMPORTANT: 
-- Use actual ${jurisdiction} requirements, forms, fees, and portal URLs
-- Timeline offsetDays are relative to deadline: negative = before, 0 = deadline day
-- Include 4-6 timeline milestones covering preparation to filing
-- Provide real risk assessment with actual consequences
+- Write in ${tone} tone throughout
+- Be specific and compelling without exaggeration
+- Use data and evidence from the problem statement
+- Ensure all sections tell a cohesive, compelling story
+- Timeline should span the full project period (typically 12 months)
+- Budget narrative should justify how funds directly support activities
 - Return ONLY valid JSON, no explanations`;
 
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: "You are a compliance intelligence expert with deep knowledge of business filing requirements across all US states. Provide accurate, jurisdiction-specific information. Return valid JSON only."
-            },
-            {
-              role: "user",
-              content: superSmartPrompt,
-            },
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: 2500,
-        });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: getGrantProposalSystemPrompt()
+          },
+          {
+            role: "user",
+            content: grantProposalPrompt,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 3000,
+      });
 
-        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
-        
-        // Compute timeline dates
-        const timelineWithDates = aiResponse.timeline 
-          ? computeTimelineDates(aiResponse.timeline, deadline)
-          : [];
+      const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
 
-        response = {
-          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
-          checklist: aiResponse.checklist || [],
-          timeline: timelineWithDates,
-          riskMatrix: aiResponse.riskMatrix || [],
-          recommendations: aiResponse.recommendations || ["File well before deadline", "Set calendar reminders"],
-          references: aiResponse.references || []
-        };
+      const response = {
+        summary: aiResponse.executiveSummary || `Grant proposal for ${projectName}.`,
+        needsStatement: aiResponse.needsStatement || problemNeed,
+        programDescription: aiResponse.programDescription || solutionActivities,
+        outcomesEvaluation: aiResponse.outcomesEvaluation || outcomesImpact,
+        budgetNarrative: aiResponse.budgetNarrative || [`Budget: ${budgetAmount}`],
+        timeline: aiResponse.timeline || [],
+        recommendations: aiResponse.recommendations || ["Review and refine before submission"]
+      };
 
-      } else {
-        // PROFILE-BASED MODE: Use pre-built knowledge + AI enhancement
-        const timelineWithDates = computeTimelineDates(profile.timeline, deadline);
-
-        const aiPrompt = `Generate a personalized executive summary and recommendations for:
-
-Entity: ${entityName || '[Entity Name]'} (${entityType})
-Jurisdiction: ${jurisdiction || 'General'}
-Filing Type: ${filingType}
-Deadline: ${deadline || '[Not provided]'}
-${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
-
-Generate ONLY a JSON object:
-{
-  "summary": "2-3 paragraphs explaining why this ${filingType} matters for ${entityName || 'this entity'}, consequences of late filing, and key compliance considerations specific to ${jurisdiction}. ${userContext.length > 0 ? 'Address user context.' : ''}",
-  "recommendations": [
-    "3-5 specific actionable recommendations tailored to ${entityName || 'this business'}"
-  ]
-}`;
-
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: "You are a compliance expert. Return valid JSON only."
-            },
-            {
-              role: "user",
-              content: aiPrompt,
-            },
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: 1000,
-        });
-
-        const aiResponse = JSON.parse(completion.choices[0].message.content || '{"summary":"","recommendations":[]}');
-
-        // Format profile data
-        const checklistItems = profile.checklist.map(item => 
-          `${item.label} - ${item.description}`
-        );
-
-        const riskItems = profile.risks.map(r => ({
-          risk: r.risk,
-          severity: r.severity,
-          likelihood: r.likelihood,
-          mitigation: r.mitigation
-        }));
-
-        const referenceLinks = profile.links.map(link => 
-          `${link.label}: ${link.url}`
-        );
-
-        response = {
-          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
-          checklist: checklistItems,
-          timeline: timelineWithDates,
-          riskMatrix: riskItems,
-          recommendations: aiResponse.recommendations && aiResponse.recommendations.length > 0 
-            ? aiResponse.recommendations 
-            : ["File well before deadline", "Set calendar reminders", "Consult with compliance advisor"],
-          references: referenceLinks
-        };
-      }
-
-      console.log("Hybrid compliance intelligence generated successfully");
+      console.log("Grant proposal generated successfully");
 
       // Increment usage counter AFTER successful generation (atomic operation with limit enforcement)
       const incrementResult = await incrementUsage(req);

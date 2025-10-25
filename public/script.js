@@ -255,122 +255,87 @@ class ComplianceToolkit {
     renderStructuredHTML(payload, generated) {
         const {
             summary = '',
-            checklist = [],
+            needsStatement = '',
+            programDescription = '',
+            outcomesEvaluation = '',
+            budgetNarrative = [],
             timeline = [],
-            riskMatrix = [],
-            recommendations = [],
-            references = []
+            recommendations = []
         } = generated || {};
 
         // Build header metadata
         const headerBlock = `
             <div class="doc-meta">
-                <div><strong>Entity:</strong> ${this.safePlaceholder(payload.entityName)}</div>
-                <div><strong>Type:</strong> ${this.safePlaceholder(payload.entityType)}</div>
-                <div><strong>Jurisdiction:</strong> ${this.safePlaceholder(payload.jurisdiction || 'General')}</div>
-                <div><strong>Filing:</strong> ${this.safePlaceholder(payload.filingType)}</div>
-                <div><strong>Deadline:</strong> ${this.safePlaceholder(payload.deadline)}</div>
+                <div><strong>Project:</strong> ${this.safePlaceholder(payload.projectName)}</div>
+                <div><strong>Organization:</strong> ${this.safePlaceholder(payload.organizationType)}</div>
+                <div><strong>Grant Type:</strong> ${this.safePlaceholder(payload.grantType)}</div>
+                <div><strong>Budget:</strong> ${this.safePlaceholder(payload.budgetAmount)}</div>
+                <div><strong>Tone:</strong> ${this.safePlaceholder(payload.tone || 'Professional')}</div>
             </div>
             <hr/>
         `;
 
-        // Tooltip mapping for common checklist items
-        const tooltipMap = {
-            'EIN': 'Employer Identification Number issued by the IRS for tax purposes',
-            'Employer Identification Number': 'Federal tax ID number issued by the IRS',
-            'Articles of Incorporation': 'Original formation documents filed with the state',
-            'Articles of Organization': 'Original formation documents filed with the state for LLCs',
-            'Statement of Information': 'Required periodic filing to keep state records current',
-            'Franchise Tax': 'Annual state tax for the privilege of doing business',
-            'Registered Agent': 'Person or entity designated to receive legal documents',
-            'Operating Agreement': 'Internal document governing LLC operations and member rights',
-            'Bylaws': 'Internal rules governing corporation operations',
-            'Board Resolutions': 'Official decisions and actions recorded by the board of directors',
-            'Financial Statements': 'Documents showing the financial position of the business',
-            'Beneficial Ownership': 'Information about individuals who own or control the entity',
-            'BOI Report': 'Beneficial Ownership Information filing required by FinCEN'
-        };
-
-        // Helper function to extract tooltip from item text
-        const getTooltip = (item) => {
-            for (const [key, description] of Object.entries(tooltipMap)) {
-                if (item.includes(key)) {
-                    return description;
-                }
-            }
-            return null; // No tooltip if no match
-        };
-
         // Build sections
-        const checklistItems = checklist && checklist.length > 0 ? checklist : ['[No checklist items provided]'];
-        const checklistHTML = checklistItems.map(item => {
-            const tooltip = getTooltip(item);
-            const titleAttr = tooltip ? ` title="${this.escapeHtml(tooltip)}"` : '';
-            return `<li${titleAttr}>${this.escapeHtml(item)}</li>`;
-        }).join('');
+        const budgetItems = budgetNarrative && budgetNarrative.length > 0 ? budgetNarrative : ['[Budget details to be provided]'];
+        const budgetHTML = budgetItems.map(item => `<li>${this.escapeHtml(item)}</li>`).join('');
 
         const timelineItems = timeline && timeline.length > 0 ? timeline : [{
-            milestone: '[Pending Input]', 
-            owner: '[Pending Input]', 
-            dueDate: '[Deadline required]', 
-            notes: 'Provide filing deadline to generate timeline'
+            phase: '[Phase]', 
+            activity: '[Activity]', 
+            timeframe: '[Timeframe]', 
+            milestone: '[Milestone]'
         }];
         const timelineRows = timelineItems.map(row => `
             <tr>
+                <td>${this.safePlaceholder(row.phase)}</td>
+                <td>${this.safePlaceholder(row.activity)}</td>
+                <td>${this.safePlaceholder(row.timeframe)}</td>
                 <td>${this.safePlaceholder(row.milestone)}</td>
-                <td>${this.safePlaceholder(row.owner)}</td>
-                <td>${this.safePlaceholder(row.dueDate)}</td>
-                <td>${this.escapeHtml(row.notes || '')}</td>
             </tr>
         `).join('');
 
-        const riskItems = riskMatrix && riskMatrix.length > 0 ? riskMatrix : [{
-            risk: 'Late filing penalty',
-            severity: 'Medium',
-            likelihood: 'Medium',
-            mitigation: 'File well before deadline; set calendar reminders'
-        }];
-        const riskRows = riskItems.map(r => `
-            <tr>
-                <td>${this.safePlaceholder(r.risk)}</td>
-                <td><span class="severity-badge ${(r.severity || 'medium').toLowerCase()}">${this.safePlaceholder(r.severity)}</span></td>
-                <td>${this.safePlaceholder(r.likelihood)}</td>
-                <td>${this.safePlaceholder(r.mitigation)}</td>
-            </tr>
-        `).join('');
-
-        const recItems = recommendations && recommendations.length > 0 ? recommendations : ['Create compliance calendar with reminders'];
+        const recItems = recommendations && recommendations.length > 0 ? recommendations : ['Review and refine your proposal before submission'];
         const recList = recItems.map((r, i) => {
             // Remove any leading numbers (e.g., "1. " or "1. 1. ") that AI might add
             const cleanText = this.escapeHtml(r).replace(/^(\d+\.\s*)+/, '');
             return `<li><strong>${i+1}.</strong> ${cleanText}</li>`;
         }).join('');
 
-        const refItems = references && references.length > 0 ? references : ['Contact your state or federal agency for official filing portals'];
-        const refs = refItems.map(r => 
-            `<li>${this.escapeHtml(r)}</li>`
-        ).join('');
-
         // Assemble final HTML
         const html = `
             ${headerBlock}
 
             <section class="compliance-section">
-                <h2 class="section-title">Executive Compliance Summary</h2>
+                <h2 class="section-title">Executive Summary</h2>
                 <div class="section-content">${this.safePlaceholder(summary)}</div>
             </section>
 
             <section class="compliance-section">
-                <h3 class="section-title">Filing Requirements Checklist</h3>
-                <ul class="checklist">${checklistHTML}</ul>
+                <h3 class="section-title">Needs Statement</h3>
+                <div class="section-content">${this.safePlaceholder(needsStatement)}</div>
             </section>
 
             <section class="compliance-section">
-                <h3 class="section-title">Compliance Timeline</h3>
+                <h3 class="section-title">Program Description</h3>
+                <div class="section-content">${this.safePlaceholder(programDescription)}</div>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Outcomes & Evaluation</h3>
+                <div class="section-content">${this.safePlaceholder(outcomesEvaluation)}</div>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Budget Narrative</h3>
+                <ul class="checklist">${budgetHTML}</ul>
+            </section>
+
+            <section class="compliance-section">
+                <h3 class="section-title">Implementation Timeline</h3>
                 <div class="table-container">
                     <table class="compliance-table grid">
                         <thead>
-                            <tr><th>Milestone</th><th>Owner</th><th>Due Date</th><th>Notes</th></tr>
+                            <tr><th>Phase</th><th>Activity</th><th>Timeframe</th><th>Milestone</th></tr>
                         </thead>
                         <tbody>${timelineRows}</tbody>
                     </table>
@@ -378,25 +343,8 @@ class ComplianceToolkit {
             </section>
 
             <section class="compliance-section">
-                <h3 class="section-title">Risk Matrix</h3>
-                <div class="table-container">
-                    <table class="compliance-table grid">
-                        <thead>
-                            <tr><th>Risk</th><th>Severity</th><th>Likelihood</th><th>Mitigation</th></tr>
-                        </thead>
-                        <tbody>${riskRows}</tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="compliance-section">
-                <h3 class="section-title">Strategic Recommendations</h3>
+                <h3 class="section-title">Recommendations for Strengthening Your Proposal</h3>
                 <ol class="recs">${recList}</ol>
-            </section>
-
-            <section class="compliance-section">
-                <h3 class="section-title">Official References</h3>
-                <ul class="refs">${refs}</ul>
             </section>
         `;
 
@@ -430,15 +378,14 @@ class ComplianceToolkit {
 
             // Collect form data
             const payload = {
-                entityName: document.getElementById('entityName')?.value.trim() || '',
-                entityType: document.getElementById('entityType')?.value || '',
-                jurisdiction: document.getElementById('jurisdiction')?.value.trim() || '',
-                filingType: document.getElementById('filingType')?.value || '',
-                deadline: document.getElementById('deadline')?.value || '',
-                requirements: Array.from(document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked'))
-                    .map(cb => cb.value),
-                risks: document.getElementById('risks')?.value.trim() || '',
-                mitigation: document.getElementById('mitigation')?.value.trim() || ''
+                projectName: document.getElementById('projectName')?.value.trim() || '',
+                organizationType: document.getElementById('organizationType')?.value || '',
+                problemNeed: document.getElementById('problemNeed')?.value.trim() || '',
+                solutionActivities: document.getElementById('solutionActivities')?.value.trim() || '',
+                outcomesImpact: document.getElementById('outcomesImpact')?.value.trim() || '',
+                budgetAmount: document.getElementById('budgetAmount')?.value.trim() || '',
+                grantType: document.getElementById('grantType')?.value || '',
+                tone: document.getElementById('tone')?.value || 'Professional'
             };
 
             // Call backend for structured JSON
@@ -631,7 +578,7 @@ class ComplianceToolkit {
 
     buildFileName(r) {
         const safe = (s) => String(s || '').replace(/[^a-z0-9-_]+/gi, '_');
-        return `GrantGenie_${safe(r?.payload?.entityName)}_${safe(r?.payload?.filingType)}.pdf`;
+        return `GrantGenie_${safe(r?.payload?.projectName)}_${safe(r?.payload?.grantType)}.pdf`;
     }
 
     wrapForPdf(innerHTML, r) {
@@ -804,19 +751,15 @@ class ComplianceToolkit {
     }
 
     generateReportName() {
-        if (!this.currentResult?.payload) return 'Compliance Report';
+        if (!this.currentResult?.payload) return 'Grant Proposal';
         
-        const { entityName, filingType, deadline } = this.currentResult.payload;
+        const { projectName, grantType } = this.currentResult.payload;
         const parts = [];
         
-        if (filingType) parts.push(filingType);
-        if (entityName) parts.push(entityName);
-        if (deadline) {
-            const date = new Date(deadline);
-            parts.push(date.toLocaleDateString());
-        }
+        if (projectName) parts.push(projectName);
+        if (grantType) parts.push(grantType);
         
-        return parts.join(' - ') || 'Compliance Report';
+        return parts.join(' - ') || 'Grant Proposal';
     }
 
     async saveReportToDatabase(name) {
@@ -846,15 +789,15 @@ class ComplianceToolkit {
 
             const payload = {
                 name: name,
-                entityName: this.currentResult.payload?.entityName || '',
-                entityType: this.currentResult.payload?.entityType || '',
-                jurisdiction: this.currentResult.payload?.jurisdiction || '',
-                filingType: this.currentResult.payload?.filingType || '',
-                deadline: this.currentResult.payload?.deadline || '',
+                entityName: this.currentResult.payload?.projectName || '',
+                entityType: this.currentResult.payload?.organizationType || '',
+                jurisdiction: this.currentResult.payload?.grantType || '',
+                filingType: this.currentResult.payload?.grantType || '',
+                deadline: '',
                 htmlContent: this.currentResult.structured?.html || '',
                 checksum: this.currentResult.checksum || '',
                 metadata: JSON.stringify(this.currentResult.payload || {}),
-                toolkitCode: 'complipilot'
+                toolkitCode: 'grantgenie'
             };
 
             const response = await fetch('/api/reports/save', {
@@ -938,13 +881,13 @@ class ComplianceToolkit {
                                 </h3>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: rgb(var(--text-secondary));">
                                     <div data-testid="text-report-entity-${report.id}">
-                                        <strong>Entity:</strong> ${this.escapeHtml(report.entityName || 'N/A')}
+                                        <strong>Project:</strong> ${this.escapeHtml(report.entityName || 'N/A')}
                                     </div>
                                     <div data-testid="text-report-jurisdiction-${report.id}">
-                                        <strong>Jurisdiction:</strong> ${this.escapeHtml(report.jurisdiction || 'N/A')}
+                                        <strong>Organization:</strong> ${this.escapeHtml(report.entityType || 'N/A')}
                                     </div>
                                     <div data-testid="text-report-filing-${report.id}">
-                                        <strong>Filing Type:</strong> ${this.escapeHtml(report.filingType || 'N/A')}
+                                        <strong>Grant Type:</strong> ${this.escapeHtml(report.filingType || 'N/A')}
                                     </div>
                                     <div data-testid="text-report-date-${report.id}">
                                         <strong>Created:</strong> ${createdDate} ${createdTime}
