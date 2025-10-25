@@ -424,6 +424,18 @@ html:not(.theme-dark) .panel-header {
     gap: var(--spacing-sm);
 }
 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .form-label {
     font-family: var(--font-body);
     font-size: var(--font-size-base);

@@ -75,82 +75,86 @@
                             <span class="error-message" id="entityNameError"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label for="entityType" class="form-label required" data-testid="label-entity-type">
-                                Business Entity Type <span class="required-marker">*</span>
-                            </label>
-                            <select 
-                                id="entityType" 
-                                class="form-select"
-                                required
-                                data-testid="select-entity-type"
-                            >
-                                <option value="">Select entity type...</option>
-                                <option value="LLC">LLC (Limited Liability Company)</option>
-                                <option value="Corporation">Corporation</option>
-                                <option value="S-Corporation">S-Corporation</option>
-                                <option value="C-Corporation">C-Corporation</option>
-                                <option value="Nonprofit">Nonprofit Organization</option>
-                                <option value="Sole Proprietorship">Sole Proprietorship</option>
-                                <option value="Partnership">Partnership</option>
-                                <option value="LLP">LLP (Limited Liability Partnership)</option>
-                            </select>
-                            <span class="error-message" id="entityTypeError"></span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="entityType" class="form-label required" data-testid="label-entity-type">
+                                    Business Entity Type <span class="required-marker">*</span>
+                                </label>
+                                <select 
+                                    id="entityType" 
+                                    class="form-select"
+                                    required
+                                    data-testid="select-entity-type"
+                                >
+                                    <option value="">Select entity type...</option>
+                                    <option value="LLC">LLC (Limited Liability Company)</option>
+                                    <option value="Corporation">Corporation</option>
+                                    <option value="S-Corporation">S-Corporation</option>
+                                    <option value="C-Corporation">C-Corporation</option>
+                                    <option value="Nonprofit">Nonprofit Organization</option>
+                                    <option value="Sole Proprietorship">Sole Proprietorship</option>
+                                    <option value="Partnership">Partnership</option>
+                                    <option value="LLP">LLP (Limited Liability Partnership)</option>
+                                </select>
+                                <span class="error-message" id="entityTypeError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="jurisdiction" class="form-label required" data-testid="label-jurisdiction">
+                                    Jurisdiction (State/Country) <span class="required-marker">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="jurisdiction" 
+                                    class="form-input"
+                                    placeholder="e.g., Delaware, California, etc."
+                                    required
+                                    data-testid="input-jurisdiction"
+                                />
+                                <span class="error-message" id="jurisdictionError"></span>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="jurisdiction" class="form-label required" data-testid="label-jurisdiction">
-                                Jurisdiction (State/Country) <span class="required-marker">*</span>
-                            </label>
-                            <input 
-                                type="text" 
-                                id="jurisdiction" 
-                                class="form-input"
-                                placeholder="e.g., Delaware, California, etc."
-                                required
-                                data-testid="input-jurisdiction"
-                            />
-                            <span class="error-message" id="jurisdictionError"></span>
-                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="filingType" class="form-label required" data-testid="label-filing-type">
+                                    Filing Type <span class="required-marker">*</span>
+                                </label>
+                                <select 
+                                    id="filingType" 
+                                    class="form-select"
+                                    required
+                                    data-testid="select-filing-type"
+                                >
+                                    <option value="">Select filing type...</option>
+                                    <option value="Annual Report">Annual Report</option>
+                                    <option value="BOIR">BOIR (Beneficial Ownership Information Report)</option>
+                                    <option value="DBE Certification">DBE Certification</option>
+                                    <option value="MBE Certification">MBE Certification</option>
+                                    <option value="8a Certification">8a Certification</option>
+                                    <option value="SAM Registration">SAM.gov Registration</option>
+                                    <option value="Business License">Business License Renewal</option>
+                                    <option value="SBA Filing">SBA Filing</option>
+                                    <option value="State Tax Registration">State Tax Registration</option>
+                                    <option value="Operating Agreement">Operating Agreement Update</option>
+                                    <option value="Other">Other Compliance Filing</option>
+                                </select>
+                                <span class="error-message" id="filingTypeError"></span>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="filingType" class="form-label required" data-testid="label-filing-type">
-                                Filing Type <span class="required-marker">*</span>
-                            </label>
-                            <select 
-                                id="filingType" 
-                                class="form-select"
-                                required
-                                data-testid="select-filing-type"
-                            >
-                                <option value="">Select filing type...</option>
-                                <option value="Annual Report">Annual Report</option>
-                                <option value="BOIR">BOIR (Beneficial Ownership Information Report)</option>
-                                <option value="DBE Certification">DBE Certification</option>
-                                <option value="MBE Certification">MBE Certification</option>
-                                <option value="8a Certification">8a Certification</option>
-                                <option value="SAM Registration">SAM.gov Registration</option>
-                                <option value="Business License">Business License Renewal</option>
-                                <option value="SBA Filing">SBA Filing</option>
-                                <option value="State Tax Registration">State Tax Registration</option>
-                                <option value="Operating Agreement">Operating Agreement Update</option>
-                                <option value="Other">Other Compliance Filing</option>
-                            </select>
-                            <span class="error-message" id="filingTypeError"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="deadline" class="form-label required" data-testid="label-deadline">
-                                Filing Deadline <span class="required-marker">*</span>
-                            </label>
-                            <input 
-                                type="date" 
-                                id="deadline" 
-                                class="form-input"
-                                required
-                                data-testid="input-deadline"
-                            />
-                            <span class="error-message" id="deadlineError"></span>
+                            <div class="form-group">
+                                <label for="deadline" class="form-label required" data-testid="label-deadline">
+                                    Filing Deadline <span class="required-marker">*</span>
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="deadline" 
+                                    class="form-input"
+                                    required
+                                    data-testid="input-deadline"
+                                />
+                                <span class="error-message" id="deadlineError"></span>
+                            </div>
                         </div>
 
                         <div class="form-group">
