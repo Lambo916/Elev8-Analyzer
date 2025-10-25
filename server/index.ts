@@ -66,6 +66,16 @@ app.use('/api/', apiLimiter);
 // Add authentication middleware
 app.use(authenticateToken);
 
+// Prevent aggressive caching of favicon and icon files
+app.use((req, res, next) => {
+  if (req.path.includes('favicon') || req.path.includes('apple-icon') || req.path.includes('chrome-')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
