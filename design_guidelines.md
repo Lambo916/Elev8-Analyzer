@@ -7,7 +7,7 @@
 
 ### Color Palette
 **Primary Colors:**
-- Gold: 51 100% 50% (primary brand color #FFD700)
+- Light Blue: 197 87% 64% (primary brand color #4FC3F7)
 - Yellow: 56 100% 62% (accent color - use sparingly)
 - White: 0 0% 100%
 - Gray: 0 0% 62%
@@ -15,10 +15,9 @@
 
 **Usage:**
 - Primary buttons and CTAs: Black backgrounds with white text
-- Input focus states and active elements: Gold
-- Gold accents for success states and branding
-- Clean white backgrounds with subtle gray borders in light mode
-- Dark backgrounds with gold accents in night mode
+- Input focus states and active elements: Light blue
+- Minimal yellow accents for success states only
+- Clean white backgrounds with subtle gray borders
 
 ### Typography
 **Font Stack:**

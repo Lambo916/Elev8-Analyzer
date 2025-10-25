@@ -1,12 +1,12 @@
 # GrantGenie Master Template v1.1.2
 
-This template includes GrantGenie branding, complete theming system (Light/Dark), tokenized CSS architecture with gradient polish, increased yellow/gold accents, and persistent theme preferences. This serves as the **master template v1.1.2** for GrantGenie and related toolkits.
+This template includes GrantGenie branding, complete theming system (Light/Dark), tokenized CSS architecture with gradient polish, increased yellow accents, and persistent theme preferences. This serves as the **master template v1.1.2** for GrantGenie and related toolkits.
 
 ## Features
 
 - **Dual Theme System**: Professional Light and Dark themes with persistent user preference
 - **Tokenized CSS Architecture**: Reusable CSS variables for colors, gradients, shadows, and typography
-- **Enhanced Gold Accents**: Tasteful use of gold (#FFEB3B) throughout both themes
+- **Enhanced Yellow Accents**: Tasteful use of yellow (#FFEB3B) throughout both themes
 - **Complete Icon Set**: Favicon, Apple Touch Icon, Android Chrome icons, and PWA manifest
 - **Theme Persistence**: Respects system preferences with localStorage override capability
 - **Accessibility First**: AA contrast compliance and reduced-motion support
@@ -25,24 +25,24 @@ This template includes GrantGenie branding, complete theming system (Light/Dark)
 ## Branding Guidelines
 
 ### Colors (Both Themes)
-- **Primary**: #FFD700 (Gold)
+- **Primary**: #4FC3F7 (Light Blue)
 - **Accent**: #FFEB3B (Yellow)
 - **Success**: #4CAF50 (Green)
 - **Error**: #F44336 (Red)
 
 ### Light Theme (v1.1.3 "Less White")
-- **Background**: Enhanced white gradient with dual accent washes (yellow + gold)
-- **Cards**: Multi-layer with gold tint fade, gradient rims, and panel sheen
+- **Background**: Enhanced blue→white gradient with dual accent washes (yellow + blue)
+- **Cards**: Multi-layer with blue tint fade, gradient rims, and panel sheen
 - **Panel Headers**: Gradient background with enhanced styling
 - **Text**: Dark slate (#1e293b) - AA compliant on all tinted backgrounds
-- **Gold Accents**: Enhanced button glows, stronger link cues, visible brand touches
-- **Visual Depth**: Visible gold tints, gradient borders, reduced flat white appearance
+- **Yellow Accents**: Enhanced button glows, stronger link cues, visible brand touches
+- **Visual Depth**: Visible blue tints, gradient borders, reduced flat white appearance
 
-### Dark Theme (Night Mode)
+### Dark Theme
 - **Background**: Dark gradient (#0A0A0A → #1A1A1A → #0f0f0f)
-- **Cards**: Elevated dark surfaces with gold borders
+- **Cards**: Elevated dark surfaces with blue borders
 - **Text**: Pure white (#FFFFFF)
-- **Gold Accents**: Enhanced glows, dual-layer button effects, accent borders
+- **Yellow Accents**: Enhanced glows, dual-layer button effects, accent borders
 
 ### Typography
 - **Headings**: Montserrat (with theme-aware shadows)
@@ -52,8 +52,8 @@ This template includes GrantGenie branding, complete theming system (Light/Dark)
 ### Interactive Elements
 - Theme toggle with sun/moon icons
 - Buttons with gradient backgrounds and theme-specific glows
-- Dual-layer hover effects (gold core + yellow halo)
-- Focus states with combined gold/yellow rings for accessibility
+- Dual-layer hover effects (blue core + yellow halo)
+- Focus states with combined blue/yellow rings for accessibility
 
 ## Setup Instructions
 
@@ -119,21 +119,21 @@ The template uses a tokenized CSS variable system located in `public/style.css`:
 Enhanced from v1.1.2 with stronger visual depth and reduced flat appearance:
 
 **New Tokens:**
-- `--bg-accent-wash-2`: Additional gold accent wash for dual-layer effect
-- `--panel-tint`: Visible gold fade from top (6% opacity)
+- `--bg-accent-wash-2`: Additional blue accent wash for dual-layer effect
+- `--panel-tint`: Visible blue fade from top (6% opacity)
 - `--panel-sheen`: White overlay for dimensional depth (65% opacity)  
-- `--rim-gradient`: Gold fade borders via border-image (18% to 0%)
+- `--rim-gradient`: Blue fade borders via border-image (18% to 0%)
 - `--panel-shadow`: Enhanced shadow for elevated feel
 - `--divider-fade`: Subtle gradient dividers
 
 **Enhanced Features:**
-- Dual accent wash: Yellow (top-right) + Gold (bottom-left)
+- Dual accent wash: Yellow (top-right) + Blue (bottom-left)
 - Three-layer panel backgrounds: Sheen + Tint + Card gradient
 - Gradient rim borders using border-image for crisp edges
-- Enhanced button/link gold cues with higher opacity
-- Visible gold tints throughout while maintaining AA contrast
+- Enhanced button/link yellow cues with higher opacity
+- Visible blue tints throughout while maintaining AA contrast
 - `--card-border`: Subtle slate border (8% opacity)
-- `--panel-header-glow`: Minimal gold glow (12% opacity)
+- `--panel-header-glow`: Minimal blue glow (12% opacity)
 
 ### Customizing Theme Tokens
 Toolkits can override specific tokens without modifying components:
@@ -154,7 +154,7 @@ html.theme-light {
 ### Accessibility Features
 - AA contrast compliance on all text/background combinations
 - `prefers-reduced-motion`: Disables heavy animations and glows
-- Focus rings: Gold core with subtle yellow halo
+- Focus rings: Blue core with subtle yellow halo
 - Theme toggle: Keyboard accessible with clear focus states
 
 ## Customization for Specific Toolkits

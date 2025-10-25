@@ -7,8 +7,8 @@ const TOOLKIT_CONFIGS = {
         tagline: "Unlock grant opportunities with AI-powered assistance",
         icon: "/favicon-32x32.png",
         logo: "complipilot-logo.png",
-        themeColor: "#FFD700", // Gold
-        primaryColorRGB: "255, 215, 0",
+        themeColor: "#4DB6E7", // Light Blue
+        primaryColorRGB: "79, 195, 247",
         
         // Form configuration
         formType: "compliance",

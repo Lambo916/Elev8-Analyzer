@@ -1,6 +1,6 @@
 # Overview
 
-GrantGenie is a production-grade AI-powered platform for discovering and applying to grant opportunities. The system delivers professional compliance reports with database-backed report management, Panel=PDF WYSIWYG parity, and a responsive desktop-first UX where the results panel fills available screen space. Built with a gold and night theme for a professional, modern interface.
+GrantGenie is a production-grade AI-powered platform for discovering and applying to grant opportunities. The system delivers professional compliance reports with database-backed report management, Panel=PDF WYSIWYG parity, and a responsive desktop-first UX where the results panel fills available screen space. Built with a blue and yellow theme for a professional, modern interface.
 
 # User Preferences
 
@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 - **Technology Stack**: Pure vanilla HTML, CSS, and JavaScript with no frameworks for maximum compatibility and minimal dependencies
-- **Component Structure**: Single-page application with modular CSS variables for consistent GrantGenie branding (gold primary, night theme)
+- **Component Structure**: Single-page application with modular CSS variables for consistent GrantGenie branding (light blue primary, yellow accents)
 - **UI Framework**: Uses shadcn/ui components with React for the client-side application, alongside Tailwind CSS for styling
 - **Design System**: Material Design principles with custom GrantGenie branding, featuring a two-panel layout (40% input, 60% results on desktop, stacked on mobile)
 - **Typography**: Montserrat for headings, Open Sans for body text with defined font weights and sizing hierarchy
