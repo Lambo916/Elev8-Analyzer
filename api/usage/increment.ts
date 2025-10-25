@@ -13,6 +13,15 @@ function getClientIp(req: VercelRequest): string {
   return typeof ip === 'string' ? ip.trim() : 'unknown';
 }
 
+// Normalize and validate tool parameter (prevent bypass via case/variant strings)
+function normalizeTool(tool: any): 'grantgenie' | 'complipilot' {
+  const normalized = String(tool || 'grantgenie').toLowerCase().trim();
+  if (normalized === 'complipilot') {
+    return 'complipilot';
+  }
+  return 'grantgenie'; // Default to grantgenie for any invalid/unknown values
+}
+
 // Helper for CORS
 function setCORS(res: VercelResponse, origin: string | undefined) {
   const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -68,8 +77,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Unable to determine client IP address' });
     }
 
-    // Get tool parameter from request body (default: grantgenie)
-    const tool = req.body?.tool || 'grantgenie';
+    // Normalize and validate tool parameter (prevent usage cap bypass)
+    const tool = normalizeTool(req.body?.tool);
     const toolName = tool === 'grantgenie' ? 'GrantGenie' : 'CompliPilot';
 
     const db = getDb();

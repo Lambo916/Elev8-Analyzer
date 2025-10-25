@@ -41,6 +41,15 @@ function getClientIp(req: Request): string {
   return typeof ip === 'string' ? ip.trim() : 'unknown';
 }
 
+// Normalize and validate tool parameter (prevent bypass via case/variant strings)
+function normalizeTool(tool: any): 'grantgenie' | 'complipilot' {
+  const normalized = String(tool || 'grantgenie').toLowerCase().trim();
+  if (normalized === 'complipilot') {
+    return 'complipilot';
+  }
+  return 'grantgenie'; // Default to grantgenie for any invalid/unknown values
+}
+
 // Check usage limit (read-only check before generation)
 async function checkUsageLimit(req: Request, tool: string = 'grantgenie'): Promise<{ allowed: boolean; count: number }> {
   try {
@@ -327,8 +336,8 @@ REMEMBER: Your analysis should be data-driven yet strategic, helping business ow
 
   // API endpoint for generating structured compliance data (HYBRID APPROACH)
   app.post("/api/generate", async (req, res) => {
-    // Determine which tool is being used (default: grantgenie for this app)
-    const tool = req.body.tool || 'grantgenie';
+    // Normalize and validate tool parameter (prevent usage cap bypass)
+    const tool = normalizeTool(req.body.tool);
     const toolName = tool === 'grantgenie' ? 'GrantGenie' : 'CompliPilot';
     
     // Check 30-report usage limit BEFORE generation (soft launch protection)
