@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { resolveProfile } from './shared/filing-profiles.js';
-import { getDb } from './db-serverless.js';
-import { usageTracking } from './shared/schema.js';
+import { resolveProfile } from './_lib/filing-profiles.js';
+import { getDb } from './_lib/db-serverless.js';
+import { usageTracking } from './_lib/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 // Initialize OpenAI

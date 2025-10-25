@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../db-serverless.js';
-import { usageTracking } from '../shared/schema.js';
+import { getDb } from '../_lib/db-serverless.js';
+import { usageTracking } from '../_lib/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 // Get client IP address from request

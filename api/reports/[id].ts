@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from '../db-serverless.js';
-import { complianceReports } from '../shared/schema.js';
+import { getDb } from '../_lib/db-serverless.js';
+import { complianceReports } from '../_lib/schema.js';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 
