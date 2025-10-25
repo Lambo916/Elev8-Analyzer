@@ -1,13 +1,13 @@
-# YourBizGuru Modular Toolkit Architecture
+# GrantGenie Modular Toolkit Architecture
 
 ## Overview
-This system demonstrates a modular architecture that allows multiple YourBizGuru toolkits to share common infrastructure while maintaining distinct branding, forms, and AI prompts.
+This system demonstrates a modular architecture that allows multiple GrantGenie toolkits to share common infrastructure while maintaining distinct branding, forms, and AI prompts.
 
 ## Current Toolkits
 
-### 1. CompliPilot (Production)
-- **Purpose**: Compliance filing preparation and risk assessment
-- **Primary Color**: YBG Blue (#4DB6E7)
+### 1. GrantGenie (Production)
+- **Purpose**: Grant opportunity discovery and application assistance
+- **Primary Color**: Gold (#FFD700)
 - **Form Type**: Compliance filing form (7 fields)
 - **AI Output**: 5 sections (Executive Summary, Checklist, Roadmap, Risk Matrix, Next Steps)
 - **Status**: ✅ Production Ready
@@ -43,7 +43,7 @@ Centralized configuration defining:
 
 ### 3. AI System Prompts (`server/routes.ts`)
 Two specialized prompt templates:
-- `getComplianceSystemPrompt()` - CompliPilot structured compliance output
+- `getComplianceSystemPrompt()` - GrantGenie structured compliance output
 - `getDiagnosticSystemPrompt()` - Elev8 Analyzer strategic analysis output
 
 **Toolkit-Aware API Routing:**
@@ -58,7 +58,7 @@ fetch('/api/generate', {
     })
 });
 ```
-- `toolkitType: 'compliance'` (default) → uses CompliPilot prompt
+- `toolkitType: 'compliance'` (default) → uses GrantGenie prompt
 - `toolkitType: 'diagnostic'` → uses Elev8 Analyzer prompt
 
 ### 4. PDF Export System (`pdf-export.js`)
@@ -66,7 +66,7 @@ Modular branding via:
 - `window.currentToolkitName` - Sets header title
 - `window.currentToolkitIcon` - Sets header icon
 - `getToolkitName()` - Dynamic toolkit detection
-- Shared YourBizGuru.com footer across all toolkits
+- Shared GrantGenie footer across all toolkits
 
 ## How to Add a New Toolkit
 
@@ -113,7 +113,7 @@ Adapt form validation, prompt building, and data collection in `script.js` based
 ## Key Benefits
 
 ✅ **Shared Infrastructure**: All toolkits use the same core components
-✅ **Consistent Branding**: YourBizGuru footer and attribution maintained
+✅ **Consistent Branding**: GrantGenie footer and attribution maintained
 ✅ **Easy Theming**: CSS variables enable quick color scheme changes
 ✅ **Modular Forms**: Each toolkit can have unique input structures
 ✅ **Specialized AI**: Dedicated system prompts for each toolkit's purpose
@@ -138,7 +138,7 @@ server/
 
 ## Production Deployment
 
-**Current Status**: CompliPilot is production-ready at `/` or `index.html`
+**Current Status**: GrantGenie is production-ready at `/` or `index.html`
 
 **Future Toolkits**: Each can be deployed at:
 - `/elev8` or `/elev8-analyzer.html` - Business Analysis
@@ -146,4 +146,4 @@ server/
 - `/tax` or `/tax-planner.html` - Tax Planning
 - etc.
 
-All sharing the same backend API and maintaining YourBizGuru branding consistency.
+All sharing the same backend API and maintaining GrantGenie branding consistency.

@@ -1,13 +1,13 @@
-# YourBizGuru (YBG) Toolkit Template Design Guidelines
+# GrantGenie Toolkit Template Design Guidelines
 
 ## Design Approach
-**System-Based Approach**: Following Material Design principles with custom YBG branding for a professional, productivity-focused mini-dashboard interface.
+**System-Based Approach**: Following Material Design principles with custom GrantGenie branding for a professional, productivity-focused mini-dashboard interface.
 
 ## Core Design Elements
 
 ### Color Palette
 **Primary Colors:**
-- Light Blue: 197 87% 64% (primary brand color)
+- Gold: 51 100% 50% (primary brand color #FFD700)
 - Yellow: 56 100% 62% (accent color - use sparingly)
 - White: 0 0% 100%
 - Gray: 0 0% 62%
@@ -15,9 +15,10 @@
 
 **Usage:**
 - Primary buttons and CTAs: Black backgrounds with white text
-- Input focus states and active elements: Light blue
-- Minimal yellow accents for success states only
-- Clean white backgrounds with subtle gray borders
+- Input focus states and active elements: Gold
+- Gold accents for success states and branding
+- Clean white backgrounds with subtle gray borders in light mode
+- Dark backgrounds with gold accents in night mode
 
 ### Typography
 **Font Stack:**
@@ -91,4 +92,4 @@
 - Proper semantic HTML structure
 - Screen reader friendly labels and descriptions
 
-This design system ensures consistency across all 6 toolkits while maintaining the professional YBG brand identity and optimizing for both standalone use and GHL iframe embedding.
+This design system ensures consistency while maintaining the professional GrantGenie brand identity and optimizing for standalone use and iframe embedding.

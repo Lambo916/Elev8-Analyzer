@@ -1,5 +1,5 @@
 /**
- * CompliPilot - Unified Rendering Architecture
+ * GrantGenie - Unified Rendering Architecture
  * Panel = PDF with checksum verification
  */
 
@@ -149,8 +149,8 @@ class ComplianceToolkit {
     }
 
     showLimitReachedAlert(count, limit) {
-        const message = `You've reached your ${limit}-report limit for the CompliPilot soft launch.`;
-        const upgradeUrl = 'https://yourbizguru.com/checkout-complipilot'; // TODO: Replace with actual GoHighLevel checkout URL
+        const message = `You've reached your ${limit}-report limit for the GrantGenie soft launch.`;
+        const upgradeUrl = 'https://grantgenie.com/checkout'; // TODO: Replace with actual checkout URL
         
         // Create modal alert
         const modal = document.createElement('div');
@@ -631,7 +631,7 @@ class ComplianceToolkit {
 
     buildFileName(r) {
         const safe = (s) => String(s || '').replace(/[^a-z0-9-_]+/gi, '_');
-        return `CompliPilot_${safe(r?.payload?.entityName)}_${safe(r?.payload?.filingType)}.pdf`;
+        return `GrantGenie_${safe(r?.payload?.entityName)}_${safe(r?.payload?.filingType)}.pdf`;
     }
 
     wrapForPdf(innerHTML, r) {
@@ -639,12 +639,12 @@ class ComplianceToolkit {
         return `
             <div class="pdf-wrapper">
                 <div class="pdf-header">
-                    <div class="brand">CompliPilot</div>
+                    <div class="brand">GrantGenie</div>
                     <div class="tiny">Generated: ${stamp}</div>
                 </div>
                 ${innerHTML}
                 <div class="footer">
-                    Powered by YourBizGuru.com • For informational purposes only. Not legal, tax, or financial advice.
+                    GrantGenie • For informational purposes only. Not legal, tax, or financial advice.
                 </div>
             </div>
         `;

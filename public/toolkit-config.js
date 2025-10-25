@@ -1,14 +1,14 @@
-// YourBizGuru Modular Toolkit Configuration System
+// GrantGenie Modular Toolkit Configuration System
 // This file defines multiple toolkits that can be swapped with minimal changes
 
 const TOOLKIT_CONFIGS = {
     complipilot: {
-        name: "CompliPilot",
-        tagline: "Navigate compliance with confidence — powered by YourBizGuru",
+        name: "GrantGenie",
+        tagline: "Unlock grant opportunities with AI-powered assistance",
         icon: "/favicon-32x32.png",
-        logo: "ybg-logo.svg",
-        themeColor: "#4DB6E7", // YBG Light Blue
-        primaryColorRGB: "79, 195, 247",
+        logo: "complipilot-logo.png",
+        themeColor: "#FFD700", // Gold
+        primaryColorRGB: "255, 215, 0",
         
         // Form configuration
         formType: "compliance",
@@ -48,12 +48,12 @@ const TOOLKIT_CONFIGS = {
         systemPromptTemplate: "compliance",
         
         // PDF export settings
-        pdfFilenamePrefix: "CompliPilot_Compliance_Report"
+        pdfFilenamePrefix: "GrantGenie_Compliance_Report"
     },
     
     elev8analyzer: {
         name: "Elev8 Analyzer",
-        tagline: "Elevate your business strategy — powered by YourBizGuru",
+        tagline: "Elevate your business strategy — powered by GrantGenie",
         icon: "/favicon-32x32.png", // Would be analyzer-specific icon
         logo: "ybg-logo.svg",
         themeColor: "#2E7D32", // Primary Green

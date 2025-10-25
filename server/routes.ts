@@ -189,9 +189,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     apiKey: apiKey,
   });
 
-  // CompliPilot compliance system prompt template
+  // GrantGenie compliance system prompt template
   const getComplianceSystemPrompt = () => {
-    return `You are CompliPilot, an expert compliance assistant powered by YourBizGuru.
+    return `You are GrantGenie, an expert compliance assistant with AI-powered assistance.
 
 Your role is to generate professional, submission-ready compliance documents that help businesses navigate regulatory requirements with confidence.
 
@@ -233,7 +233,7 @@ REMEMBER: Consistency and structure are critical. Every document must have all 5
 
   // Elev8 Analyzer diagnostic system prompt template (SCAFFOLD)
   const getDiagnosticSystemPrompt = () => {
-    return `You are Elev8 Analyzer, an expert business diagnostic assistant powered by YourBizGuru.
+    return `You are Elev8 Analyzer, an expert business diagnostic assistant powered by GrantGenie.
 
 Your role is to generate professional strategic analysis reports that help businesses identify opportunities, address challenges, and elevate their operations.
 
