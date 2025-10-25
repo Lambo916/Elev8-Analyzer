@@ -334,7 +334,7 @@ window.YBG_PDF = window.YBG_PDF || {};
       // Try to parse as table row (pipe-separated)
       if (line.includes('|')) {
         const cells = line.split('|').map(c => c.trim()).filter(c => c && c !== '---');
-        if (cells.length >= 3 && !cells[0].match(/^(Milestone|Phase|Task)/i)) {
+        if (cells.length >= 3 && !cells[0].match(/^(Milestone|Phase|Task|Activity)/i)) {
           rows.push(cells.slice(0, 4)); // Take first 4 columns
         }
       }
@@ -350,10 +350,10 @@ window.YBG_PDF = window.YBG_PDF || {};
     return {
       endIdx: i,
       table: {
-        headers: ['Milestone', 'Owner', 'Due Date', 'Notes'],
+        headers: ['Phase', 'Activity', 'Timeframe', 'Milestone'],
         columns: [
-          { width: 0.35, align: 'left' },
-          { width: 0.20, align: 'left' },
+          { width: 0.25, align: 'left' },
+          { width: 0.30, align: 'left' },
           { width: 0.20, align: 'left' },
           { width: 0.25, align: 'left' }
         ],
@@ -455,6 +455,59 @@ window.YBG_PDF = window.YBG_PDF || {};
     };
   }
   
+  function parseBudgetNarrativeTable(lines, startIdx) {
+    const rows = [];
+    let i = startIdx;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Stop at next heading or separator
+      if (line.startsWith('##') || line.startsWith('---')) {
+        break;
+      }
+      
+      // Skip blank lines (don't stop, just continue)
+      if (line === '') {
+        i++;
+        continue;
+      }
+      
+      // Parse budget line items (bullet points or numbered)
+      if (line.match(/^[•\-\*\d\.]/)) {
+        const cleanText = line.replace(/^[•\-\*\d\.\s]+/, '').trim();
+        
+        // Try to extract category and amount
+        // Format: "Category ($X,XXX): Description"
+        const match = cleanText.match(/^([^($]+?)(?:\s*\(?\$?([\d,]+)\)?)?:\s*(.+)$/);
+        if (match) {
+          const category = match[1].trim();
+          const amount = match[2] ? `$${match[2]}` : '';
+          const description = match[3].trim();
+          rows.push([category, amount, description]);
+        } else {
+          // Fallback: entire line as description
+          rows.push([cleanText, '', '']);
+        }
+      }
+      
+      i++;
+    }
+    
+    return {
+      endIdx: i,
+      table: {
+        headers: ['Budget Category', 'Amount', 'Justification'],
+        columns: [
+          { width: 0.25, align: 'left' },
+          { width: 0.15, align: 'left' },
+          { width: 0.60, align: 'left' }
+        ],
+        rows
+      }
+    };
+  }
+  
   function parseContent(text) {
     if (!text) return [];
     
@@ -477,15 +530,22 @@ window.YBG_PDF = window.YBG_PDF || {};
         i++;
         
         // Detect and parse table sections
-        if (heading.includes('checklist') || heading.includes('requirements')) {
-          const result = parseChecklistTable(lines, i);
+        if (heading.includes('budget') && heading.includes('narrative')) {
+          const result = parseBudgetNarrativeTable(lines, i);
           if (result.table.rows.length > 0) {
             blocks.push({ type: 'table', data: result.table });
             i = result.endIdx;
             continue;
           }
-        } else if (heading.includes('timeline') || heading.includes('roadmap') || heading.includes('schedule')) {
+        } else if (heading.includes('timeline') || heading.includes('implementation') || heading.includes('schedule')) {
           const result = parseTimelineTable(lines, i);
+          if (result.table.rows.length > 0) {
+            blocks.push({ type: 'table', data: result.table });
+            i = result.endIdx;
+            continue;
+          }
+        } else if (heading.includes('checklist') || heading.includes('requirements')) {
+          const result = parseChecklistTable(lines, i);
           if (result.table.rows.length > 0) {
             blocks.push({ type: 'table', data: result.table });
             i = result.endIdx;

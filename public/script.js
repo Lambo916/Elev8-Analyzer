@@ -578,7 +578,12 @@ class ComplianceToolkit {
 
     buildFileName(r) {
         const safe = (s) => String(s || '').replace(/[^a-z0-9-_]+/gi, '_');
-        return `GrantGenie_${safe(r?.payload?.projectName)}_${safe(r?.payload?.grantType)}.pdf`;
+        const date = new Date(r.createdAt || Date.now());
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        return `GrantGenie_${safe(r?.payload?.projectName)}_${safe(r?.payload?.grantType)}_${dateStr}.pdf`;
     }
 
     wrapForPdf(innerHTML, r) {
