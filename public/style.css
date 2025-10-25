@@ -1169,6 +1169,17 @@ hr,
     margin-bottom: var(--spacing-md);
 }
 
+/* Recommendations list - disable default numbering since JS adds manual numbers */
+ol.recs {
+    list-style: none;
+    padding-left: 0;
+}
+
+ol.recs li {
+    margin-bottom: var(--spacing-sm);
+    padding-left: var(--spacing-xs);
+}
+
 /* Checklist styles */
 .compliance-section .checklist li[title] {
     cursor: help;

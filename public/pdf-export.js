@@ -781,10 +781,17 @@ window.YBG_PDF = window.YBG_PDF || {};
             break;
           
           case 'ol':
-            let index = 1;
             for (const li of node.querySelectorAll(':scope > li')) {
-              markdown += `${index}. ` + li.textContent.trim() + '\n';
-              index++;
+              const text = li.textContent.trim();
+              // Check if text already starts with a number (manual numbering)
+              // If so, use it as-is; otherwise add automatic numbering
+              if (/^\d+\./.test(text)) {
+                markdown += text + '\n';
+              } else {
+                // Fallback: add automatic numbering for lists without manual numbers
+                const index = Array.from(node.querySelectorAll(':scope > li')).indexOf(li) + 1;
+                markdown += `${index}. ` + text + '\n';
+              }
             }
             markdown += '\n';
             break;
