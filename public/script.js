@@ -205,9 +205,11 @@ class ComplianceToolkit {
         `).join('');
 
         const recItems = recommendations && recommendations.length > 0 ? recommendations : ['Create compliance calendar with reminders'];
-        const recList = recItems.map((r, i) => 
-            `<li><strong>${i+1}.</strong> ${this.escapeHtml(r)}</li>`
-        ).join('');
+        const recList = recItems.map((r, i) => {
+            // Remove any leading numbers (e.g., "1. " or "1. 1. ") that AI might add
+            const cleanText = this.escapeHtml(r).replace(/^(\d+\.\s*)+/, '');
+            return `<li><strong>${i+1}.</strong> ${cleanText}</li>`;
+        }).join('');
 
         const refItems = references && references.length > 0 ? references : ['Contact your state or federal agency for official filing portals'];
         const refs = refItems.map(r => 
