@@ -265,6 +265,13 @@ html.theme-dark h3 {
     color: rgb(var(--text));
 }
 
+/* Light theme: visible border on theme toggle */
+html.theme-light .theme-toggle,
+html:not(.theme-dark) .theme-toggle {
+    border: 1.5px solid rgba(100, 116, 139, 0.3);
+    background: rgba(255, 255, 255, 0.9);
+}
+
 .theme-toggle:hover {
     background: rgba(var(--card), 1);
     border-color: rgba(var(--primary-rgb), 0.4);
@@ -453,7 +460,7 @@ html:not(.theme-dark) .panel-header {
 .form-textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid rgba(var(--border), 0.3);
+    border: 1.5px solid rgba(var(--border), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
     font-size: var(--font-size-base);
@@ -465,6 +472,13 @@ html:not(.theme-dark) .panel-header {
     transition: all 0.3s ease;
 }
 
+/* Light theme: stronger textarea border */
+html.theme-light .form-textarea,
+html:not(.theme-dark) .form-textarea {
+    border: 1.5px solid rgba(100, 116, 139, 0.25);
+    background: rgba(255, 255, 255, 0.85);
+}
+
 .form-textarea::placeholder {
     color: rgb(var(--text-muted));
 }
@@ -473,13 +487,22 @@ html:not(.theme-dark) .panel-header {
 .form-select {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid rgba(var(--border), 0.3);
+    border: 1.5px solid rgba(var(--border), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
     font-size: var(--font-size-base);
     color: rgb(var(--text));
     background: rgba(var(--bg), 0.5);
     transition: all 0.3s ease;
+}
+
+/* Light theme: stronger borders for better visibility */
+html.theme-light .form-input,
+html.theme-light .form-select,
+html:not(.theme-dark) .form-input,
+html:not(.theme-dark) .form-select {
+    border: 1.5px solid rgba(100, 116, 139, 0.25);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .form-select {
@@ -516,6 +539,13 @@ html:not(.theme-dark) .panel-header {
     background: rgba(var(--card), 0.5);
     border-radius: var(--border-radius-sm);
     border: 1px solid rgba(var(--border), 0.2);
+}
+
+/* Light theme: stronger border on checkbox group */
+html.theme-light .checkbox-group,
+html:not(.theme-dark) .checkbox-group {
+    border: 1.5px solid rgba(100, 116, 139, 0.2);
+    background: rgba(255, 255, 255, 0.7);
 }
 
 .checkbox-label {
@@ -1329,16 +1359,35 @@ ol.recs li {
 .severity-badge.high {
     background: rgba(var(--ybg-brand-error), 0.15);
     color: rgb(var(--ybg-brand-error));
+    border: 1.5px solid rgba(var(--ybg-brand-error), 0.3);
 }
 
 .severity-badge.medium {
     background: rgba(var(--accent-rgb), 0.2);
     color: rgb(var(--text));
+    border: 1.5px solid rgba(var(--accent-rgb), 0.35);
 }
 
 .severity-badge.low {
     background: rgba(var(--ybg-brand-success), 0.15);
     color: rgb(var(--ybg-brand-success));
+    border: 1.5px solid rgba(var(--ybg-brand-success), 0.3);
+}
+
+/* Light theme: stronger borders on badges for visibility */
+html.theme-light .severity-badge.high,
+html:not(.theme-dark) .severity-badge.high {
+    border-color: rgba(var(--ybg-brand-error), 0.4);
+}
+
+html.theme-light .severity-badge.medium,
+html:not(.theme-dark) .severity-badge.medium {
+    border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+html.theme-light .severity-badge.low,
+html:not(.theme-dark) .severity-badge.low {
+    border-color: rgba(var(--ybg-brand-success), 0.4);
 }
 
 /* Recommendations list */
