@@ -80,6 +80,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let newCount: number;
 
     if (existingRecord.length > 0) {
+      // Check if already at limit
+      if (existingRecord[0].reportCount >= 30) {
+        console.log(`[Usage Increment] IP ${ipAddress} already at limit: ${existingRecord[0].reportCount}/30`);
+        return res.status(429).json({
+          reportCount: existingRecord[0].reportCount,
+          hasReachedLimit: true,
+          limit: 30,
+          error: 'Usage limit already reached'
+        });
+      }
+      
       // Update existing record
       const updated = await db
         .update(usageTracking)

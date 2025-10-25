@@ -486,11 +486,18 @@ class ComplianceToolkit {
 
             this.showSuccess('Compliance guide generated successfully!');
 
-            // Increment usage counter after successful generation
-            await this.incrementUsage();
+            // Note: Usage counter is automatically incremented by backend
 
         } catch (error) {
             console.error('Generation error:', error);
+            
+            // Handle usage limit error from backend
+            if (error.message && error.message.includes('30-report limit')) {
+                const usageCheck = await this.checkUsageLimit();
+                this.showLimitReachedAlert(usageCheck.count, usageCheck.limit);
+                return;
+            }
+            
             this.showError(error.message || 'Failed to generate compliance guide');
         } finally {
             this.setLoadingState(false);

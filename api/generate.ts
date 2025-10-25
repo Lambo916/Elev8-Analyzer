@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { resolveProfile } from './shared/filing-profiles.js';
+import { getDb } from './db-serverless.js';
+import { usageTracking } from './shared/schema.js';
+import { eq, sql } from 'drizzle-orm';
 
 // Initialize OpenAI
 let openai: OpenAI | null = null;
@@ -13,6 +16,112 @@ function getOpenAI() {
     openai = new OpenAI({ apiKey: apiKey.replace(/\s+/g, '').trim() });
   }
   return openai;
+}
+
+// Get client IP address from request
+function getClientIp(req: VercelRequest): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded
+    ? (typeof forwarded === 'string' ? forwarded.split(',')[0] : forwarded[0])
+    : req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+  
+  return typeof ip === 'string' ? ip.trim() : 'unknown';
+}
+
+// Check usage limit (read-only check before generation)
+async function checkUsageLimit(req: VercelRequest): Promise<{ allowed: boolean; count: number }> {
+  try {
+    const ipAddress = getClientIp(req);
+    
+    if (ipAddress === 'unknown') {
+      console.error('[Usage] Unable to determine client IP - blocking request for security');
+      return { allowed: false, count: 30 }; // Treat as limit reached to block generation
+    }
+
+    const db = getDb();
+    
+    // Check current usage
+    const existing = await db
+      .select()
+      .from(usageTracking)
+      .where(eq(usageTracking.ipAddress, ipAddress))
+      .limit(1);
+
+    const currentCount = existing.length > 0 ? existing[0].reportCount : 0;
+
+    // Check against 30-report limit
+    if (currentCount >= 30) {
+      console.log(`[Usage] IP ${ipAddress} has reached limit: ${currentCount}/30`);
+      return { allowed: false, count: currentCount };
+    }
+
+    console.log(`[Usage] IP ${ipAddress} current usage: ${currentCount}/30`);
+    return { allowed: true, count: currentCount };
+  } catch (error) {
+    console.error('[Usage] Check error:', error);
+    // Fail open for soft launch - allow generation if usage tracking fails
+    return { allowed: true, count: 0 };
+  }
+}
+
+// Increment usage after successful generation (atomic with limit enforcement)
+async function incrementUsage(req: VercelRequest): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
+  try {
+    const ipAddress = getClientIp(req);
+    
+    if (ipAddress === 'unknown') {
+      console.error('[Usage] Unable to determine client IP - failing increment for security');
+      return { success: false, count: 30, limitReached: true }; // Fail closed to prevent bypass
+    }
+
+    const db = getDb();
+    
+    // Atomic increment with strict limit enforcement
+    // Only increments if count < 30 (prevents race conditions)
+    const updated = await db
+      .update(usageTracking)
+      .set({
+        reportCount: sql`${usageTracking.reportCount} + 1`,
+        lastUpdated: new Date(),
+      })
+      .where(sql`${usageTracking.ipAddress} = ${ipAddress} AND ${usageTracking.reportCount} < 30`)
+      .returning();
+
+    if (updated.length > 0) {
+      // Successfully incremented
+      console.log(`[Usage] IP ${ipAddress} incremented to ${updated[0].reportCount}/30`);
+      return { success: true, count: updated[0].reportCount };
+    }
+
+    // No rows updated - either doesn't exist or already at limit
+    const existing = await db
+      .select()
+      .from(usageTracking)
+      .where(eq(usageTracking.ipAddress, ipAddress))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Record exists and is at/over limit
+      console.log(`[Usage] IP ${ipAddress} already at limit: ${existing[0].reportCount}/30`);
+      return { success: false, count: existing[0].reportCount, limitReached: true };
+    }
+
+    // First report for this IP - insert with count 1
+    const inserted = await db
+      .insert(usageTracking)
+      .values({
+        ipAddress,
+        reportCount: 1,
+      })
+      .returning();
+    
+    console.log(`[Usage] IP ${ipAddress} first report: 1/30`);
+    return { success: true, count: inserted[0].reportCount };
+  } catch (error) {
+    console.error('[Usage] Increment error - CRITICAL:', error);
+    // Return error state to prevent uncounted report delivery
+    return { success: false, count: 0, limitReached: true };
+  }
 }
 
 // Helper for CORS (production-locked with development support)
@@ -108,8 +217,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Check 30-report usage limit BEFORE generation (soft launch protection)
+  const usageCheck = await checkUsageLimit(req);
+  if (!usageCheck.allowed) {
+    console.log(`[Vercel] /api/generate - Request blocked: usage limit reached (${usageCheck.count}/30)`);
+    return res.status(429).json({
+      error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+      limitReached: true,
+      count: usageCheck.count,
+      limit: 30
+    });
+  }
+
   try {
-    console.log('[Vercel] /api/generate - Starting report generation');
+    console.log(`[Vercel] /api/generate - Starting report generation (usage: ${usageCheck.count}/30)`);
     
     const { formData } = req.body as any;
     
@@ -351,6 +472,20 @@ Generate ONLY a JSON object:
     }
 
     console.log('[Vercel] /api/generate - Hybrid compliance intelligence generated successfully');
+
+    // Increment usage counter AFTER successful generation (atomic operation with limit enforcement)
+    const incrementResult = await incrementUsage(req);
+    
+    // If increment failed due to limit (race condition), reject the request
+    if (!incrementResult.success && incrementResult.limitReached) {
+      console.log(`[Vercel] /api/generate - Request completed but limit reached during increment: ${incrementResult.count}/30`);
+      return res.status(429).json({
+        error: 'You have reached your 30-report limit for the CompliPilot soft launch. Please upgrade to continue.',
+        limitReached: true,
+        count: incrementResult.count,
+        limit: 30
+      });
+    }
 
     return res.status(200).json(response);
 
