@@ -1168,9 +1168,20 @@ window.YBG_PDF = window.YBG_PDF || {};
           'Latest Result' : 
           `Result ${index + 1}`;
         
+        // Use current date/time for PDF generation timestamp
+        const currentDate = new Date();
+        const formattedTimestamp = currentDate.toLocaleString('en-US', {
+          month: '2-digit',
+          day: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        
         writer.writeBlock({
           type: 'h2',
-          text: `${headerText} - ${result.displayTime || new Date(result.timestamp).toLocaleString()}`
+          text: `${headerText} - Generated: ${formattedTimestamp}`
         });
         
         // Prompt if available
