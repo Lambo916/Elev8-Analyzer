@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { resolveProfile } from './_lib/filing-profiles.js';
 import { getDb } from './_lib/db-serverless.js';
 import { usageTracking } from './_lib/schema.js';
 import { eq, sql } from 'drizzle-orm';
@@ -159,46 +158,6 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
-// Helper: Compute timeline dates from deadline with validation
-function computeTimelineDates(timeline: any[], deadline: string | null) {
-  if (!deadline) {
-    return timeline.map(item => ({
-      milestone: item.milestone,
-      owner: item.owner,
-      dueDate: `T${item.offsetDays}`,
-      notes: item.notes
-    }));
-  }
-  
-  // Validate deadline format
-  const deadlineDate = new Date(deadline);
-  if (isNaN(deadlineDate.getTime())) {
-    console.warn(`[Vercel] Invalid deadline format: ${deadline}, falling back to relative dates`);
-    return timeline.map(item => ({
-      milestone: item.milestone,
-      owner: item.owner,
-      dueDate: `T${item.offsetDays}`,
-      notes: item.notes
-    }));
-  }
-  
-  return timeline.map(item => {
-    const dueDate = new Date(deadlineDate);
-    dueDate.setDate(dueDate.getDate() + item.offsetDays);
-    
-    const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-    const day = String(dueDate.getDate()).padStart(2, '0');
-    const year = dueDate.getFullYear();
-    
-    return {
-      milestone: item.milestone,
-      owner: item.owner,
-      dueDate: `${month}/${day}/${year}`,
-      notes: item.notes
-    };
-  });
-}
-
 // Main handler for /api/generate
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin as string | undefined;
@@ -230,283 +189,159 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log(`[Vercel] /api/generate - Starting report generation (usage: ${usageCheck.count}/30)`);
+    console.log(`[Express] /api/generate - Starting grant proposal generation (usage: ${usageCheck.count}/30)`);
     
     const { formData } = req.body as any;
     
     if (!formData) {
-      console.error('[Vercel] /api/generate - Missing formData');
+      console.error('[Express] /api/generate - Missing formData');
       return res.status(400).json({ error: 'formData is required' });
     }
 
     const {
-      entityName,
-      entityType,
-      jurisdiction,
-      filingType,
-      deadline,
-      requirements = [],
-      risks,
-      mitigation
+      projectName,
+      organizationType,
+      grantType,
+      problemStatement,
+      solutionActivities,
+      expectedOutcomes,
+      totalBudget,
+      writingTone
     } = formData;
 
-    // Validate required fields
-    if (!entityType || !filingType) {
+    // Validate required fields for grant proposals
+    if (!organizationType || !grantType) {
       return res.status(400).json({
-        error: "Entity type and filing type are required.",
+        error: "Organization type and grant type are required.",
       });
     }
 
-    console.log('[Vercel] /api/generate - Form data:', {
-      filingType,
-      jurisdiction,
-      entityType
+    console.log('[Express] /api/generate - Grant proposal data:', {
+      projectName,
+      organizationType,
+      grantType,
+      totalBudget
     });
-
-    // STEP 1: Try to resolve filing profile (expert knowledge base)
-    const profile = resolveProfile(filingType, jurisdiction, entityType);
-    const useAIMode = !profile;
-    
-    if (useAIMode) {
-      console.log(`[Vercel] No pre-built profile found - using super smart AI mode for ${jurisdiction} ${filingType}`);
-    }
-
-    // Build user context for AI
-    const userContext: string[] = [];
-    if (requirements.length > 0) {
-      userContext.push(`Selected requirements: ${requirements.join(', ')}`);
-    }
-    if (risks) {
-      userContext.push(`Risk concerns: ${risks}`);
-    }
-    if (mitigation) {
-      userContext.push(`Mitigation plan: ${mitigation}`);
-    }
 
     // Initialize OpenAI client
     const ai = getOpenAI();
 
-    let response;
+    // Generate grant proposal using AI
+    console.log('[Express] /api/generate - Generating grant proposal with AI...');
+    
+    const grantProposalPrompt = `You are an expert grant writer specializing in creating compelling, professional grant proposals that win funding.
 
-    if (useAIMode) {
-      // SUPER SMART AI MODE: Generate everything through AI
-      const superSmartPrompt = `You are a professional compliance intelligence system specializing in business filing requirements across all 50 US states.
+Generate a comprehensive grant proposal for:
+- Project/Organization: ${projectName || '[Project Name]'} 
+- Organization Type: ${organizationType}
+- Grant Type: ${grantType}
+- Total Budget: ${totalBudget || 'Not specified'}
+- Problem/Need: ${problemStatement || 'Not specified'}
+- Solution/Activities: ${solutionActivities || 'Not specified'}
+- Expected Outcomes: ${expectedOutcomes || 'Not specified'}
+- Writing Tone: ${writingTone || 'Professional & Persuasive'}
 
-Generate a comprehensive compliance report for:
-- Entity: ${entityName || '[Entity Name]'} (${entityType})
-- Jurisdiction: ${jurisdiction || 'General'}
-- Filing Type: ${filingType}
-- Deadline: ${deadline || '[Not specified]'}
-${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
+CRITICAL: Create a persuasive, well-structured grant proposal with specific details. Avoid generic placeholders.
 
-CRITICAL: Research and provide ACCURATE, STATE-SPECIFIC information. Do not provide generic placeholder content.
-
-Generate a JSON object with these fields:
+Generate a JSON object with these 7 sections:
 {
-  "summary": "2-3 professional paragraphs explaining: (1) What this ${filingType} is and why it matters for ${entityName || 'this entity'} in ${jurisdiction}, (2) Specific ${jurisdiction} requirements and deadlines, (3) Real consequences of non-compliance (actual penalties, suspension risks, etc.)",
+  "executiveSummary": "A compelling 2-3 paragraph executive summary that captures the essence of the proposal, the problem being addressed, your unique solution, and expected impact. Make it persuasive and engaging.",
   
-  "checklist": [
-    "List 5-7 specific filing requirements for ${filingType} in ${jurisdiction}. Include actual form numbers, fee amounts, and state-specific documents (e.g., 'Statement of Information Form SI-550' for California LLCs, not generic placeholders)"
-  ],
+  "needsStatement": "3-4 paragraphs detailing: (1) The specific problem or need this project addresses, (2) Supporting evidence, statistics, or data demonstrating the need, (3) Who is affected and how, (4) Why addressing this need is urgent and important. Be specific and data-driven where possible.",
   
-  "timeline": [
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -30, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -14, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": -7, "notes": "Specific action required"},
-    {"milestone": "Milestone name", "owner": "Responsible party", "offsetDays": 0, "notes": "Specific action required"}
-  ],
+  "programDescription": "4-5 paragraphs describing: (1) Your proposed solution/program in detail, (2) Specific activities and methods you'll use, (3) Target population and how you'll reach them, (4) Timeline of program activities, (5) Why your approach is effective and evidence-based. Include concrete details about implementation.",
   
-  "riskMatrix": [
-    {"risk": "Specific compliance risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"},
-    {"risk": "Another specific risk", "severity": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "Specific mitigation action"}
-  ],
+  "outcomesEvaluation": "3-4 paragraphs covering: (1) Specific, measurable outcomes you expect to achieve, (2) How you will measure success (evaluation methods and metrics), (3) Short-term and long-term impact, (4) How you'll use evaluation results to improve the program. Include both quantitative and qualitative measures.",
+  
+  "budgetNarrative": "A detailed budget narrative (3-4 paragraphs) explaining: (1) Major budget categories and amounts, (2) How each expense directly supports project goals, (3) Why the budget is reasonable and necessary, (4) Any cost-sharing or matching funds. Make the connection between budget items and program activities clear.",
+  
+  "implementationTimeline": "A detailed timeline (4-6 milestones/phases) showing: (1) Key project phases from start to completion, (2) Major milestones and deliverables, (3) Responsible parties, (4) Timeframes for each phase. Format as an array of milestone objects with structure: {\"phase\": \"Phase name\", \"activity\": \"What happens\", \"timeframe\": \"Month 1-3 or specific dates\", \"milestone\": \"Key deliverable\"}",
   
   "recommendations": [
-    "3-5 actionable recommendations specific to ${jurisdiction} ${filingType}"
-  ],
-  
-  "references": [
-    "Official ${jurisdiction} filing portal with actual URL",
-    "State agency website with actual URL", 
-    "Relevant government resources with actual URLs"
+    "3-5 specific, actionable recommendations for strengthening this proposal",
+    "Each recommendation should be a complete sentence offering concrete advice"
   ]
 }
 
 IMPORTANT: 
-- Use actual ${jurisdiction} requirements, forms, fees, and portal URLs
-- Timeline offsetDays are relative to deadline: negative = before, 0 = deadline day
-- Include 4-6 timeline milestones covering preparation to filing
-- Provide real risk assessment with actual consequences
-- Return ONLY valid JSON, no explanations`;
+- Use the ${writingTone} writing style throughout
+- Be specific - avoid phrases like "we will work hard" or "we are committed"
+- Include realistic details based on the provided information
+- Make it persuasive and fundable
+- Return ONLY valid JSON, no explanations or markdown`;
 
-      try {
-        console.log('[Vercel] /api/generate - Calling OpenAI API (AI Mode)...');
-        
-        const completion = await ai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: "You are a compliance intelligence expert with deep knowledge of business filing requirements across all US states. Provide accurate, jurisdiction-specific information. Return valid JSON only."
-            },
-            {
-              role: "user",
-              content: superSmartPrompt,
-            },
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: 2500,
-        });
-
-        console.log('[Vercel] /api/generate - OpenAI API call completed');
-        
-        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
-        
-        // Compute timeline dates
-        const timelineWithDates = aiResponse.timeline 
-          ? computeTimelineDates(aiResponse.timeline, deadline)
-          : [];
-
-        response = {
-          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
-          checklist: aiResponse.checklist || [],
-          timeline: timelineWithDates,
-          riskMatrix: aiResponse.riskMatrix || [],
-          recommendations: aiResponse.recommendations || ["File well before deadline", "Set calendar reminders"],
-          references: aiResponse.references || []
-        };
-
-      } catch (error: any) {
-        console.error('[Vercel] /api/generate - OpenAI error in AI mode:', error.message);
-        console.error('[Vercel] /api/generate - Full error:', error);
-        
-        // Return a friendly error with details for debugging
-        return res.status(500).json({ 
-          error: 'Failed to generate AI report. Please try again.',
-          details: process.env.NODE_ENV !== 'production' ? error.message : undefined
-        });
-      }
-
-    } else {
-      // PROFILE-BASED MODE: Use pre-built knowledge + AI enhancement
-      console.log('[Vercel] /api/generate - Using pre-built profile:', profile.name);
+    try {
+      console.log('[Express] /api/generate - Calling OpenAI API for grant proposal...');
       
-      const timelineWithDates = computeTimelineDates(profile.timeline, deadline);
+      const completion = await ai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert grant writer with deep knowledge of successful grant proposals across all sectors. Create compelling, fundable proposals with specific details. Return valid JSON only."
+          },
+          {
+            role: "user",
+            content: grantProposalPrompt,
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 3000,
+      });
 
-      const aiPrompt = `Generate a personalized executive summary and recommendations for:
+      console.log('[Express] /api/generate - OpenAI API call completed');
+      
+      const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+      
+      // Transform response to match frontend expectations
+      const response = {
+        summary: aiResponse.executiveSummary || 'Executive summary not generated.',
+        needsStatement: aiResponse.needsStatement || 'Needs statement not generated.',
+        programDescription: aiResponse.programDescription || 'Program description not generated.',
+        outcomesEvaluation: aiResponse.outcomesEvaluation || 'Outcomes and evaluation not generated.',
+        budgetNarrative: Array.isArray(aiResponse.budgetNarrative) 
+          ? aiResponse.budgetNarrative 
+          : aiResponse.budgetNarrative ? [aiResponse.budgetNarrative] : ['Budget narrative not generated.'],
+        timeline: aiResponse.implementationTimeline || [],
+        recommendations: aiResponse.recommendations || ['Review and refine your proposal before submission']
+      };
 
-Entity: ${entityName || '[Entity Name]'} (${entityType})
-Jurisdiction: ${jurisdiction || 'General'}
-Filing Type: ${filingType}
-Deadline: ${deadline || '[Not provided]'}
-${userContext.length > 0 ? '\nUser Context:\n' + userContext.join('\n') : ''}
+      console.log('[Express] /api/generate - Grant proposal generated successfully');
 
-Generate ONLY a JSON object:
-{
-  "summary": "2-3 paragraphs explaining why this ${filingType} matters for ${entityName || 'this entity'}, consequences of late filing, and key compliance considerations specific to ${jurisdiction}. ${userContext.length > 0 ? 'Address user context.' : ''}",
-  "recommendations": [
-    "3-5 specific actionable recommendations tailored to ${entityName || 'this business'}"
-  ]
-}`;
-
-      try {
-        console.log('[Vercel] /api/generate - Calling OpenAI API (Profile Mode)...');
-        
-        const completion = await ai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: "You are a compliance expert. Return valid JSON only."
-            },
-            {
-              role: "user",
-              content: aiPrompt,
-            },
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: 1000,
-        });
-
-        console.log('[Vercel] /api/generate - OpenAI API call completed');
-        
-        const aiResponse = JSON.parse(completion.choices[0].message.content || '{"summary":"","recommendations":[]}');
-
-        // Format profile data
-        const checklistItems = profile.checklist.map(item => 
-          `${item.label} - ${item.description}`
-        );
-
-        const riskItems = profile.risks.map(r => ({
-          risk: r.risk,
-          severity: r.severity,
-          likelihood: r.likelihood,
-          mitigation: r.mitigation
-        }));
-
-        const referenceLinks = profile.links.map(link => 
-          `${link.label}: ${link.url}`
-        );
-
-        response = {
-          summary: aiResponse.summary || `This compliance report addresses the ${filingType} requirement for ${entityName || 'your business'}.`,
-          checklist: checklistItems,
-          timeline: timelineWithDates,
-          riskMatrix: riskItems,
-          recommendations: aiResponse.recommendations && aiResponse.recommendations.length > 0 
-            ? aiResponse.recommendations 
-            : ["File well before deadline", "Set calendar reminders", "Consult with compliance advisor"],
-          references: referenceLinks
-        };
-
-      } catch (error: any) {
-        console.error('[Vercel] /api/generate - OpenAI error in profile mode:', error.message);
-        console.error('[Vercel] /api/generate - Full error:', error);
-        
-        // Return a friendly error with details for debugging
-        return res.status(500).json({ 
-          error: 'Failed to generate profile-based report. Please try again.',
-          details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+      // Increment usage counter AFTER successful generation
+      const incrementResult = await incrementUsage(req);
+      
+      // If increment failed due to limit (race condition), reject the request
+      if (!incrementResult.success && incrementResult.limitReached) {
+        console.log(`[Express] /api/generate - Request completed but limit reached during increment: ${incrementResult.count}/30`);
+        return res.status(429).json({
+          error: 'You have reached your 30-report limit for the GrantGenie soft launch. Please upgrade to continue.',
+          limitReached: true,
+          count: incrementResult.count,
+          limit: 30
         });
       }
-    }
 
-    console.log('[Vercel] /api/generate - Hybrid compliance intelligence generated successfully');
+      return res.status(200).json(response);
 
-    // Increment usage counter AFTER successful generation (atomic operation with limit enforcement)
-    const incrementResult = await incrementUsage(req);
-    
-    // If increment failed due to limit (race condition), reject the request
-    if (!incrementResult.success && incrementResult.limitReached) {
-      console.log(`[Vercel] /api/generate - Request completed but limit reached during increment: ${incrementResult.count}/30`);
-      return res.status(429).json({
-        error: 'You have reached your 30-report limit for the GrantGenie soft launch. Please upgrade to continue.',
-        limitReached: true,
-        count: incrementResult.count,
-        limit: 30
+    } catch (error: any) {
+      console.error('[Express] /api/generate - OpenAI error:', error.message);
+      console.error('[Express] /api/generate - Full error:', error);
+      
+      // Return a friendly error with details for debugging
+      return res.status(500).json({ 
+        error: 'Failed to generate grant proposal. Please try again.',
+        details: process.env.NODE_ENV !== 'production' ? error.message : undefined
       });
     }
-
-    return res.status(200).json(response);
 
   } catch (error: any) {
-    console.error('[Vercel] /api/generate - Error:', error);
-    console.error('[Vercel] /api/generate - Stack:', error.stack);
+    console.error('[Express] /api/generate - Error:', error);
+    console.error('[Express] /api/generate - Stack:', error.stack);
     
-    // ALWAYS return JSON, never let Vercel show HTML error page
-    try {
-      return res.status(500).json({ 
-        error: 'Something went wrong. Please try again later.',
-        ...(process.env.NODE_ENV !== 'production' && { 
-          debug: error.message,
-          stack: error.stack 
-        })
-      });
-    } catch (jsonError) {
-      // Last resort: if JSON serialization fails, send plain text JSON
-      res.status(500).send(JSON.stringify({ 
-        error: 'Internal server error' 
-      }));
-    }
+    return res.status(500).json({
+      error: 'Something went wrong. Please try again later.',
+      ...(process.env.NODE_ENV !== 'production' && { debug: error.message })
+    });
   }
 }
