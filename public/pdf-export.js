@@ -156,7 +156,8 @@ window.YBG_PDF = window.YBG_PDF || {};
   }
 
   function getToolkitIcon() {
-    return window.currentToolkitIcon || "/favicon-32x32.png";
+    // Use the full-size logo for PDF exports (not the tiny favicon)
+    return window.currentToolkitLogo || "grantgenie-logo.png";
   }
 
   // ---- Image Loading -------------------------------------------------------
@@ -190,8 +191,8 @@ window.YBG_PDF = window.YBG_PDF || {};
       // Set opacity to 6% (0.06) for subtle watermark
       doc.setGState(new doc.GState({ opacity: 0.06 }));
       
-      // Draw the logo centered on page
-      doc.addImage(iconDataUrl, "PNG", centerX, centerY, watermarkSize, watermarkSize, "", "FAST");
+      // Draw the logo centered on page with high quality
+      doc.addImage(iconDataUrl, "PNG", centerX, centerY, watermarkSize, watermarkSize, "", "SLOW");
       
       // Restore full opacity for content
       doc.setGState(new doc.GState({ opacity: 1.0 }));
@@ -214,8 +215,8 @@ window.YBG_PDF = window.YBG_PDF || {};
         const logoX = x;
         const logoY = y + 1;
         
-        // Draw square logo
-        doc.addImage(iconDataUrl, "PNG", logoX, logoY, logoSize, logoSize, "", "FAST");
+        // Draw square logo with high quality (SLOW compression for crisp rendering)
+        doc.addImage(iconDataUrl, "PNG", logoX, logoY, logoSize, logoSize, "", "SLOW");
       } catch (e) {
         // Silent fail for logo
       }

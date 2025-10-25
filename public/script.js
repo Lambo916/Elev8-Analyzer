@@ -3,6 +3,10 @@
  * Panel = PDF with checksum verification
  */
 
+// Initialize toolkit configuration for PDF exports
+window.currentToolkitName = "GrantGenie";
+window.currentToolkitLogo = "grantgenie-logo.png";  // Full-size logo for crisp PDF rendering
+
 // =====================================================
 // THEME MANAGER (keeping existing functionality)
 // =====================================================
