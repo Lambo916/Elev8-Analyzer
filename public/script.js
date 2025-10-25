@@ -855,7 +855,7 @@ class ComplianceToolkit {
         }, { once: true });
 
         try {
-            const response = await fetch('/api/reports/list?toolkit=complipilot', {
+            const response = await fetch('/api/reports/list?toolkit=grantgenie', {
                 headers: {
                     ...this.getAuthHeaders()
                 }
