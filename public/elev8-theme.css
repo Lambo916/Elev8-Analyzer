@@ -10,25 +10,34 @@
     --ybg-brand-success: 16, 185, 129;  /* Success Green */
     --ybg-brand-error: 239, 68, 68;    /* Red */
     
-    /* Light Theme with Emerald Green Primary + Blue→Teal Gradient */
-    --bg: 248, 250, 252;                /* Clean light gray-blue */
-    --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E3A5F 35%, #14B8A6 100%);
-    --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(0, 184, 124, 0.08), rgba(255, 255, 255, 0) 58%);
-    --bg-accent-wash-2: radial-gradient(900px 700px at -10% 110%, rgba(20, 184, 166, 0.06), rgba(255, 255, 255, 0) 60%);
+    /* Light Theme with Emerald Green Primary + Soft Gradient */
+    --bg: 252, 253, 254;                /* Very light background */
+    --bg-gradient: linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 35%, #80CBC4 100%);
+    --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(0, 184, 124, 0.05), rgba(255, 255, 255, 0) 58%);
+    --bg-accent-wash-2: radial-gradient(900px 700px at -10% 110%, rgba(20, 184, 166, 0.04), rgba(255, 255, 255, 0) 60%);
     
     --card: 255, 255, 255;
-    --card-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafb 100%);
-    --card-header: 243, 250, 249;       /* Subtle teal tint */
+    --card-gradient: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+    --card-header: 249, 252, 251;       /* Very subtle teal tint */
     
     --panel: 255, 255, 255;
-    --panel-tint: linear-gradient(180deg, rgba(0, 184, 124, 0.03) 0%, rgba(255, 255, 255, 0.0) 38%);
-    --rim-gradient: linear-gradient(180deg, rgba(0, 184, 124, 0.12), rgba(0, 184, 124, 0.00));
+    --panel-tint: linear-gradient(180deg, rgba(0, 184, 124, 0.02) 0%, rgba(255, 255, 255, 0.0) 38%);
+    --rim-gradient: linear-gradient(180deg, rgba(0, 184, 124, 0.08), rgba(0, 184, 124, 0.00));
+    
+    /* Text Colors - Darker for better contrast in light mode */
+    --text: 30, 41, 59;                  /* Dark slate for readability */
+    --text-secondary: 71, 85, 105;       /* Medium slate */
+    --text-muted: 100, 116, 139;         /* Light slate */
     
     /* Interactive Colors - Emerald Green Primary */
     --primary: rgb(0, 184, 124);
     --primary-rgb: 0, 184, 124;
     --accent: rgb(20, 184, 166);  /* Teal accent */
     --accent-rgb: 20, 184, 166;
+    
+    /* Borders for light mode */
+    --border: 203, 213, 225;             /* Soft border */
+    --border-strong: 148, 163, 184;      /* Stronger border */
     
     /* Button Gradients - Emerald Green */
     --btn-gradient: linear-gradient(90deg, #00B87C, #00D68F);

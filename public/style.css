@@ -188,7 +188,7 @@ html:not(.theme-dark) body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .header-right {
