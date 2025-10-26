@@ -43,7 +43,7 @@ function getClientIp(req: Request): string {
 
 // Normalize and validate tool parameter (prevent bypass via case/variant strings)
 function normalizeTool(tool: any): 'elev8analyzer' | 'grantgenie' | 'complipilot' {
-  const normalized = String(tool || 'elev8analyzer').toLowerCase().trim();
+  const normalized = String(tool || 'grantgenie').toLowerCase().trim();
   if (normalized === 'elev8analyzer') {
     return 'elev8analyzer';
   }
@@ -53,7 +53,7 @@ function normalizeTool(tool: any): 'elev8analyzer' | 'grantgenie' | 'complipilot
   if (normalized === 'complipilot') {
     return 'complipilot';
   }
-  return 'elev8analyzer'; // Default to elev8analyzer for any invalid/unknown values
+  return 'grantgenie'; // Default to grantgenie for backward compatibility
 }
 
 // Check usage limit (read-only check before generation)
@@ -408,7 +408,7 @@ REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON obje
   app.post("/api/generate", async (req, res) => {
     // Normalize and validate tool parameter (prevent usage cap bypass)
     const tool = normalizeTool(req.body.tool);
-    const toolName = tool === 'grantgenie' ? 'GrantGenie' : 'CompliPilot';
+    const toolName = tool === 'grantgenie' ? 'GrantGenie' : tool === 'elev8analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
     
     // Check 30-report usage limit BEFORE generation (soft launch protection)
     const usageCheck = await checkUsageLimit(req, tool);
@@ -426,7 +426,7 @@ REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON obje
     const { formData } = req.body;
     
     try {
-      console.log(`[Express] /api/generate - Starting report generation (usage: ${usageCheck.count}/30)`);
+      console.log(`[Express] /api/generate - Starting ${tool} report generation (usage: ${usageCheck.count}/30)`);
       
       // Input validation
       if (!formData) {
@@ -435,28 +435,90 @@ REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON obje
         });
       }
 
-      const {
-        projectName,
-        organizationType,
-        problemNeed,
-        solutionActivities,
-        outcomesImpact,
-        budgetAmount,
-        grantType,
-        tone = 'Professional'
-      } = formData;
+      let response;
+      
+      // Handle Elev8 Analyzer diagnostic flow
+      if (tool === 'elev8analyzer') {
+        const {
+          businessName,
+          industry,
+          revenueRange,
+          creditProfile,
+          employees,
+          challenges,
+          goals
+        } = formData;
 
-      // Validate required fields
-      if (!projectName || !organizationType || !problemNeed || !solutionActivities || !outcomesImpact || !budgetAmount || !grantType) {
-        return res.status(400).json({
-          error: "All required fields must be completed.",
+        // Validate required fields for diagnostic
+        if (!businessName || !industry || !revenueRange || !employees) {
+          return res.status(400).json({
+            error: "Business name, industry, revenue range, and employee count are required.",
+          });
+        }
+
+        console.log(`Generating business analysis for: ${businessName} (${industry})`);
+
+        // Build diagnostic prompt
+        const diagnosticPrompt = `Generate a comprehensive business health diagnostic for the following company:
+
+BUSINESS PROFILE:
+- Business Name: ${businessName}
+- Industry: ${industry}
+- Annual Revenue: ${revenueRange}
+- Credit Profile: ${creditProfile || 'Not provided'}
+- Employees: ${employees}
+
+CHALLENGES:
+${challenges || 'Not specified'}
+
+STRATEGIC GOALS:
+${goals || 'Not specified'}
+
+Analyze this business across all 8 pillars and provide a detailed, actionable assessment. Be specific and realistic based on the profile provided. Return ONLY valid JSON matching the exact structure specified in the system prompt.`;
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: getDiagnosticSystemPrompt()
+            },
+            {
+              role: "user",
+              content: diagnosticPrompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 3500,
         });
-      }
 
-      console.log(`Generating grant proposal for: ${projectName} - ${grantType} (${organizationType})`);
+        response = JSON.parse(completion.choices[0].message.content || '{}');
+        console.log("Business diagnostic generated successfully");
 
-      // Build grant proposal prompt with all user inputs
-      const grantProposalPrompt = `You are a professional grant writing expert specializing in compelling, fundable proposals.
+      } else {
+        // Handle GrantGenie grant proposal flow
+        const {
+          projectName,
+          organizationType,
+          problemNeed,
+          solutionActivities,
+          outcomesImpact,
+          budgetAmount,
+          grantType,
+          tone = 'Professional'
+        } = formData;
+
+        // Validate required fields
+        if (!projectName || !organizationType || !problemNeed || !solutionActivities || !outcomesImpact || !budgetAmount || !grantType) {
+          return res.status(400).json({
+            error: "All required fields must be completed.",
+          });
+        }
+
+        console.log(`Generating grant proposal for: ${projectName} - ${grantType} (${organizationType})`);
+
+        // Build grant proposal prompt with all user inputs
+        const grantProposalPrompt = `You are a professional grant writing expert specializing in compelling, fundable proposals.
 
 Generate a comprehensive grant proposal for:
 - Project/Organization: ${projectName}
@@ -510,35 +572,36 @@ IMPORTANT:
 - Budget narrative should justify how funds directly support activities
 - Return ONLY valid JSON, no explanations`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: getGrantProposalSystemPrompt()
-          },
-          {
-            role: "user",
-            content: grantProposalPrompt,
-          },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 3000,
-      });
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: getGrantProposalSystemPrompt()
+            },
+            {
+              role: "user",
+              content: grantProposalPrompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 3000,
+        });
 
-      const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
 
-      const response = {
-        summary: aiResponse.executiveSummary || `Grant proposal for ${projectName}.`,
-        needsStatement: aiResponse.needsStatement || problemNeed,
-        programDescription: aiResponse.programDescription || solutionActivities,
-        outcomesEvaluation: aiResponse.outcomesEvaluation || outcomesImpact,
-        budgetNarrative: aiResponse.budgetNarrative || [`Budget: ${budgetAmount}`],
-        timeline: aiResponse.timeline || [],
-        recommendations: aiResponse.recommendations || ["Review and refine before submission"]
-      };
+        response = {
+          summary: aiResponse.executiveSummary || `Grant proposal for ${projectName}.`,
+          needsStatement: aiResponse.needsStatement || problemNeed,
+          programDescription: aiResponse.programDescription || solutionActivities,
+          outcomesEvaluation: aiResponse.outcomesEvaluation || outcomesImpact,
+          budgetNarrative: aiResponse.budgetNarrative || [`Budget: ${budgetAmount}`],
+          timeline: aiResponse.timeline || [],
+          recommendations: aiResponse.recommendations || ["Review and refine before submission"]
+        };
 
-      console.log("Grant proposal generated successfully");
+        console.log("Grant proposal generated successfully");
+      }
 
       // Increment usage counter AFTER successful generation (atomic operation with limit enforcement)
       const incrementResult = await incrementUsage(req, tool);

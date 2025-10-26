@@ -1,0 +1,402 @@
+/**
+ * Elev8 Analyzer Custom Styles
+ * Pillar cards, scoring system, and diagnostic-specific UI
+ */
+
+/* ========================================
+   OVERALL ELEV8 INDEX CARD
+   ======================================== */
+.elev8-index-card {
+    background: linear-gradient(135deg, rgba(var(--ybg-brand-primary), 0.1) 0%, rgba(var(--ybg-brand-accent), 0.05) 100%);
+    border: 2px solid rgba(var(--ybg-brand-primary), 0.3);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+}
+
+.elev8-index-score {
+    margin-bottom: var(--spacing-md);
+}
+
+.elev8-index-number {
+    font-size: 72px;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    line-height: 1;
+    margin-bottom: var(--spacing-sm);
+}
+
+.elev8-index-label {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: rgb(var(--text-secondary));
+    font-family: var(--font-heading);
+}
+
+.elev8-index-band {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    border: 2px solid;
+    margin-bottom: var(--spacing-md);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.elev8-index-summary {
+    font-size: var(--font-size-base);
+    color: rgb(var(--text));
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Status band color variants */
+.elev8-index-band.elite {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.elev8-index-band.strong {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: #22C55E;
+    color: #22C55E;
+}
+
+.elev8-index-band.stable {
+    background-color: rgba(234, 179, 8, 0.1);
+    border-color: #EAB308;
+    color: #EAB308;
+}
+
+.elev8-index-band.at-risk {
+    background-color: rgba(249, 115, 22, 0.1);
+    border-color: #F97316;
+    color: #F97316;
+}
+
+.elev8-index-band.critical {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+/* ========================================
+   PILLARS SECTION
+   ======================================== */
+.pillars-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: rgb(var(--text));
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 3px solid rgba(var(--ybg-brand-primary), 0.3);
+}
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.pillar-card {
+    background: rgb(var(--card));
+    border: 1px solid rgba(var(--border), 0.5);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-lg);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.pillar-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.pillar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-sm);
+}
+
+.pillar-name {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: rgb(var(--text));
+    flex: 1;
+    line-height: 1.3;
+}
+
+.pillar-score-badge {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 8px;
+    border: 2px solid;
+    min-width: 60px;
+    text-align: center;
+}
+
+.pillar-score-badge.green {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.pillar-score-badge.yellow {
+    background-color: rgba(234, 179, 8, 0.1);
+    border-color: #EAB308;
+    color: #EAB308;
+}
+
+.pillar-score-badge.red {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+.pillar-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pillar-insights,
+.pillar-actions {
+    margin-top: var(--spacing-md);
+}
+
+.pillar-insights strong,
+.pillar-actions strong {
+    display: block;
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: rgb(var(--text));
+    margin-bottom: var(--spacing-xs);
+}
+
+.pillar-insights ul,
+.pillar-actions ol {
+    margin: 0;
+    padding-left: var(--spacing-lg);
+    color: rgb(var(--text-secondary));
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+.pillar-insights li,
+.pillar-actions li {
+    margin-bottom: var(--spacing-xs);
+}
+
+/* ========================================
+   INSIGHTS SECTION (Strengths & Gaps)
+   ======================================== */
+.insights-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.insights-card {
+    background: rgb(var(--card));
+    border: 1px solid rgba(var(--border), 0.5);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow);
+}
+
+.strengths-card {
+    border-left: 4px solid rgba(var(--ybg-brand-accent), 1);
+}
+
+.gaps-card {
+    border-left: 4px solid #F97316;
+}
+
+.insights-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: rgb(var(--text));
+    margin-bottom: var(--spacing-md);
+}
+
+.insights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.insights-list li {
+    padding: var(--spacing-sm) 0;
+    color: rgb(var(--text-secondary));
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(var(--border), 0.3);
+}
+
+.insights-list li:last-child {
+    border-bottom: none;
+}
+
+.insights-list strong {
+    color: rgb(var(--text));
+    font-weight: 600;
+}
+
+/* ========================================
+   ROADMAP SECTION
+   ======================================== */
+.roadmap-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.roadmap-phase {
+    background: rgb(var(--card));
+    border: 1px solid rgba(var(--border), 0.5);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow);
+}
+
+.roadmap-phase:nth-child(1) {
+    border-top: 4px solid rgba(var(--ybg-brand-accent), 1);
+}
+
+.roadmap-phase:nth-child(2) {
+    border-top: 4px solid rgba(var(--ybg-brand-primary), 1);
+}
+
+.roadmap-phase:nth-child(3) {
+    border-top: 4px solid #8B5CF6;
+}
+
+.roadmap-phase-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: rgb(var(--text));
+    margin-bottom: var(--spacing-md);
+}
+
+.roadmap-actions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: roadmap-counter;
+}
+
+.roadmap-actions li {
+    counter-increment: roadmap-counter;
+    padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-xl);
+    color: rgb(var(--text-secondary));
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    position: relative;
+    border-bottom: 1px solid rgba(var(--border), 0.3);
+}
+
+.roadmap-actions li:last-child {
+    border-bottom: none;
+}
+
+.roadmap-actions li::before {
+    content: counter(roadmap-counter);
+    position: absolute;
+    left: 0;
+    top: var(--spacing-sm);
+    width: 24px;
+    height: 24px;
+    background: rgba(var(--ybg-brand-primary), 0.15);
+    color: rgb(var(--ybg-brand-primary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+@media (max-width: 768px) {
+    .pillars-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .roadmap-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .insights-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .elev8-index-number {
+        font-size: 56px;
+    }
+    
+    .elev8-index-label {
+        font-size: var(--font-size-lg);
+    }
+}
+
+/* ========================================
+   DARK MODE ADJUSTMENTS
+   ======================================== */
+html.theme-dark .pillar-card,
+html.theme-dark .insights-card,
+html.theme-dark .roadmap-phase {
+    background: rgb(var(--card));
+    border-color: rgba(var(--border), 0.2);
+}
+
+html.theme-dark .pillar-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+html.theme-dark .elev8-index-card {
+    background: linear-gradient(135deg, rgba(var(--ybg-brand-primary), 0.15) 0%, rgba(var(--ybg-brand-accent), 0.08) 100%);
+    border-color: rgba(var(--ybg-brand-primary), 0.4);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.hidden {
+    display: none !important;
+}
+
+.no-results {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: rgb(var(--text-muted));
+    font-size: var(--font-size-lg);
+}

@@ -1432,12 +1432,254 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.save(filename);
   }
 
+  // ---- Elev8 Analyzer PDF Export (Diagnostic Format) ----------------------
+  window.exportElev8AnalysisToPDF = async function(analysis) {
+    try {
+      const jsPDF = await loadJsPDF();
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      
+      // Load icon
+      const iconDataUrl = await loadImageAsDataURL(getToolkitIcon());
+      
+      // Apply global typography
+      applyGlobalTypography(doc);
+      
+      const overallIndex = analysis.overall?.score || 0;
+      const businessName = analysis.businessName || 'Business';
+      const timestamp = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      let currentY = CONTENT.top;
+      let pageNum = 1;
+      
+      // ---- Page 1: Cover Page ----
+      drawWatermark(doc, iconDataUrl);
+      drawHeader(doc, pageNum, iconDataUrl);
+      
+      // Title
+      doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(8, 145, 178); // Teal
+      currentY = CONTENT.top + 30;
+      doc.text("Elev8 Analyzer Report", CONTENT.left, currentY, { align: 'left' });
+      
+      // Business name
+      doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+      doc.setFontSize(16);
+      doc.setTextColor(...TYPOGRAPHY.colorBody);
+      currentY += 12;
+      doc.text(businessName, CONTENT.left, currentY);
+      
+      // Timestamp
+      doc.setFontSize(11);
+      doc.setTextColor(...TYPOGRAPHY.colorMeta);
+      currentY += 8;
+      doc.text(`Generated: ${timestamp}`, CONTENT.left, currentY);
+      
+      // Overall Index (large display)
+      currentY += 25;
+      doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+      doc.setFontSize(48);
+      doc.setTextColor(8, 145, 178); // Teal
+      doc.text(`${overallIndex}`, CONTENT.left, currentY);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(...TYPOGRAPHY.colorMeta);
+      doc.text("Overall Elev8 Index", CONTENT.left + 30, currentY);
+      
+      // Executive summary
+      if (analysis.overall?.summary) {
+        currentY += 15;
+        doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+        doc.setFontSize(TYPOGRAPHY.bodySize);
+        doc.setTextColor(...TYPOGRAPHY.colorBody);
+        
+        const summaryLines = doc.splitTextToSize(analysis.overall.summary, CONTENT.width - 20);
+        doc.text(summaryLines, CONTENT.left, currentY);
+        currentY += summaryLines.length * TYPOGRAPHY.lineHeight;
+      }
+      
+      // ---- Page 2+: 8 Pillar Breakdown ----
+      doc.addPage();
+      pageNum++;
+      applyGlobalTypography(doc);
+      drawWatermark(doc, iconDataUrl);
+      drawHeader(doc, pageNum, iconDataUrl);
+      
+      currentY = CONTENT.top;
+      
+      // Section heading
+      doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(...TYPOGRAPHY.colorHeading);
+      doc.text("8 Pillars of Business Health", CONTENT.left, currentY);
+      currentY += 10;
+      
+      // Render each pillar
+      const pillars = analysis.pillars || [];
+      
+      for (let i = 0; i < pillars.length; i++) {
+        const pillar = pillars[i];
+        
+        // Check if we need a new page
+        if (currentY > CONTENT.bottom - 60) {
+          doc.addPage();
+          pageNum++;
+          applyGlobalTypography(doc);
+          drawWatermark(doc, iconDataUrl);
+          drawHeader(doc, pageNum, iconDataUrl);
+          currentY = CONTENT.top;
+        }
+        
+        // Pillar name
+        doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+        doc.setFontSize(13);
+        doc.setTextColor(...TYPOGRAPHY.colorHeading);
+        doc.text(`${i + 1}. ${pillar.name}`, CONTENT.left, currentY);
+        
+        // Score badge
+        const scoreColor = pillar.score >= 71 ? [16, 185, 129] : pillar.score >= 41 ? [234, 179, 8] : [239, 68, 68];
+        doc.setTextColor(...scoreColor);
+        doc.text(`Score: ${pillar.score}/100`, CONTENT.right - 30, currentY, { align: 'right' });
+        
+        currentY += 7;
+        
+        // Insights
+        doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...TYPOGRAPHY.colorBody);
+        doc.text("Key Insights:", CONTENT.left + 3, currentY);
+        currentY += 5;
+        
+        doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+        doc.setFontSize(10);
+        
+        (pillar.insights || []).forEach(insight => {
+          const lines = doc.splitTextToSize(`• ${insight}`, CONTENT.width - 10);
+          doc.text(lines, CONTENT.left + 3, currentY);
+          currentY += lines.length * 4.5;
+        });
+        
+        currentY += 3;
+        
+        // Actions
+        doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+        doc.setFontSize(10);
+        doc.text("Priority Actions:", CONTENT.left + 3, currentY);
+        currentY += 5;
+        
+        doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+        doc.setFontSize(10);
+        
+        (pillar.actions || []).forEach((action, idx) => {
+          const lines = doc.splitTextToSize(`${idx + 1}. ${action}`, CONTENT.width - 10);
+          doc.text(lines, CONTENT.left + 3, currentY);
+          currentY += lines.length * 4.5;
+        });
+        
+        currentY += 8;
+        
+        // Divider line
+        if (i < pillars.length - 1) {
+          doc.setDrawColor(200, 200, 200);
+          doc.line(CONTENT.left, currentY - 2, CONTENT.right, currentY - 2);
+          currentY += 2;
+        }
+      }
+      
+      // ---- New Page: 30/60/90 Roadmap ----
+      doc.addPage();
+      pageNum++;
+      applyGlobalTypography(doc);
+      drawWatermark(doc, iconDataUrl);
+      drawHeader(doc, pageNum, iconDataUrl);
+      
+      currentY = CONTENT.top;
+      
+      // Section heading
+      doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+      doc.setFontSize(16);
+      doc.setTextColor(...TYPOGRAPHY.colorHeading);
+      doc.text("30/60/90-Day Action Roadmap", CONTENT.left, currentY);
+      currentY += 12;
+      
+      const roadmap = analysis.roadmap || {};
+      const phases = [
+        { title: '30 Days (Quick Wins)', actions: roadmap.d30 || [], color: [16, 185, 129] },
+        { title: '60 Days (Process Improvements)', actions: roadmap.d60 || [], color: [8, 145, 178] },
+        { title: '90 Days (Strategic Initiatives)', actions: roadmap.d90 || [], color: [139, 92, 246] }
+      ];
+      
+      phases.forEach((phase, phaseIdx) => {
+        // Check if we need a new page
+        if (currentY > CONTENT.bottom - 40) {
+          doc.addPage();
+          pageNum++;
+          applyGlobalTypography(doc);
+          drawWatermark(doc, iconDataUrl);
+          drawHeader(doc, pageNum, iconDataUrl);
+          currentY = CONTENT.top;
+        }
+        
+        // Phase title
+        doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(...phase.color);
+        doc.text(phase.title, CONTENT.left, currentY);
+        currentY += 7;
+        
+        // Phase actions
+        doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...TYPOGRAPHY.colorBody);
+        
+        phase.actions.forEach((action, idx) => {
+          const lines = doc.splitTextToSize(`${idx + 1}. ${action}`, CONTENT.width - 8);
+          doc.text(lines, CONTENT.left + 3, currentY);
+          currentY += lines.length * 4.5 + 1;
+        });
+        
+        currentY += 5;
+      });
+      
+      // ---- Add Footers to All Pages ----
+      const totalPages = pageNum;
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        
+        const h = doc.internal.pageSize.getHeight();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(110, 110, 110);
+        const footer = `Generated by Elev8 Analyzer   Page ${i} of ${totalPages}`;
+        doc.text(footer, MARGINS.left, h - 24);
+        
+        doc.setFontSize(7);
+        doc.setTextColor(130, 130, 130);
+        const disclaimer = "Disclaimer: For informational purposes only. Not legal, tax, or financial advice.";
+        doc.text(disclaimer, MARGINS.left, h - 18);
+      }
+      
+      // Save PDF with timestamp
+      const filename = `Elev8_Business_Analysis_${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+      
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
   // Additional API aliases (extend existing YBG_PDF object)
   Object.assign(window.YBG_PDF, {
     exportResultToPDF: window.exportResultToPDF,
     exportAllResultsToPDF: window.exportAllResultsToPDF,
     exportLatestResult: () => exportMultipleResults('latest'),
-    exportAllResults: () => exportMultipleResults('all')
+    exportAllResults: () => exportMultipleResults('all'),
+    exportElev8Analysis: window.exportElev8AnalysisToPDF
   });
 
 })();
