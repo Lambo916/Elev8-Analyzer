@@ -45,7 +45,7 @@
    ENHANCED HEADER STYLING
    ======================================== */
 .elev8-theme .app-header {
-    padding: 0;
+    padding: 12px 0;
 }
 
 .elev8-theme .header-content {
@@ -648,7 +648,7 @@ html.theme-dark .elev8-index-card {
 .diagnostic-form {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
 }
 
 .diagnostic-form .form-group {
@@ -733,54 +733,61 @@ html.theme-dark .elev8-index-card {
     background: rgba(var(--ybg-brand-error), 0.05);
 }
 
-/* Enhanced PDF Export button for Elev8 */
-.elev8-theme #exportPdfBtn {
-    background: var(--btn-gradient) !important;
-    border: none !important;
-    color: white !important;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(var(--ybg-brand-primary), 0.3);
-    padding: 8px 16px;
+/* Standardized Results Panel Buttons - CompliPilot Style */
+.elev8-theme .panel-actions .action-btn,
+.elev8-theme #exportPdfBtn,
+.elev8-theme #copyAllBtn {
+    background: rgba(var(--primary-rgb), 0.08);
+    border: 1.5px solid rgba(var(--primary-rgb), 0.25);
+    color: var(--primary);
     border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+}
+
+.elev8-theme .panel-actions .action-btn:hover,
+.elev8-theme #exportPdfBtn:hover,
+.elev8-theme #copyAllBtn:hover {
+    background: rgba(var(--primary-rgb), 0.15);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    transform: translateY(-1px);
+}
+
+.elev8-theme .panel-actions .clear-btn,
+.elev8-theme #clearHistoryBtn {
+    background: transparent;
+    border: 1.5px solid rgba(var(--border), 0.4);
+    color: rgb(var(--text-secondary));
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+}
+
+.elev8-theme .panel-actions .clear-btn:hover,
+.elev8-theme #clearHistoryBtn:hover {
+    background: rgba(var(--border), 0.1);
+    border-color: rgba(var(--border), 0.6);
+    color: rgb(var(--text));
+    transform: translateY(-1px);
+}
+
+/* Enhanced Submit button keeps gradient style */
+.elev8-theme .submit-btn {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.elev8-theme #exportPdfBtn:hover {
-    background: var(--btn-gradient-hover) !important;
-    box-shadow: 0 4px 12px rgba(var(--ybg-brand-primary), 0.4);
-    transform: translateY(-1px);
-}
-
-.elev8-theme #exportPdfBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 4px rgba(var(--ybg-brand-primary), 0.3);
-}
-
-/* Enhanced button hover feedback for all Elev8 buttons */
-.elev8-theme .submit-btn,
-.elev8-theme .action-btn {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.elev8-theme .submit-btn:hover,
-.elev8-theme .action-btn:hover {
+.elev8-theme .submit-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(var(--ybg-brand-primary), 0.4);
 }
 
-.elev8-theme .submit-btn:active,
-.elev8-theme .action-btn:active {
+.elev8-theme .submit-btn:active {
     transform: translateY(0);
     box-shadow: 0 1px 4px rgba(var(--ybg-brand-primary), 0.3);
-}
-
-.elev8-theme .clear-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(var(--ybg-brand-error), 0.2);
-}
-
-.elev8-theme .clear-btn:active {
-    transform: translateY(0);
 }
 
 /* ========================================

@@ -918,6 +918,7 @@ html.theme-dark .submit-btn:hover {
     border-top: 2px solid rgba(var(--border), 0.3);
     transition: all 0.3s ease;
     position: relative;
+    background: rgba(var(--card), 0.5);
 }
 
 /* Subtle top divider line for separation */
@@ -952,19 +953,19 @@ html.theme-dark .submit-btn:hover {
 }
 
 .footer a {
-    color: var(--primary);
+    color: rgb(var(--text));
     text-decoration: none;
     margin: 0 6px;
     transition: all 0.15s ease;
     position: relative;
+    font-weight: 500;
 }
 
 /* Light theme: enhanced yellow hover underline */
 html.theme-light .footer a:hover,
 html:not(.theme-dark) .footer a:hover {
     color: var(--primary);
-    text-decoration: underline;
-    text-decoration-color: rgba(var(--ybg-brand-accent), 0.55);
+    text-decoration: none;
 }
 
 html:not(.theme-dark) .footer a:hover::after {
@@ -978,12 +979,10 @@ html:not(.theme-dark) .footer a:hover::after {
     box-shadow: 0 0 4px rgba(var(--accent-rgb), 0.6);
 }
 
-/* Dark theme: yellow hover halo */
+/* Dark theme: primary hover color */
 html.theme-dark .footer a:hover {
     color: var(--primary);
-    text-decoration: underline;
-    text-decoration-color: rgba(var(--ybg-brand-accent), 0.55);
-    text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7);
+    text-decoration: none;
 }
 
 /* ========================================
