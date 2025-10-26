@@ -14,18 +14,18 @@
 
 .elev8-theme .app-container {
     position: relative;
-    padding-top: var(--spacing-xl);
+    padding-top: var(--spacing-md);
     padding-bottom: var(--spacing-2xl);
 }
 
 /* Enhanced section spacing */
 .elev8-theme .main-content {
-    gap: var(--spacing-2xl);
-    margin-top: var(--spacing-xl);
+    gap: var(--spacing-md);
+    margin-top: 0;
 }
 
 .elev8-theme .panel {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-sm);
 }
 
 /* Increase border-radius globally for Elev8 */
@@ -45,14 +45,13 @@
    ENHANCED HEADER STYLING
    ======================================== */
 .elev8-theme .app-header {
-    padding: var(--spacing-xl) 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 0;
 }
 
 .elev8-theme .header-content {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
 }
 
 .elev8-theme .app-title {
@@ -797,6 +796,16 @@ html.theme-dark .elev8-index-card {
     
     .elev8-theme .app-tagline {
         font-size: 12px;
+    }
+    
+    /* Logo scaling for mobile */
+    .elev8-theme .logo {
+        height: 90px;
+        max-height: 90px;
+    }
+    
+    .elev8-theme .header-left {
+        gap: var(--spacing-xs);
     }
     
     /* Single column layout for very small screens */
