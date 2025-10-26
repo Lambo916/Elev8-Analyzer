@@ -177,6 +177,10 @@ html:not(.theme-dark) body {
     padding: 4px 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
     margin-bottom: var(--spacing-sm);
+    margin-left: calc(var(--spacing-md) * -1);
+    margin-right: calc(var(--spacing-md) * -1);
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
     position: relative;
 }
 
@@ -190,6 +194,8 @@ html:not(.theme-dark) body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    margin-left: 0;
+    padding-left: 0;
 }
 
 .header-right {
@@ -200,7 +206,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 260px;
+    height: 208px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
