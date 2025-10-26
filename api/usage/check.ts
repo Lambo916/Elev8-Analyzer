@@ -14,9 +14,18 @@ function getClientIp(req: VercelRequest): string {
 }
 
 // Normalize and validate tool parameter (prevent bypass via case/variant strings)
-function normalizeTool(tool: any): 'grantgenie' {
-  // Always return 'grantgenie' since CompliPilot has been deprecated
-  return 'grantgenie'; // All requests use grantgenie toolkit
+function normalizeTool(tool: any): 'elev8analyzer' | 'grantgenie' | 'complipilot' {
+  const normalized = String(tool || 'elev8analyzer').toLowerCase().trim();
+  if (normalized === 'elev8analyzer') {
+    return 'elev8analyzer';
+  }
+  if (normalized === 'grantgenie') {
+    return 'grantgenie';
+  }
+  if (normalized === 'complipilot') {
+    return 'complipilot';
+  }
+  return 'elev8analyzer'; // Default to elev8analyzer for any invalid/unknown values
 }
 
 // Helper for CORS
@@ -24,7 +33,8 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
   const isDevelopment = process.env.NODE_ENV !== 'production';
   
   const allowedOrigins = [
-    'https://grant.yourbizguru.com',
+    'https://analyzer.yourbizguru.com',
+    'https://www.yourbizguru.com',
     /https:\/\/.*\.vercel\.app$/,
     /https:\/\/.*\.replit\.dev$/,
   ];
@@ -47,7 +57,7 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
     });
   }
 
-  res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://grant.yourbizguru.com');
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://analyzer.yourbizguru.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');

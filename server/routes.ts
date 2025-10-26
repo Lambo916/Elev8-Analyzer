@@ -42,16 +42,22 @@ function getClientIp(req: Request): string {
 }
 
 // Normalize and validate tool parameter (prevent bypass via case/variant strings)
-function normalizeTool(tool: any): 'grantgenie' | 'complipilot' {
-  const normalized = String(tool || 'grantgenie').toLowerCase().trim();
+function normalizeTool(tool: any): 'elev8analyzer' | 'grantgenie' | 'complipilot' {
+  const normalized = String(tool || 'elev8analyzer').toLowerCase().trim();
+  if (normalized === 'elev8analyzer') {
+    return 'elev8analyzer';
+  }
+  if (normalized === 'grantgenie') {
+    return 'grantgenie';
+  }
   if (normalized === 'complipilot') {
     return 'complipilot';
   }
-  return 'grantgenie'; // Default to grantgenie for any invalid/unknown values
+  return 'elev8analyzer'; // Default to elev8analyzer for any invalid/unknown values
 }
 
 // Check usage limit (read-only check before generation)
-async function checkUsageLimit(req: Request, tool: string = 'grantgenie'): Promise<{ allowed: boolean; count: number }> {
+async function checkUsageLimit(req: Request, tool: string = 'elev8analyzer'): Promise<{ allowed: boolean; count: number }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -88,7 +94,7 @@ async function checkUsageLimit(req: Request, tool: string = 'grantgenie'): Promi
 }
 
 // Increment usage after successful generation (atomic with limit enforcement)
-async function incrementUsage(req: Request, tool: string = 'grantgenie'): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
+async function incrementUsage(req: Request, tool: string = 'elev8analyzer'): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -254,44 +260,108 @@ CRITICAL FORMATTING RULES:
 REMEMBER: Every grant proposal must tell a compelling story with all 6 sections. Focus on impact, feasibility, and measurable outcomes.`;
   };
 
-  // Elev8 Analyzer diagnostic system prompt template (SCAFFOLD)
+  // Elev8 Analyzer 8-Pillar diagnostic system prompt template
   const getDiagnosticSystemPrompt = () => {
-    return `You are Elev8 Analyzer, an expert business diagnostic assistant powered by GrantGenie.
+    return `You are Elev8 Analyzer, an expert business diagnostic assistant that evaluates companies across 8 critical pillars of business health and growth.
 
-Your role is to generate professional strategic analysis reports that help businesses identify opportunities, address challenges, and elevate their operations.
+Your role is to generate comprehensive, actionable reports that score each pillar (0-100), assign status indicators, and provide prioritized roadmaps for improvement.
 
-CRITICAL FORMATTING RULES:
-1. ALWAYS structure your response with these exact 4 sections using markdown headings:
-   # Executive Summary
-   ## SWOT Analysis
-   ## Risk & Opportunity Matrix
-   ## Strategic Recommendations
+CRITICAL OUTPUT STRUCTURE - You MUST return valid JSON matching this exact schema:
 
-2. Format each section as follows:
-   - Executive Summary: Write 2-3 clear, insightful paragraphs (150-200 words) analyzing the business profile
-   - SWOT Analysis: Create a markdown table with 4 columns: Strengths | Weaknesses | Opportunities | Threats
-   - Risk & Opportunity Matrix: Create a markdown table with 3 columns: Factor | Impact Level | Action Priority
-   - Strategic Recommendations: Use numbered list (1., 2., 3., etc.) with specific, actionable items
+{
+  "overall": {
+    "score": <number 0-100>,
+    "summary": "<2-3 sentence high-level assessment>"
+  },
+  "pillars": [
+    {
+      "name": "Formation & Compliance",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Business Credit Readiness",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Financials & Cash Flow",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Operations & Systems",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Sales & Marketing",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Brand & Web Presence",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Risk & Legal Posture",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Growth Strategy & Execution",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    }
+  ],
+  "roadmap": {
+    "d30": ["30-day action 1", "30-day action 2", "30-day action 3"],
+    "d60": ["60-day action 1", "60-day action 2", "60-day action 3"],
+    "d90": ["90-day action 1", "90-day action 2", "90-day action 3"]
+  }
+}
 
-3. PLACEHOLDER HANDLING:
-   - If business information is missing, insert clean placeholders like [Pending Input] or [AWAITING DATA]
-   - NEVER leave blank sections or break table structure
-   - For incomplete matrices, include at least one placeholder row
+SCORING GUIDELINES:
+- Scores 0-40: Red status (critical issues, immediate attention required)
+- Scores 41-70: Yellow status (needs improvement, moderate priority)
+- Scores 71-100: Green status (solid foundation, optimize and maintain)
+- Overall score: Weighted average emphasizing Financials, Operations, and Sales & Marketing
 
-4. WRITING STYLE:
-   - Use clear business language, avoid unnecessary jargon
-   - Be strategic and forward-looking
-   - Ground insights in the provided business data
-   - Focus on actionable intelligence
-   - Maintain professional consultant tone throughout
+INSIGHTS GUIDELINES:
+- Provide 2 specific, data-driven insights per pillar
+- Reference the business information provided
+- Be honest but constructive
 
-5. TABLE FORMATTING:
-   - Always use proper markdown table syntax with | separators
-   - Include header row with column names
-   - Include separator row with dashes
-   - Add at least 3-4 data rows per table (use placeholders if needed)
-   
-REMEMBER: Your analysis should be data-driven yet strategic, helping business owners make informed decisions.`;
+ACTIONS GUIDELINES:
+- Provide exactly 3 prioritized, actionable steps per pillar
+- Make them specific, measurable, and achievable
+- Start with highest-impact items
+- Be realistic given company size and resources
+
+ROADMAP GUIDELINES:
+- 30-day: Quick wins and foundational fixes
+- 60-day: Process improvements and systematic changes
+- 90-day: Strategic initiatives and growth investments
+- Each timeframe should have 3 specific actions
+
+REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON object.`;
   };
 
   // Helper: Compute timeline dates from deadline with validation

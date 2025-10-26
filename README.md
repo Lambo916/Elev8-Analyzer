@@ -1,6 +1,6 @@
-# GrantGenie Master Template v1.1.2
+# Elev8 Analyzer v1.0
 
-This template includes GrantGenie branding, complete theming system (Light/Dark), tokenized CSS architecture with gradient polish, increased yellow accents, and persistent theme preferences. This serves as the **master template v1.1.2** for GrantGenie and related toolkits.
+Elev8 Analyzer is a comprehensive business diagnostic platform that evaluates companies across 8 critical pillars of business health and growth. Built on the proven GrantGenie codebase architecture with complete theming system (Light/Dark), tokenized CSS with deep blue→teal gradients and emerald accents.
 
 ## Features
 
@@ -25,9 +25,9 @@ This template includes GrantGenie branding, complete theming system (Light/Dark)
 ## Branding Guidelines
 
 ### Colors (Both Themes)
-- **Primary**: #4FC3F7 (Light Blue)
-- **Accent**: #FFEB3B (Yellow)
-- **Success**: #4CAF50 (Green)
+- **Primary**: #0891B2 (Deep Teal / Cyan-600)
+- **Accent**: #10B981 (Emerald Green / Emerald-500)
+- **Success**: #22C55E (Success Green)
 - **Error**: #F44336 (Red)
 
 ### Light Theme (v1.1.3 "Less White")
@@ -60,7 +60,7 @@ This template includes GrantGenie branding, complete theming system (Light/Dark)
 1. **Clone the template**
    ```bash
    git clone [repository-url]
-   cd grantgenie
+   cd elev8-analyzer-v1
    ```
 
 2. **Install dependencies**

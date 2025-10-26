@@ -53,11 +53,11 @@ const TOOLKIT_CONFIGS = {
     
     elev8analyzer: {
         name: "Elev8 Analyzer",
-        tagline: "Elevate your business strategy — powered by GrantGenie",
-        icon: "/favicon-32x32.png", // Would be analyzer-specific icon
+        tagline: "Elevate Your Business — 8 Pillars to Growth",
+        icon: "/favicon-32x32.png",
         logo: "ybg-logo.svg",
-        themeColor: "#2E7D32", // Primary Green
-        primaryColorRGB: "46, 125, 50",
+        themeColor: "#0891B2", // Deep Blue-Teal (cyan-600)
+        primaryColorRGB: "8, 145, 178",
         
         // Form configuration
         formType: "diagnostic",
@@ -118,7 +118,7 @@ const TOOLKIT_CONFIGS = {
 
 // Toolkit switcher - returns active toolkit config
 function getActiveToolkit() {
-    const activeToolkitKey = window.ACTIVE_TOOLKIT || 'grantgenie';
+    const activeToolkitKey = window.ACTIVE_TOOLKIT || 'elev8analyzer';
     return TOOLKIT_CONFIGS[activeToolkitKey];
 }
 

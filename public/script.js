@@ -4,8 +4,8 @@
  */
 
 // Initialize toolkit configuration for PDF exports
-window.currentToolkitName = "GrantGenie";
-window.currentToolkitLogo = "grantgenie-logo.png";  // Full-size logo for crisp PDF rendering
+window.currentToolkitName = "Elev8 Analyzer";
+window.currentToolkitLogo = "ybg-logo.svg";  // Full-size logo for crisp PDF rendering
 
 // =====================================================
 // THEME MANAGER (keeping existing functionality)
@@ -153,8 +153,8 @@ class ComplianceToolkit {
     }
 
     showLimitReachedAlert(count, limit) {
-        const message = `You've reached your ${limit}-report limit for the GrantGenie soft launch.`;
-        const upgradeUrl = 'https://grantgenie.com/checkout'; // TODO: Replace with actual checkout URL
+        const message = `You've reached your ${limit}-report limit for the Elev8 Analyzer soft launch.`;
+        const upgradeUrl = 'https://analyzer.yourbizguru.com/upgrade'; // TODO: Replace with actual checkout URL
         
         // Create modal alert
         const modal = document.createElement('div');
@@ -183,7 +183,7 @@ class ComplianceToolkit {
                 <h2 style="color: var(--text-primary); margin-bottom: 16px;">Report Limit Reached</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 24px;">${message}</p>
                 <p style="color: var(--text-secondary); margin-bottom: 24px;">
-                    Please upgrade or purchase additional access to continue generating compliance reports.
+                    Please upgrade or purchase additional access to continue generating business analysis reports.
                 </p>
                 <div style="display: flex; gap: 12px; justify-content: center;">
                     <a href="${upgradeUrl}" target="_blank" style="

@@ -128,7 +128,8 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
   const isDevelopment = process.env.NODE_ENV !== 'production';
   
   const allowedOrigins = [
-    'https://grant.yourbizguru.com',
+    'https://analyzer.yourbizguru.com',
+    'https://www.yourbizguru.com',
     /https:\/\/.*\.vercel\.app$/,
     /https:\/\/.*\.replit\.dev$/,
   ];
@@ -152,7 +153,7 @@ function setCORS(res: VercelResponse, origin: string | undefined) {
     });
   }
 
-  res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://grant.yourbizguru.com');
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin && origin ? origin : 'https://analyzer.yourbizguru.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
