@@ -514,9 +514,22 @@ class Elev8AnalyzerApp {
 
         return `
             <div class="insights-card strengths-card">
-                <h4 class="insights-title">🌟 Top Strengths</h4>
+                <h4 class="insights-title">
+                    <svg class="insights-icon success-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Top Strengths
+                </h4>
                 <ul class="insights-list">
-                    ${topTwo.map(p => `<li><strong>${p.name}</strong> (Score: ${p.score})</li>`).join('')}
+                    ${topTwo.map(p => `
+                        <li class="strength-item">
+                            <svg class="list-icon success-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <strong>${p.name}</strong> (Score: ${p.score})
+                        </li>
+                    `).join('')}
                 </ul>
             </div>
         `;
@@ -528,9 +541,25 @@ class Elev8AnalyzerApp {
 
         return `
             <div class="insights-card gaps-card">
-                <h4 class="insights-title">🎯 Priority Gaps</h4>
+                <h4 class="insights-title">
+                    <svg class="insights-icon warning-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Priority Gaps
+                </h4>
                 <ul class="insights-list">
-                    ${bottomThree.map(p => `<li><strong>${p.name}</strong> (Score: ${p.score})</li>`).join('')}
+                    ${bottomThree.map(p => `
+                        <li class="gap-item">
+                            <svg class="list-icon warning-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <strong>${p.name}</strong> (Score: ${p.score})
+                        </li>
+                    `).join('')}
                 </ul>
             </div>
         `;

@@ -223,14 +223,22 @@
     border-radius: var(--border-radius-sm);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.insights-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
 
 .strengths-card {
-    border-left: 4px solid rgba(var(--ybg-brand-accent), 1);
+    border-left: 4px solid #10B981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgb(var(--card)) 100%);
 }
 
 .gaps-card {
-    border-left: 4px solid #F97316;
+    border-left: 4px solid #EF4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.03) 0%, rgb(var(--card)) 100%);
 }
 
 .insights-title {
@@ -239,6 +247,21 @@
     font-family: var(--font-heading);
     color: rgb(var(--text));
     margin-bottom: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.insights-icon {
+    flex-shrink: 0;
+}
+
+.success-icon {
+    color: #10B981;
+}
+
+.warning-icon {
+    color: #EF4444;
 }
 
 .insights-list {
@@ -248,11 +271,14 @@
 }
 
 .insights-list li {
-    padding: var(--spacing-sm) 0;
+    padding: var(--spacing-md) 0;
     color: rgb(var(--text-secondary));
     font-size: var(--font-size-base);
     line-height: 1.5;
     border-bottom: 1px solid rgba(var(--border), 0.3);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
 }
 
 .insights-list li:last-child {
@@ -262,6 +288,27 @@
 .insights-list strong {
     color: rgb(var(--text));
     font-weight: 600;
+}
+
+.list-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.strength-item {
+    color: rgb(var(--text));
+}
+
+.strength-item .list-icon {
+    color: #10B981;
+}
+
+.gap-item {
+    color: rgb(var(--text));
+}
+
+.gap-item .list-icon {
+    color: #EF4444;
 }
 
 /* ========================================
@@ -385,6 +432,97 @@ html.theme-dark .pillar-card:hover {
 html.theme-dark .elev8-index-card {
     background: linear-gradient(135deg, rgba(var(--ybg-brand-primary), 0.15) 0%, rgba(var(--ybg-brand-accent), 0.08) 100%);
     border-color: rgba(var(--ybg-brand-primary), 0.4);
+}
+
+/* ========================================
+   FORM ENHANCEMENTS
+   ======================================== */
+.diagnostic-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.diagnostic-form .form-group {
+    position: relative;
+}
+
+.diagnostic-form .form-label {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: rgb(var(--text));
+    margin-bottom: var(--spacing-sm);
+}
+
+.diagnostic-form .form-input,
+.diagnostic-form .form-select,
+.diagnostic-form .form-textarea {
+    border-radius: 10px;
+    border: 1.5px solid rgba(var(--border), 0.3);
+    transition: all 0.3s ease;
+}
+
+.diagnostic-form .form-input:focus,
+.diagnostic-form .form-select:focus,
+.diagnostic-form .form-textarea:focus {
+    border-color: rgb(var(--ybg-brand-primary));
+    box-shadow: 0 0 0 3px rgba(var(--ybg-brand-primary), 0.1);
+}
+
+/* Form section divider */
+.diagnostic-form .form-group:nth-child(6)::after {
+    content: '';
+    position: absolute;
+    bottom: calc(var(--spacing-lg) * -0.5);
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(var(--ybg-brand-primary), 0), 
+        rgba(var(--ybg-brand-primary), 0.3) 50%, 
+        rgba(var(--ybg-brand-primary), 0));
+}
+
+/* Enhanced submit button */
+.submit-btn {
+    background: var(--btn-gradient) !important;
+    border: none;
+    border-radius: 10px;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(var(--ybg-brand-primary), 0.3);
+}
+
+.submit-btn:hover {
+    background: var(--btn-gradient-hover) !important;
+    box-shadow: 0 6px 16px rgba(var(--ybg-brand-primary), 0.4);
+    transform: translateY(-1px);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Clear button styling */
+.clear-btn {
+    background: transparent;
+    border: 1.5px solid rgba(var(--border), 0.4);
+    border-radius: 10px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: 500;
+    color: rgb(var(--text-secondary));
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.clear-btn:hover {
+    border-color: rgba(var(--ybg-brand-error), 0.5);
+    color: rgb(var(--ybg-brand-error));
+    background: rgba(var(--ybg-brand-error), 0.05);
 }
 
 /* ========================================
