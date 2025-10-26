@@ -721,11 +721,94 @@ class Elev8AnalyzerApp {
 }
 
 // =====================================================
+// DROPDOWN MANAGER
+// =====================================================
+class DropdownManager {
+    constructor() {
+        this.activeDropdown = null;
+        this.init();
+    }
+
+    init() {
+        // Setup File dropdown
+        const fileBtn = document.getElementById('fileBtn');
+        const fileMenu = document.getElementById('fileMenu');
+        if (fileBtn && fileMenu) {
+            fileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleDropdown(fileMenu);
+            });
+        }
+
+        // Setup Export dropdown
+        const exportBtn = document.getElementById('exportBtn');
+        const exportMenu = document.getElementById('exportMenu');
+        if (exportBtn && exportMenu) {
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleDropdown(exportMenu);
+            });
+        }
+
+        // Setup File dropdown items
+        const saveReportBtn = document.getElementById('saveReportBtn');
+        if (saveReportBtn) {
+            saveReportBtn.addEventListener('click', () => {
+                this.closeAllDropdowns();
+                this.saveReport();
+            });
+        }
+
+        const loadReportBtn = document.getElementById('loadReportBtn');
+        if (loadReportBtn) {
+            loadReportBtn.addEventListener('click', () => {
+                this.closeAllDropdowns();
+                this.loadReport();
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            this.closeAllDropdowns();
+        });
+    }
+
+    toggleDropdown(menu) {
+        if (this.activeDropdown === menu) {
+            this.closeAllDropdowns();
+        } else {
+            this.closeAllDropdowns();
+            menu.classList.add('active');
+            this.activeDropdown = menu;
+        }
+    }
+
+    closeAllDropdowns() {
+        const dropdowns = document.querySelectorAll('.dropdown-menu');
+        dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+        this.activeDropdown = null;
+    }
+
+    saveReport() {
+        // Placeholder for save functionality
+        alert('Save Report functionality coming soon!');
+    }
+
+    loadReport() {
+        // Placeholder for load functionality
+        alert('Load Report functionality coming soon!');
+    }
+}
+
+// =====================================================
 // INITIALIZE APP
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize theme manager
     new ThemeManager();
+    
+    // Initialize dropdown manager
+    new DropdownManager();
     
     // Initialize Elev8 Analyzer app
     window.elev8App = new Elev8AnalyzerApp();

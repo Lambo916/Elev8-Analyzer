@@ -733,46 +733,83 @@ html.theme-dark .elev8-index-card {
     background: rgba(var(--ybg-brand-error), 0.05);
 }
 
-/* Standardized Results Panel Buttons - CompliPilot Style */
-.elev8-theme .panel-actions .action-btn,
-.elev8-theme #exportPdfBtn,
-.elev8-theme #copyAllBtn {
-    background: rgba(var(--primary-rgb), 0.08);
-    border: 1.5px solid rgba(var(--primary-rgb), 0.25);
-    color: var(--primary);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 500;
-    font-size: var(--font-size-sm);
-    transition: all 0.2s ease;
+/* Dropdown Button System - CompliPilot Style */
+.elev8-theme .panel-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
-.elev8-theme .panel-actions .action-btn:hover,
-.elev8-theme #exportPdfBtn:hover,
-.elev8-theme #copyAllBtn:hover {
-    background: rgba(var(--primary-rgb), 0.15);
-    border-color: rgba(var(--primary-rgb), 0.4);
-    transform: translateY(-1px);
+.elev8-theme .dropdown-btn-wrapper {
+    position: relative;
 }
 
-.elev8-theme .panel-actions .clear-btn,
+.elev8-theme .dropdown-btn,
+.elev8-theme #fileBtn,
+.elev8-theme #exportBtn,
 .elev8-theme #clearHistoryBtn {
-    background: transparent;
-    border: 1.5px solid rgba(var(--border), 0.4);
-    color: rgb(var(--text-secondary));
-    border-radius: 8px;
+    background: rgba(var(--primary-rgb), 0.2);
+    border: none;
+    color: rgb(var(--text));
+    border-radius: 6px;
     padding: 8px 16px;
     font-weight: 500;
-    font-size: var(--font-size-sm);
+    font-size: 14px;
+    cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
 }
 
-.elev8-theme .panel-actions .clear-btn:hover,
+.elev8-theme .dropdown-btn:hover,
+.elev8-theme #fileBtn:hover,
+.elev8-theme #exportBtn:hover,
 .elev8-theme #clearHistoryBtn:hover {
-    background: rgba(var(--border), 0.1);
-    border-color: rgba(var(--border), 0.6);
+    background: rgba(var(--primary-rgb), 0.3);
+}
+
+.elev8-theme .dropdown-indicator {
+    font-size: 18px;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+/* Dropdown Menu */
+.elev8-theme .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: rgb(var(--card));
+    border: 1px solid rgba(var(--border), 0.3);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 160px;
+    padding: 4px 0;
+    display: none;
+}
+
+.elev8-theme .dropdown-menu.active {
+    display: block;
+}
+
+.elev8-theme .dropdown-item {
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
     color: rgb(var(--text));
-    transform: translateY(-1px);
+    font-size: 14px;
+    font-weight: 400;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.elev8-theme .dropdown-item:hover {
+    background: rgba(var(--primary-rgb), 0.1);
 }
 
 /* Enhanced Submit button keeps gradient style */
@@ -865,21 +902,35 @@ html.theme-dark .elev8-index-card {
     
     /* Buttons with thumb-reach padding */
     .elev8-theme .submit-btn,
-    .elev8-theme .action-btn,
-    .elev8-theme .clear-btn,
-    .elev8-theme #exportPdfBtn {
+    .elev8-theme .dropdown-btn,
+    .elev8-theme .clear-btn {
         min-height: 48px;
         padding: 12px 20px;
+        font-size: 15px;
     }
     
-    /* Ensure buttons stack nicely */
-    .elev8-theme .result-actions {
+    /* Stack panel actions vertically on mobile */
+    .elev8-theme .panel-actions {
         flex-direction: column;
         width: 100%;
-        gap: var(--spacing-md);
+        gap: var(--spacing-sm);
     }
     
-    .elev8-theme .result-actions button {
+    .elev8-theme .dropdown-btn-wrapper {
+        width: 100%;
+    }
+    
+    .elev8-theme .dropdown-btn,
+    .elev8-theme #fileBtn,
+    .elev8-theme #exportBtn,
+    .elev8-theme #clearHistoryBtn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .elev8-theme .dropdown-menu {
+        left: 0;
+        right: 0;
         width: 100%;
     }
     

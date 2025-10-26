@@ -210,29 +210,45 @@
                 <div class="panel-header">
                     <h2 data-testid="text-results-header">Analysis Results</h2>
                     <div class="panel-actions">
-                        <select id="exportMode" class="export-mode-select" data-testid="select-export-mode">
-                            <option value="latest">Latest Result</option>
-                            <option value="all">All Results</option>
-                        </select>
-                        <button 
-                            id="exportPdfBtn" 
-                            class="action-btn"
-                            title="Export to PDF (Ctrl+S)"
-                            data-testid="button-export-pdf"
-                        >
-                            Export PDF
-                        </button>
-                        <button 
-                            id="copyAllBtn" 
-                            class="action-btn"
-                            title="Copy all results to clipboard (Ctrl+Shift+C)"
-                            data-testid="button-copy-all"
-                        >
-                            Copy All
-                        </button>
+                        <div class="dropdown-btn-wrapper">
+                            <button 
+                                id="fileBtn" 
+                                class="dropdown-btn"
+                                title="File options"
+                                data-testid="button-file"
+                            >
+                                File <span class="dropdown-indicator">•</span>
+                            </button>
+                            <div class="dropdown-menu" id="fileMenu" data-testid="menu-file">
+                                <button class="dropdown-item" id="saveReportBtn" data-testid="button-save-report">
+                                    Save Report
+                                </button>
+                                <button class="dropdown-item" id="loadReportBtn" data-testid="button-load-report">
+                                    Load Report
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dropdown-btn-wrapper">
+                            <button 
+                                id="exportBtn" 
+                                class="dropdown-btn"
+                                title="Export options"
+                                data-testid="button-export"
+                            >
+                                Export <span class="dropdown-indicator">•</span>
+                            </button>
+                            <div class="dropdown-menu" id="exportMenu" data-testid="menu-export">
+                                <button class="dropdown-item" id="exportPdfBtn" data-testid="button-export-pdf">
+                                    Export PDF
+                                </button>
+                                <button class="dropdown-item" id="copyAllBtn" data-testid="button-copy-all">
+                                    Copy All
+                                </button>
+                            </div>
+                        </div>
                         <button 
                             id="clearHistoryBtn" 
-                            class="clear-btn"
+                            class="dropdown-btn"
                             title="Clear all results"
                             data-testid="button-clear-history"
                         >
