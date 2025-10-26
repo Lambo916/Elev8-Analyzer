@@ -318,6 +318,9 @@ html:not(.theme-dark) .theme-toggle {
     flex-direction: column;
     gap: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
+    margin-top: -150px;
+    position: relative;
+    z-index: 10;
 }
 
 /* ========================================
