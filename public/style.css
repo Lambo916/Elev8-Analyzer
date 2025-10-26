@@ -174,7 +174,7 @@ html:not(.theme-dark) body {
    ======================================== */
 
 .app-header {
-    padding: var(--spacing-xs) 0;
+    padding: 6px 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
     margin-bottom: var(--spacing-lg);
     position: relative;
