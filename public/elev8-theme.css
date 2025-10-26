@@ -39,7 +39,7 @@
 }
 
 /* Dark theme variant for Elev8 Analyzer */
-.elev8-theme[data-theme="dark"] {
+.elev8-theme.theme-dark {
     --bg: 15, 23, 42;                    /* Deep blue-black (Slate 900) */
     --bg-gradient: linear-gradient(135deg, #0F172A 0%, #1E3A5F 35%, #0D9488 100%);
     --bg-accent-wash: radial-gradient(1200px 820px at 90% -140px, rgba(0, 184, 124, 0.1), rgba(0, 0, 0, 0) 58%);

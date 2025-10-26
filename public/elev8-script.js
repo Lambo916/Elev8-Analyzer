@@ -446,6 +446,18 @@ class Elev8AnalyzerApp {
                 <div class="elev8-index-score" style="color: ${statusBand.color}">
                     <div class="elev8-index-number">${overallIndex}</div>
                     <div class="elev8-index-label">Overall Elev8 Index</div>
+                    
+                    <!-- Horizontal Progress Bar -->
+                    <div class="elev8-progress-container">
+                        <div class="elev8-progress-track">
+                            <div class="elev8-progress-fill" style="width: ${overallIndex}%" data-score="${overallIndex}"></div>
+                        </div>
+                        <div class="elev8-progress-labels">
+                            <span class="progress-label-left">0</span>
+                            <span class="progress-label-center">50</span>
+                            <span class="progress-label-right">100</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="elev8-index-band ${statusBand.class}" style="background-color: ${statusBand.color}20; border-color: ${statusBand.color}">
                     ${statusBand.label}
@@ -477,13 +489,31 @@ class Elev8AnalyzerApp {
         `;
     }
 
+    getPillarIcon(pillarName) {
+        const iconMap = {
+            'Formation & Compliance': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+            'Business Credit Readiness': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+            'Financials & Cash Flow': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+            'Operations & Systems': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/></svg>',
+            'Sales & Marketing': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+            'Brand & Web Presence': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+            'Risk & Legal Posture': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            'Growth Strategy & Execution': '<svg class="pillar-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>'
+        };
+        return iconMap[pillarName] || '';
+    }
+
     renderPillarCards(pillars) {
         return pillars.map((pillar, index) => {
             const status = Elev8Calculator.getPillarStatus(pillar.score);
+            const icon = this.getPillarIcon(pillar.name);
             return `
                 <div class="pillar-card" data-testid="card-pillar-${index}">
                     <div class="pillar-header">
-                        <h4 class="pillar-name">${pillar.name}</h4>
+                        <div class="pillar-title-row">
+                            ${icon}
+                            <h4 class="pillar-name">${pillar.name}</h4>
+                        </div>
                         <div class="pillar-score-badge ${status.class}" style="background-color: ${status.color}20; border-color: ${status.color}; color: ${status.color}">
                             ${pillar.score}
                         </div>

@@ -4,6 +4,84 @@
  */
 
 /* ========================================
+   BODY & LAYOUT ENHANCEMENTS
+   ======================================== */
+.elev8-theme {
+    background: var(--bg-gradient) !important;
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+.elev8-theme .app-container {
+    position: relative;
+    padding-top: var(--spacing-xl);
+    padding-bottom: var(--spacing-2xl);
+}
+
+/* Enhanced section spacing */
+.elev8-theme .main-content {
+    gap: var(--spacing-2xl);
+    margin-top: var(--spacing-xl);
+}
+
+.elev8-theme .panel {
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Increase border-radius globally for Elev8 */
+.elev8-theme .panel,
+.elev8-theme .pillar-card,
+.elev8-theme .elev8-index-card {
+    border-radius: 12px;
+}
+
+.elev8-theme .form-input,
+.elev8-theme .form-select,
+.elev8-theme .form-textarea {
+    border-radius: 10px;
+}
+
+/* ========================================
+   ENHANCED HEADER STYLING
+   ======================================== */
+.elev8-theme .app-header {
+    padding: var(--spacing-xl) 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.elev8-theme .header-content {
+    align-items: center;
+}
+
+.elev8-theme .app-title {
+    font-size: 30px;
+    letter-spacing: -0.5px;
+}
+
+/* Animated pulse effect replacing static dot */
+.elev8-theme .app-title::after {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    animation: elev8-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(var(--ybg-brand-primary), 0.7);
+}
+
+@keyframes elev8-pulse {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        box-shadow: 0 0 0 0 rgba(var(--ybg-brand-primary), 0.7);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 0 0 4px rgba(var(--ybg-brand-primary), 0);
+    }
+}
+
+/* ========================================
    OVERALL ELEV8 INDEX CARD
    ======================================== */
 .elev8-index-card {
@@ -58,6 +136,63 @@
     margin: 0 auto;
 }
 
+/* ========================================
+   HORIZONTAL PROGRESS BAR
+   ======================================== */
+.elev8-progress-container {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--spacing-lg) auto 0;
+}
+
+.elev8-progress-track {
+    width: 100%;
+    height: 12px;
+    background: linear-gradient(to right, 
+        #EF4444 0%,      /* Red (0) */
+        #F97316 25%,     /* Orange (25) */
+        #EAB308 50%,     /* Yellow (50) */
+        #84CC16 75%,     /* Lime (75) */
+        #00B87C 100%     /* Emerald (100) */
+    );
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.3;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.elev8-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(to right, 
+        #EF4444 0%,      /* Red (0) */
+        #F97316 25%,     /* Orange (25) */
+        #EAB308 50%,     /* Yellow (50) */
+        #84CC16 75%,     /* Lime (75) */
+        #00B87C 100%     /* Emerald (100) */
+    );
+    border-radius: 6px;
+    opacity: 1;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(var(--ybg-brand-primary), 0.5);
+}
+
+.elev8-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: rgb(var(--text-secondary));
+}
+
+.progress-label-left { text-align: left; }
+.progress-label-center { text-align: center; }
+.progress-label-right { text-align: right; }
+
 /* Status band color variants */
 .elev8-index-band.elite {
     background-color: rgba(16, 185, 129, 0.1);
@@ -104,6 +239,35 @@
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-sm);
     border-bottom: 3px solid rgba(var(--ybg-brand-primary), 0.3);
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+}
+
+/* Enhanced typography for better readability */
+.elev8-theme .pillar-insights ul,
+.elev8-theme .pillar-actions ol,
+.elev8-theme .insights-list,
+.elev8-theme .roadmap-actions {
+    line-height: 1.7;
+}
+
+.elev8-theme .pillar-insights li,
+.elev8-theme .pillar-actions li,
+.elev8-theme .roadmap-actions li {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.7;
+}
+
+.elev8-theme .elev8-index-summary {
+    line-height: 1.75;
+}
+
+/* Boost header contrast */
+.elev8-theme .insights-title,
+.elev8-theme .roadmap-phase-title {
+    font-weight: 700;
+    color: rgb(var(--text));
+    opacity: 1;
 }
 
 .pillars-grid {
@@ -116,15 +280,41 @@
 .pillar-card {
     background: rgb(var(--card));
     border: 1px solid rgba(var(--border), 0.5);
-    border-radius: var(--border-radius-sm);
+    border-radius: 12px;
     padding: var(--spacing-lg);
     transition: all 0.3s ease;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 
+                0 0 0 1px rgba(var(--ybg-brand-primary), 0.1);
+    opacity: 0;
+    animation: fadeInUp 0.5s ease-out forwards;
 }
 
 .pillar-card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 
+                0 0 0 1px rgba(var(--ybg-brand-primary), 0.2),
+                0 0 16px rgba(var(--ybg-brand-primary), 0.15);
     transform: translateY(-2px);
+}
+
+/* Staggered animation delay for each card */
+.pillar-card:nth-child(1) { animation-delay: 0.1s; }
+.pillar-card:nth-child(2) { animation-delay: 0.2s; }
+.pillar-card:nth-child(3) { animation-delay: 0.3s; }
+.pillar-card:nth-child(4) { animation-delay: 0.4s; }
+.pillar-card:nth-child(5) { animation-delay: 0.5s; }
+.pillar-card:nth-child(6) { animation-delay: 0.6s; }
+.pillar-card:nth-child(7) { animation-delay: 0.7s; }
+.pillar-card:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .pillar-header {
@@ -133,6 +323,19 @@
     align-items: flex-start;
     margin-bottom: var(--spacing-md);
     gap: var(--spacing-sm);
+}
+
+.pillar-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.pillar-icon {
+    flex-shrink: 0;
+    color: rgb(var(--ybg-brand-primary));
+    opacity: 0.8;
 }
 
 .pillar-name {
@@ -538,6 +741,7 @@ html.theme-dark .elev8-index-card {
     box-shadow: 0 2px 8px rgba(var(--ybg-brand-primary), 0.3);
     padding: 8px 16px;
     border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .elev8-theme #exportPdfBtn:hover {
@@ -548,6 +752,132 @@ html.theme-dark .elev8-index-card {
 
 .elev8-theme #exportPdfBtn:active {
     transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(var(--ybg-brand-primary), 0.3);
+}
+
+/* Enhanced button hover feedback for all Elev8 buttons */
+.elev8-theme .submit-btn,
+.elev8-theme .action-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.elev8-theme .submit-btn:hover,
+.elev8-theme .action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--ybg-brand-primary), 0.4);
+}
+
+.elev8-theme .submit-btn:active,
+.elev8-theme .action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(var(--ybg-brand-primary), 0.3);
+}
+
+.elev8-theme .clear-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(var(--ybg-brand-error), 0.2);
+}
+
+.elev8-theme .clear-btn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   MOBILE OPTIMIZATION (<400px)
+   ======================================== */
+@media (max-width: 400px) {
+    .elev8-theme .app-container {
+        padding-left: var(--spacing-sm);
+        padding-right: var(--spacing-sm);
+    }
+    
+    .elev8-theme .app-title {
+        font-size: 22px;
+    }
+    
+    .elev8-theme .app-tagline {
+        font-size: 11px;
+    }
+    
+    /* Single column layout for very small screens */
+    .elev8-theme .main-content {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .elev8-theme .pillars-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    /* Compact Overall Index card */
+    .elev8-theme .elev8-index-number {
+        font-size: 56px;
+    }
+    
+    .elev8-theme .elev8-index-label {
+        font-size: var(--font-size-lg);
+    }
+    
+    /* Progress bar adjustments */
+    .elev8-theme .elev8-progress-container {
+        max-width: 100%;
+    }
+    
+    /* Compact pillar cards */
+    .elev8-theme .pillar-card {
+        padding: var(--spacing-md);
+    }
+    
+    .elev8-theme .pillar-name {
+        font-size: var(--font-size-base);
+    }
+    
+    /* Form inputs more touch-friendly */
+    .elev8-theme .form-input,
+    .elev8-theme .form-select,
+    .elev8-theme .form-textarea {
+        min-height: 44px;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    /* Buttons with thumb-reach padding */
+    .elev8-theme .submit-btn,
+    .elev8-theme .action-btn,
+    .elev8-theme .clear-btn,
+    .elev8-theme #exportPdfBtn {
+        min-height: 48px;
+        padding: var(--spacing-md) var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    /* Ensure buttons stack nicely */
+    .elev8-theme .result-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: var(--spacing-sm);
+    }
+    
+    .elev8-theme .result-actions button {
+        width: 100%;
+    }
+    
+    /* Insights section stacks vertically */
+    .elev8-theme .insights-section {
+        flex-direction: column;
+    }
+    
+    /* Roadmap grid to single column */
+    .elev8-theme .roadmap-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    /* Reduce vertical spacing on small screens */
+    .elev8-theme .section-title {
+        margin-bottom: var(--spacing-md);
+        font-size: var(--font-size-xl);
+    }
 }
 
 /* ========================================
