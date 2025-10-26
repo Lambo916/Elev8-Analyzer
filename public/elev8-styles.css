@@ -14,7 +14,7 @@
 
 .elev8-theme .app-container {
     position: relative;
-    padding-top: var(--spacing-md);
+    padding-top: var(--spacing-sm);
     padding-bottom: var(--spacing-2xl);
 }
 
@@ -55,8 +55,10 @@
 }
 
 .elev8-theme .app-title {
-    font-size: 30px;
+    font-size: 20px;
     letter-spacing: -0.5px;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 /* Animated pulse effect replacing static dot */
@@ -791,7 +793,7 @@ html.theme-dark .elev8-index-card {
     }
     
     .elev8-theme .app-title {
-        font-size: 22px;
+        font-size: 16px;
     }
     
     .elev8-theme .app-tagline {
@@ -800,8 +802,8 @@ html.theme-dark .elev8-index-card {
     
     /* Logo scaling for mobile */
     .elev8-theme .logo {
-        height: 90px;
-        max-height: 90px;
+        height: 40px;
+        max-height: 40px;
     }
     
     .elev8-theme .header-left {

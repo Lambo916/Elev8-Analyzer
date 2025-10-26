@@ -191,7 +191,7 @@ html:not(.theme-dark) body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
     padding-left: 0;
 }
 
@@ -203,7 +203,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 145px;
+    height: 48px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
