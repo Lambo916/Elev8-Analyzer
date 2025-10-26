@@ -182,8 +182,6 @@ html:not(.theme-dark) body {
     padding-left: 0;
     padding-right: var(--spacing-md);
     position: relative;
-    top: -3px;
-    margin-bottom: calc(var(--spacing-sm) - 2px);
 }
 
 .header-content {
@@ -208,7 +206,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 166px;
+    height: 208px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
