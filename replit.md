@@ -1,10 +1,20 @@
 # Overview
 
-Elev8 Analyzer is a production-grade AI-powered business diagnostic platform that evaluates companies across 8 critical pillars of business health and growth. The system delivers comprehensive, actionable reports scoring each pillar (0-100) with status indicators and prioritized 30/60/90-day roadmaps. Built on proven GrantGenie architecture with database-backed report management and responsive desktop-first UX. Features deep blue→teal gradients with emerald green accents for a professional, growth-focused interface.
+YourBizGuru Tools is a multi-tool platform featuring Elev8 Analyzer (default) and GrantGenie. Elev8 Analyzer is a production-grade AI-powered business diagnostic platform that evaluates companies across 8 critical pillars of business health and growth, delivering comprehensive reports scoring each pillar (0-100) with status indicators and prioritized 30/60/90-day roadmaps. GrantGenie provides AI-powered grant writing assistance. Both tools share database infrastructure with separate 30-report usage caps per tool. Features deep blue→teal gradients with emerald green accents for Elev8; GrantGenie maintains its original branding.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+# Recent Changes
+
+## 2025-01-26: Elev8 Analyzer Launch
+- Made Elev8 Analyzer the default entry point (index.html redirects to elev8-analyzer.html)
+- Moved original GrantGenie interface to grantgenie.html
+- Added cross-navigation links in headers (GrantGenie ↔ Elev8 Analyzer)
+- Completed Phase 2: Full frontend integration with 8-pillar results rendering, Overall Elev8 Index display, strengths/gaps analysis, 30/60/90 roadmap, and PDF export
+- Backend API in server/routes.ts handles both tool flows with proper validation and default to 'grantgenie' for backward compatibility
+- exportElev8AnalysisToPDF function generates multi-page PDFs with cover, 8-pillar breakdown, and roadmap sections
 
 # System Architecture
 
