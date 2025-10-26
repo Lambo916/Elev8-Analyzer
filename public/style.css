@@ -166,7 +166,7 @@ html:not(.theme-dark) body {
     flex-direction: column;
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 0 var(--spacing-lg);
+    padding: 0 var(--spacing-md);
 }
 
 /* ========================================
@@ -174,9 +174,9 @@ html:not(.theme-dark) body {
    ======================================== */
 
 .app-header {
-    padding: 6px 0;
+    padding: 4px 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
     position: relative;
 }
 
@@ -236,7 +236,7 @@ html:not(.theme-dark) body {
 .title-container {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0px;
 }
 
 .app-tagline {
@@ -1120,30 +1120,19 @@ hr,
 
 @media (max-width: 768px) {
     .app-container {
-        padding: 0 var(--spacing-md);
+        padding: 0 var(--spacing-sm);
     }
     
     .logo {
-        height: 48px;
+        height: 44px;
     }
     
     .app-title {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
     }
     
-    .header-content {
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
-    
-    .header-left {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .theme-toggle {
-        width: 100%;
-        justify-content: center;
+    .app-tagline {
+        font-size: 10px;
     }
     
     .main-content {
@@ -1176,20 +1165,29 @@ hr,
 
 @media (max-width: 480px) {
     .app-container {
-        padding: 0 var(--spacing-md);
+        padding: 0 var(--spacing-xs);
     }
     
     .header-left {
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs);
     }
     
     .logo {
-        height: 44px;
+        height: 40px;
         width: auto;
     }
     
     .app-title {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xs);
+    }
+    
+    .app-tagline {
+        font-size: 9px;
+    }
+    
+    .theme-toggle {
+        font-size: 11px;
+        padding: var(--spacing-xs) var(--spacing-sm);
     }
     
     .panel-header {
