@@ -28,6 +28,7 @@
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
+    --spacing-2xl: 48px;
     
     /* Layout - Constants */
     --max-width: 1200px;
@@ -399,7 +400,7 @@ html.theme-dark .results-panel::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-xl);
     background: rgba(var(--card-header), 0.5);
     border-bottom: 1px solid rgba(var(--border), 0.15);
 }
@@ -437,7 +438,7 @@ html:not(.theme-dark) .panel-header {
 }
 
 .panel-content {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     /* Allow panel content to grow and fill available space */
     flex: 1;
     display: flex;
@@ -453,13 +454,13 @@ html:not(.theme-dark) .panel-header {
 .toolkit-form {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl);
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
 }
 
 .form-row {
@@ -490,16 +491,16 @@ html:not(.theme-dark) .panel-header {
 
 .form-textarea {
     width: 100%;
-    padding: 12px;
+    padding: 12px 16px;
     border: 1.5px solid rgba(var(--border), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
     font-size: var(--font-size-base);
-    line-height: 1.5;
+    line-height: 1.6;
     color: rgb(var(--text));
     background: rgba(var(--bg), 0.5);
     resize: vertical;
-    min-height: 120px;
+    min-height: 140px;
     transition: all 0.3s ease;
 }
 
@@ -518,7 +519,7 @@ html:not(.theme-dark) .form-textarea {
 .form-input,
 .form-select {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 16px;
     border: 1.5px solid rgba(var(--border), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
@@ -640,7 +641,7 @@ html.theme-dark .checkbox-group {
    ======================================== */
 
 .submit-btn {
-    padding: 12px 24px;
+    padding: 14px 28px;
     background: var(--btn-gradient);
     color: #000;
     border: none;
@@ -649,9 +650,9 @@ html.theme-dark .checkbox-group {
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    min-height: 44px;
+    min-height: 48px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -713,16 +714,16 @@ html.theme-dark .submit-btn:hover {
 }
 
 .clear-btn {
-    padding: 6px 12px;
+    padding: 8px 16px;
     background: transparent;
     color: var(--primary);
     border: 1px solid rgba(var(--primary-rgb), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .clear-btn:hover {
@@ -732,16 +733,16 @@ html.theme-dark .submit-btn:hover {
 }
 
 .action-btn {
-    padding: 6px 12px;
+    padding: 8px 16px;
     background: transparent;
     color: var(--primary);
     border: 1px solid rgba(var(--primary-rgb), 0.5);
     border-radius: var(--border-radius-sm);
     font-family: var(--font-body);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
@@ -1119,7 +1120,7 @@ hr,
 
 @media (max-width: 768px) {
     .app-container {
-        padding: 0 var(--spacing-md);
+        padding: 0 var(--spacing-lg);
     }
     
     .app-title {
@@ -1128,7 +1129,7 @@ hr,
     
     .header-content {
         flex-direction: column;
-        gap: var(--spacing-md);
+        gap: var(--spacing-lg);
     }
     
     .header-left {
@@ -1143,21 +1144,25 @@ hr,
     
     .main-content {
         grid-template-columns: 1fr;
-        gap: var(--spacing-lg);
+        gap: var(--spacing-xl);
     }
     
     .panel-header {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-md) var(--spacing-lg);
     }
     
     .panel-content {
-        padding: var(--spacing-md);
+        padding: var(--spacing-lg);
+    }
+    
+    .toolkit-form {
+        gap: var(--spacing-lg);
     }
     
     .result-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--spacing-sm);
+        gap: var(--spacing-md);
     }
     
     .result-actions {
@@ -1166,6 +1171,10 @@ hr,
 }
 
 @media (max-width: 480px) {
+    .app-container {
+        padding: 0 var(--spacing-md);
+    }
+    
     .header-left {
         gap: var(--spacing-sm);
     }
@@ -1179,8 +1188,16 @@ hr,
         font-size: 20px;
     }
     
+    .panel-header {
+        padding: var(--spacing-md);
+    }
+    
+    .panel-content {
+        padding: var(--spacing-md);
+    }
+    
     .form-textarea {
-        min-height: 100px;
+        min-height: 120px;
     }
 }
 
