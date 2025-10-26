@@ -194,8 +194,8 @@ html:not(.theme-dark) body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    margin-left: 0;
-    padding-left: 0;
+    position: relative;
+    left: calc(var(--spacing-md) * -1);
 }
 
 .header-right {
