@@ -5,7 +5,7 @@
 
 // Initialize toolkit configuration for PDF exports
 window.currentToolkitName = "Elev8 Analyzer";
-window.currentToolkitLogo = "ybg-logo.svg";  // Full-size logo for crisp PDF rendering
+window.currentToolkitLogo = "elev8-logo.png";  // Full-size logo for crisp PDF rendering
 
 // =====================================================
 // THEME MANAGER (keeping existing functionality)

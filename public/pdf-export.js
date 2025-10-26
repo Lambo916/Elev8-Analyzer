@@ -158,7 +158,7 @@ window.YBG_PDF = window.YBG_PDF || {};
 
   function getToolkitIcon() {
     // Use the full-size logo for PDF exports (not the tiny favicon)
-    return window.currentToolkitLogo || "ybg-logo.svg";
+    return window.currentToolkitLogo || "elev8-logo.png";
   }
 
   // ---- Image Loading -------------------------------------------------------
