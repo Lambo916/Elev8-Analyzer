@@ -25,6 +25,10 @@
     font-family: var(--font-heading);
     line-height: 1;
     margin-bottom: var(--spacing-sm);
+    background: linear-gradient(135deg, rgb(var(--ybg-brand-primary)), rgb(var(--ybg-brand-accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .elev8-index-label {
@@ -523,6 +527,27 @@ html.theme-dark .elev8-index-card {
     border-color: rgba(var(--ybg-brand-error), 0.5);
     color: rgb(var(--ybg-brand-error));
     background: rgba(var(--ybg-brand-error), 0.05);
+}
+
+/* Enhanced PDF Export button for Elev8 */
+.elev8-theme #exportPdfBtn {
+    background: var(--btn-gradient) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(var(--ybg-brand-primary), 0.3);
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.elev8-theme #exportPdfBtn:hover {
+    background: var(--btn-gradient-hover) !important;
+    box-shadow: 0 4px 12px rgba(var(--ybg-brand-primary), 0.4);
+    transform: translateY(-1px);
+}
+
+.elev8-theme #exportPdfBtn:active {
+    transform: translateY(0);
 }
 
 /* ========================================
