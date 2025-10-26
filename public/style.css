@@ -174,9 +174,9 @@ html:not(.theme-dark) body {
    ======================================== */
 
 .app-header {
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-md) 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
     position: relative;
 }
 
@@ -189,7 +189,7 @@ html:not(.theme-dark) body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
 }
 
 .header-right {
@@ -200,7 +200,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 128px;
+    height: 80px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
@@ -213,7 +213,7 @@ html:not(.theme-dark) body {
 /* Title with yellow accent dot */
 .app-title {
     font-family: var(--font-heading);
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     font-weight: 600;
     color: rgb(var(--text));
     position: relative;
@@ -236,12 +236,12 @@ html:not(.theme-dark) body {
 .title-container {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .app-tagline {
     font-family: var(--font-body);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     font-weight: 400;
     color: rgb(var(--text-secondary));
     margin: 0;
@@ -1124,12 +1124,12 @@ hr,
     }
     
     .app-title {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-lg);
     }
     
     .header-content {
         flex-direction: column;
-        gap: var(--spacing-lg);
+        gap: var(--spacing-md);
     }
     
     .header-left {
@@ -1176,16 +1176,16 @@ hr,
     }
     
     .header-left {
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs);
     }
     
     .logo {
-        height: 96px;
+        height: 64px;
         width: auto;
     }
     
     .app-title {
-        font-size: 20px;
+        font-size: var(--font-size-base);
     }
     
     .panel-header {
