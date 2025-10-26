@@ -167,7 +167,6 @@ html:not(.theme-dark) body {
     max-width: var(--max-width);
     margin: 0 auto;
     padding: 0 var(--spacing-md);
-    padding-top: 160px;
 }
 
 /* ========================================
@@ -178,13 +177,9 @@ html:not(.theme-dark) body {
     padding: 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
     margin-bottom: var(--spacing-sm);
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    z-index: 100;
-    background: rgba(var(--bg), 0.95);
-    backdrop-filter: blur(10px);
+    margin-left: calc(var(--spacing-md) * -1);
+    margin-right: calc(var(--spacing-md) * -1);
+    padding-right: var(--spacing-md);
 }
 
 .header-content {
