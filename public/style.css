@@ -166,7 +166,7 @@ html:not(.theme-dark) body {
     flex-direction: column;
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 0 var(--spacing-md);
+    padding: 0 var(--spacing-lg);
 }
 
 /* ========================================
@@ -174,7 +174,7 @@ html:not(.theme-dark) body {
    ======================================== */
 
 .app-header {
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-sm) 0;
     border-bottom: 1px solid rgba(var(--border), 0.2);
     margin-bottom: var(--spacing-lg);
     position: relative;
@@ -189,7 +189,7 @@ html:not(.theme-dark) body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .header-right {
@@ -200,7 +200,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 110px;
+    height: 52px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
@@ -213,7 +213,7 @@ html:not(.theme-dark) body {
 /* Title with yellow accent dot */
 .app-title {
     font-family: var(--font-heading);
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-lg);
     font-weight: 600;
     color: rgb(var(--text));
     position: relative;
@@ -241,7 +241,7 @@ html:not(.theme-dark) body {
 
 .app-tagline {
     font-family: var(--font-body);
-    font-size: var(--font-size-sm);
+    font-size: 11px;
     font-weight: 400;
     color: rgb(var(--text-secondary));
     margin: 0;
@@ -1124,11 +1124,11 @@ hr,
     }
     
     .logo {
-        height: 90px;
+        height: 48px;
     }
     
     .app-title {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-base);
     }
     
     .header-content {
@@ -1176,7 +1176,7 @@ hr,
 
 @media (max-width: 480px) {
     .app-container {
-        padding: 0 var(--spacing-sm);
+        padding: 0 var(--spacing-md);
     }
     
     .header-left {
@@ -1184,12 +1184,12 @@ hr,
     }
     
     .logo {
-        height: 80px;
+        height: 44px;
         width: auto;
     }
     
     .app-title {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-sm);
     }
     
     .panel-header {
