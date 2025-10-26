@@ -200,7 +200,7 @@ html:not(.theme-dark) body {
 }
 
 .logo {
-    height: 52px;
+    height: 260px;
     width: auto;
     filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4));
     transition: filter 0.3s ease;
