@@ -42,10 +42,14 @@
 }
 
 /* ========================================
-   ENHANCED HEADER STYLING - MATCH COMPLIPILOT
+   ENHANCED HEADER STYLING - PERFECT ALIGNMENT
    ======================================== */
 .elev8-theme .app-header {
     padding: var(--spacing-lg) 0;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .elev8-theme .header-content {
