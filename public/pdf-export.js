@@ -1473,6 +1473,11 @@ window.YBG_PDF = window.YBG_PDF || {};
       drawWatermark(doc, iconDataUrl);
       drawHeader(doc, pageNum, iconDataUrl);
       
+      // DEBUG: Draw red border around content area to prove new margins are active
+      doc.setDrawColor(255, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.rect(CONTENT.left, CONTENT.top, CONTENT.width, CONTENT.height);
+      
       // Title
       doc.setFont(TYPOGRAPHY.fontFamily, "bold");
       doc.setFontSize(22);
