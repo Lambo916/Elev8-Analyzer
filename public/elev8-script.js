@@ -29,16 +29,24 @@ function setupChartDefaultsForAnalyzer() {
 function forceRenderAllCharts() {
     console.log('[Elev8 Charts] Force rendering all pending charts');
     
+    // Check if app instance exists
+    if (!window.elev8App || !window.elev8App.analysisData) {
+        console.warn('[Elev8 Charts] Cannot force render charts - app instance or analysis data not available');
+        return;
+    }
+    
     // Find all chart-wrap containers that haven't been initialized yet
-    document.querySelectorAll('.chart-wrap:not([data-inited])').forEach(wrap => {
+    const pendingCharts = document.querySelectorAll('.chart-wrap:not([data-inited])');
+    if (pendingCharts.length === 0) {
+        console.log('[Elev8 Charts] All charts already rendered');
+        return;
+    }
+    
+    pendingCharts.forEach(wrap => {
         const chartType = wrap.dataset.chart;
-        
-        // Get the app instance from the global scope
-        if (window.elev8App && window.elev8App.analysisData) {
-            window.elev8App.initChartByType(chartType, window.elev8App.analysisData);
-            wrap.dataset.inited = '1';
-            console.log(`[Elev8 Charts] Force-rendered ${chartType} chart`);
-        }
+        window.elev8App.initChartByType(chartType, window.elev8App.analysisData);
+        wrap.dataset.inited = '1';
+        console.log(`[Elev8 Charts] Force-rendered ${chartType} chart`);
     });
 }
 
@@ -47,9 +55,6 @@ function forceRenderAllCharts() {
  */
 function freezeChartsForExport() {
     if (!window.Chart) return;
-    
-    // First, force render any lazy-loaded charts that haven't been created yet
-    forceRenderAllCharts();
     
     Chart.defaults.animation = false;
     const canvases = document.querySelectorAll('canvas.chartjs, .chart-card canvas');
