@@ -1,239 +1,401 @@
-# Elev8 Analyzer v1.0
+# Elev8 Analyzer
 
-Elev8 Analyzer is a comprehensive business diagnostic platform that evaluates companies across 8 critical pillars of business health and growth. Built on the proven GrantGenie codebase architecture with complete theming system (Light/Dark), tokenized CSS with deep blue→teal gradients and emerald accents.
+> AI-powered business diagnostic toolkit — part of the YourBizGuru platform
 
-## Features
+![Elev8 Analyzer](public/elev8-logo.png)
 
-- **Dual Theme System**: Professional Light and Dark themes with persistent user preference
-- **Tokenized CSS Architecture**: Reusable CSS variables for colors, gradients, shadows, and typography
-- **Enhanced Yellow Accents**: Tasteful use of yellow (#FFEB3B) throughout both themes
-- **Complete Icon Set**: Favicon, Apple Touch Icon, Android Chrome icons, and PWA manifest
-- **Theme Persistence**: Respects system preferences with localStorage override capability
-- **Accessibility First**: AA contrast compliance and reduced-motion support
-- **AI-Powered Backend**: OpenAI GPT-4o-mini integration with fallback support
-- **Mobile Responsive**: Optimized for all device sizes with theme-aware mobile chrome
-- **PWA Ready**: Complete manifest and icon set for Progressive Web App deployment
+## Overview
+
+Elev8 Analyzer is a comprehensive business diagnostic platform that evaluates companies across **8 critical pillars** of business health and growth. Using advanced AI technology, it provides actionable insights, identifies strengths and gaps, and delivers a prioritized 30/60/90-day roadmap for business improvement.
+
+### 8 Pillars of Business Health
+
+1. **Formation & Compliance** - Legal structure, registrations, and regulatory adherence
+2. **Business Credit Readiness** - Credit profile, tradelines, and funding preparedness
+3. **Financials & Cash Flow** - Revenue, expenses, profitability, and cash management
+4. **Operations & Systems** - Processes, efficiency, and operational infrastructure
+5. **Sales & Marketing** - Customer acquisition, marketing channels, and sales strategies
+6. **Brand & Web Presence** - Digital footprint, branding consistency, and online visibility
+7. **Risk & Legal Posture** - Liability protection, contracts, and risk mitigation
+8. **Growth Strategy & Execution** - Strategic planning, scalability, and expansion readiness
+
+### Key Features
+
+- **Elev8 Index (0-100)**: Overall business health score with weighted pillar contributions
+- **Pillar Scoring**: Individual assessments (0-100) for each of the 8 pillars
+- **Status Indicators**: Green (71-100), Yellow (41-70), Red (0-40) health markers
+- **AI-Powered Insights**: Deep analysis of strengths, gaps, and improvement opportunities
+- **Prioritized Roadmap**: Actionable 30/60/90-day plans tailored to your business
+- **Professional PDF Export**: Multi-page reports with branding and disclaimer footers
+- **Dark Mode Default**: Sleek emerald green (#00B87C) branding with deep navy→teal gradients
+- **IP-Based Tracking**: 30-report soft-launch limit per IP address
+- **Report Persistence**: Save, load, and manage multiple business analyses
 
 ## Tech Stack
 
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3 with custom properties
-- **Backend**: Express.js with TypeScript
-- **AI Integration**: OpenAI API (GPT-4o-mini with GPT-3.5-turbo fallback)
-- **Database**: PostgreSQL with Drizzle ORM (optional)
-- **Development**: Vite, React (for client components), Tailwind CSS
+### Frontend
+- **HTML5, CSS3, JavaScript** - Vanilla implementation for maximum compatibility
+- **Responsive Design** - Mobile-first with CompliPilot-style dropdown buttons
+- **Theme System** - Light/Dark modes with persistent user preferences
+- **PDF Generation** - jsPDF with custom formatting and multi-page support
 
-## Branding Guidelines
+### Backend
+- **Node.js + Express** - RESTful API server
+- **TypeScript** - Type-safe server implementation
+- **OpenAI API** - GPT-4o integration for AI-powered analysis
+- **PostgreSQL** - Report persistence and usage tracking
+- **Drizzle ORM** - Type-safe database operations
 
-### Colors (Both Themes)
-- **Primary**: #0891B2 (Deep Teal / Cyan-600)
-- **Accent**: #10B981 (Emerald Green / Emerald-500)
-- **Success**: #22C55E (Success Green)
-- **Error**: #F44336 (Red)
-
-### Light Theme (v1.1.3 "Less White")
-- **Background**: Enhanced blue→white gradient with dual accent washes (yellow + blue)
-- **Cards**: Multi-layer with blue tint fade, gradient rims, and panel sheen
-- **Panel Headers**: Gradient background with enhanced styling
-- **Text**: Dark slate (#1e293b) - AA compliant on all tinted backgrounds
-- **Yellow Accents**: Enhanced button glows, stronger link cues, visible brand touches
-- **Visual Depth**: Visible blue tints, gradient borders, reduced flat white appearance
-
-### Dark Theme
-- **Background**: Dark gradient (#0A0A0A → #1A1A1A → #0f0f0f)
-- **Cards**: Elevated dark surfaces with blue borders
-- **Text**: Pure white (#FFFFFF)
-- **Yellow Accents**: Enhanced glows, dual-layer button effects, accent borders
-
-### Typography
-- **Headings**: Montserrat (with theme-aware shadows)
-- **Body**: Open Sans
-- **Sizes**: Consistent scale from 12px to 28px
-
-### Interactive Elements
-- Theme toggle with sun/moon icons
-- Buttons with gradient backgrounds and theme-specific glows
-- Dual-layer hover effects (blue core + yellow halo)
-- Focus states with combined blue/yellow rings for accessibility
+### Deployment
+- **Vercel** - Production hosting with serverless functions
+- **Replit** - Development environment and staging
+- **CORS Enabled** - Configured for analyzer.yourbizguru.com
 
 ## Setup Instructions
 
-1. **Clone the template**
-   ```bash
-   git clone [repository-url]
-   cd elev8-analyzer-v1
-   ```
+### 1. Clone the Repository
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/Lambo916/Elev8-Analyzer.git
+cd Elev8-Analyzer
+```
 
-3. **Configure environment variables**
-   - Add your `OPENAI_API_KEY` to the secrets panel
-   - Optionally add `SESSION_SECRET` for session management
+### 2. Install Dependencies
 
-4. **Run development server**
-   ```bash
-   npm run dev
-   ```
-   The application will be available at `http://localhost:5000`
+```bash
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file or add the following secrets to your Replit environment:
+
+```env
+# Required
+OPENAI_API_KEY=sk-...                    # OpenAI API key for AI analysis
+DATABASE_URL=postgresql://...            # PostgreSQL connection string
+SUPABASE_URL=https://...                 # Supabase project URL
+SUPABASE_ANON_KEY=eyJ...                 # Supabase anon/public key
+
+# Application
+TOOL_NAME=elev8analyzer                  # Tool identifier for usage tracking
+NODE_ENV=development                     # Environment (development/production)
+SESSION_SECRET=your-secret-key           # Session encryption key
+
+# Optional
+PORT=5000                                # Server port (default: 5000)
+```
+
+### 4. Run the Development Server
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5000`
+
+For Replit users, simply click the **Run** button after configuring secrets.
+
+## Usage
+
+### Generating a Business Analysis
+
+1. **Fill out the business profile**:
+   - Business Name
+   - Industry/Type
+   - Years in Operation
+   - Annual Revenue
+   - Number of Employees
+   - Current Challenges
+
+2. **Submit for AI Analysis**:
+   - Click "Analyze My Business"
+   - Wait for AI-powered evaluation (typically 15-30 seconds)
+
+3. **Review Results**:
+   - Overall Elev8 Index score (0-100)
+   - Individual pillar scores with color-coded status
+   - Key Insights for each pillar
+   - Priority Actions for improvement
+   - 30/60/90-day roadmap with specific action items
+
+4. **Export & Save**:
+   - **Export PDF**: Professional multi-page report with branding
+   - **Save Report**: Store analysis for future reference
+   - **Load Saved Reports**: Access previously generated analyses
+
+### Usage Limits
+
+- **30 reports per IP address** during soft launch
+- Counter displayed in the interface
+- Usage tracked via PostgreSQL database
 
 ## Deployment
 
-### Vercel Deployment
+### Vercel Production
+
+The application is hosted on Vercel:
+
+**Live URL**: https://analyzer.yourbizguru.com
+
+#### Deploy Your Own
+
 1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
-3. Deploy with automatic builds on push
+2. Configure environment variables in Vercel dashboard:
+   - `OPENAI_API_KEY`
+   - `DATABASE_URL`
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `TOOL_NAME=elev8analyzer`
+   - `NODE_ENV=production`
+3. Deploy with automatic builds on push to main branch
 
-### GoHighLevel Integration
-Embed the dashboard using an iframe:
-```html
-<iframe 
-  src="https://your-app.vercel.app" 
-  width="100%" 
-  height="800"
-  frameborder="0">
-</iframe>
+### Replit Staging
+
+Use Replit for development and staging:
+
+1. Fork this Repl or import from GitHub
+2. Add secrets in the Secrets panel
+3. Click Run to start the development server
+4. Access via the Replit webview URL
+
+## Architecture
+
+### Project Structure
+
+```
+├── public/                 # Frontend application (vanilla JS)
+│   ├── elev8-analyzer.html # Elev8 Analyzer main page
+│   ├── elev8-script.js     # Analyzer application logic
+│   ├── elev8-styles.css    # Analyzer-specific styles
+│   ├── elev8-theme.css     # Theme system (light/dark modes)
+│   ├── pdf-export.js       # PDF export functionality
+│   ├── toolkit-config.js   # Toolkit configuration
+│   ├── privacy.html        # Privacy policy
+│   ├── terms.html          # Terms of service
+│   ├── elev8-logo.png      # Branding assets
+│   └── favicon*.png        # Favicon and icons
+├── server/                 # Express backend
+│   ├── index.ts            # Server entry point
+│   ├── routes.ts           # API endpoints and business logic
+│   ├── storage.ts          # Storage interface (in-memory/DB)
+│   └── vite.ts             # Vite dev server integration
+├── shared/                 # Shared types and database schemas
+│   └── schema.ts           # Drizzle ORM schema definitions
+├── client/                 # Alternative entry point (optional)
+│   └── index.html          # Alternative frontend entry
+└── api/                    # Vercel serverless functions
+    └── *.ts                # Serverless API handlers
 ```
 
-## Themes
+### Database Schema (PostgreSQL + Drizzle ORM)
 
-### Theme System Architecture
-The template uses a tokenized CSS variable system located in `public/style.css`:
-
-- **Root variables**: Define brand colors as RGB values for flexible alpha usage
-- **Theme classes**: `.theme-light` (default) and `.theme-dark` applied to `<html>`
-- **Token categories**:
-  - Colors: `--bg`, `--card`, `--text`, `--muted`, `--border`
-  - Brand: `--primary`, `--accent`, `--success`, `--error`
-  - Gradients: `--bg-gradient`, `--btn-gradient`, `--accent-glow`
-  - Shadows: `--shadow`, `--shadow-strong`, `--glow-primary`, `--glow-accent`
-
-### Theme Behavior
-1. **First Load**: Honors system preference via `prefers-color-scheme`
-2. **Manual Toggle**: Overrides system preference, persists to localStorage (`ybg-theme`)
-3. **Persistence**: User choice survives page refreshes
-4. **System Changes**: Only applied if no manual preference is set
-
-### Light Theme "Less White" Pass (v1.1.3)
-Enhanced from v1.1.2 with stronger visual depth and reduced flat appearance:
-
-**New Tokens:**
-- `--bg-accent-wash-2`: Additional blue accent wash for dual-layer effect
-- `--panel-tint`: Visible blue fade from top (6% opacity)
-- `--panel-sheen`: White overlay for dimensional depth (65% opacity)  
-- `--rim-gradient`: Blue fade borders via border-image (18% to 0%)
-- `--panel-shadow`: Enhanced shadow for elevated feel
-- `--divider-fade`: Subtle gradient dividers
-
-**Enhanced Features:**
-- Dual accent wash: Yellow (top-right) + Blue (bottom-left)
-- Three-layer panel backgrounds: Sheen + Tint + Card gradient
-- Gradient rim borders using border-image for crisp edges
-- Enhanced button/link yellow cues with higher opacity
-- Visible blue tints throughout while maintaining AA contrast
-- `--card-border`: Subtle slate border (8% opacity)
-- `--panel-header-glow`: Minimal blue glow (12% opacity)
-
-### Customizing Theme Tokens
-Toolkits can override specific tokens without modifying components:
-```css
-/* Example: Adjust accent wash intensity */
-html.theme-light {
-    --bg-accent-wash: radial-gradient(1200px 800px at 85% -120px, 
-        rgba(255, 235, 59, 0.15), /* Stronger yellow */
-        rgba(255, 255, 255, 0) 55%);
+```typescript
+// users table (authentication, future feature)
+{
+  id: varchar (uuid, primary key)
+  username: text (unique)
+  password: text
 }
 
-/* Example: Reduce card gradient contrast */
-html.theme-light {
-    --card-gradient: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+// saved_elev8_reports table
+{
+  id: varchar (uuid, primary key)
+  ipAddress: text
+  reportName: text
+  analysisData: json        // Full analysis results with pillars & roadmap
+  createdAt: timestamp
 }
-```
 
-### Accessibility Features
-- AA contrast compliance on all text/background combinations
-- `prefers-reduced-motion`: Disables heavy animations and glows
-- Focus rings: Blue core with subtle yellow halo
-- Theme toggle: Keyboard accessible with clear focus states
+// usage_tracking table
+{
+  id: varchar (uuid, primary key)
+  ipAddress: text
+  tool: text                // 'elev8analyzer'
+  reportCount: integer
+  lastUpdated: timestamp
+  unique: (ipAddress, tool) // Composite unique constraint
+}
 
-## Customization for Specific Toolkits
-
-To customize for each toolkit:
-
-1. Update the title and description in `public/index.html`
-2. Modify the OpenAI prompt system message in `server/routes.ts`
-3. Adjust the placeholder text in the textarea
-4. Update the `site.webmanifest` with toolkit-specific details
-5. (Optional) Override theme tokens for toolkit-specific branding
-
-## File Structure
-
-```
-/
-├── public/
-│   ├── index.html          # Main HTML with GrantGenie branding
-│   ├── style.css           # Dark gradient theme with neon effects
-│   ├── script.js           # Frontend JavaScript
-│   ├── favicon.ico         # Browser favicon
-│   ├── favicon-32x32.png   # 32px favicon
-│   ├── apple-touch-icon.png # iOS icon
-│   ├── android-chrome-*.png # Android icons
-│   └── site.webmanifest    # PWA manifest
-├── server/
-│   ├── index.ts            # Express server entry
-│   ├── routes.ts           # API routes with OpenAI integration
-│   └── storage.ts          # Storage interface
-├── client/
-│   └── src/                # React components (if needed)
-└── package.json            # Dependencies
+// compliance_reports table (multi-tool support)
+{
+  id: varchar (uuid, primary key)
+  name: text
+  entityName: text
+  entityType: text
+  jurisdiction: text
+  filingType: text
+  deadline: text
+  htmlContent: text
+  checksum: text
+  metadata: json
+  toolkitCode: text         // Tool identifier
+  ownerId: text
+  userId: varchar
+  createdAt: timestamp
+}
 ```
 
 ## API Endpoints
 
-- `GET /` - Serves the main dashboard
-- `POST /api/generate` - Generates AI responses
-  - Request: `{ "prompt": "Your business question" }`
-  - Response: `{ "result": "AI response", "timestamp": "ISO date", "model": "gpt-4o-mini" }`
+### Core Endpoints
 
-## Security Features
+#### POST /api/generate
+Generate AI-powered content (used by both tools).
 
-- API key validation and secure storage
-- Input validation and sanitization
-- Rate limiting ready
-- CORS configuration for iframe embedding
-- No API key logging in production
+**Request:**
+```json
+{
+  "prompt": "Your business question or compliance scenario"
+}
+```
 
-## Browser Support
+**Response:**
+```json
+{
+  "result": "AI-generated response",
+  "timestamp": "2025-01-26T12:00:00.000Z",
+  "model": "gpt-4o-mini"
+}
+```
 
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
-- Mobile browsers (iOS Safari, Chrome Mobile)
+### Elev8 Analyzer Endpoints
+
+#### POST /api/elev8/reports/save
+Save an Elev8 analysis report.
+
+**Request:**
+```json
+{
+  "reportName": "Big Stake Q1 2025",
+  "analysisData": {
+    "businessName": "Big Stake Consulting LLC",
+    "overall": { "score": 73, "summary": "..." },
+    "pillars": [...],
+    "roadmap": { "d30": [...], "d60": [...], "d90": [...] }
+  }
+}
+```
+
+#### GET /api/elev8/reports/list
+Get all saved Elev8 reports for current IP address.
+
+**Response:**
+```json
+{
+  "reports": [
+    {
+      "id": "uuid",
+      "reportName": "Big Stake Q1 2025",
+      "createdAt": "2025-01-26T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### GET /api/elev8/reports/load/:id
+Load a specific saved Elev8 report by ID.
+
+#### DELETE /api/elev8/reports/delete/:id
+Delete a saved Elev8 report.
+
+### Legacy Compliance Report Endpoints
+
+_Note: These endpoints support other tools in the YourBizGuru toolkit._
+
+#### POST /api/reports/save
+#### GET /api/reports/list
+#### GET /api/reports/:id
+#### DELETE /api/reports/:id
+
+### Utility Endpoints
+
+#### GET /api/usage/check?tool={tool}
+Check usage count for current IP address.
+
+**Parameters:**
+- `tool`: `elev8analyzer` or `grantgenie`
+
+**Response:**
+```json
+{
+  "allowed": true,
+  "count": 5,
+  "limit": 30
+}
+```
+
+#### POST /api/usage/increment
+Increment usage counter (called automatically after report generation).
+
+#### GET /api/db/ping
+Database health check.
+
+#### GET /api/auth/config
+Authentication configuration (for future features).
+
+## Branding & Design
+
+### Color Palette
+
+- **Primary**: Deep Teal (#0891B2) → Emerald gradients
+- **Accent**: Emerald Green (#00B87C)
+- **Success**: Green (#10B981)
+- **Warning**: Amber (#F59E0B)
+- **Error**: Red (#EF4444)
+
+### Typography
+
+- **Headings**: Montserrat (bold, 600)
+- **Body**: Open Sans (regular, 400)
+- **Monospace**: Consolas, Monaco
+
+### Theme Modes
+
+- **Dark Mode** (default): Deep navy backgrounds with teal/emerald accents
+- **Light Mode**: Clean white with blue-tinted cards
+- **User Preference**: Persisted in localStorage
 
 ## License
 
-© 2025 GrantGenie - All Rights Reserved
+MIT License
+
+Copyright (c) 2025 YourBizGuru / Big Stake Consulting LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Credits
+
+**Developed by**: [YourBizGuru](https://yourbizguru.com) (Big Stake Consulting LLC)
+
+**Concept, Design & Architecture**: Founder, Big Stake Consulting LLC
+
+**AI Integration**: OpenAI GPT-4o
+
+**Hosting**: Vercel
+
+**Repository**: https://github.com/Lambo916/Elev8-Analyzer
 
 ---
 
-**Version**: 1.1.2  
-**Release Date**: September 2025  
-**Template Tag**: `ybg-template-v1.1.2`  
+**Version**: 1.1  
+**Release Date**: January 2025  
+**Status**: Soft Launch (30-report limit per IP)
 
-### Changelog v1.1.2 (Light Theme Gradient Polish)
-- Enhanced light theme with subtle gradient backgrounds
-- Added faint yellow brand accent wash to page background
-- Implemented card gradients (white→soft-gray) for depth
-- Added minimal panel header glow for visual hierarchy
-- Included button inner highlight for dimensional effect
-- Maintained AA contrast compliance (14.63:1 verified)
-- Dark theme remains unchanged from v1.1.0
-
-### Changelog v1.1.0
-- Added comprehensive Light/Dark theme system
-- Implemented tokenized CSS architecture for reusability
-- Increased yellow accent presence across both themes
-- Added persistent theme toggle with localStorage
-- Enhanced accessibility with AA contrast and reduced-motion support
-- Improved button hover states with dual-layer glows
+For support or inquiries, visit [YourBizGuru.com](https://yourbizguru.com)
