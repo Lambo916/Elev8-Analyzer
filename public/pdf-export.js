@@ -1444,6 +1444,11 @@ window.YBG_PDF = window.YBG_PDF || {};
   // ---- Elev8 Analyzer PDF Export (Diagnostic Format) ----------------------
   window.exportElev8AnalysisToPDF = async function(analysis) {
     try {
+      console.log('[PDF Export] Starting export with MARGINS:', MARGINS);
+      console.log('[PDF Export] CONTENT area:', CONTENT);
+      console.log('[PDF Export] HEADER:', HEADER);
+      console.log('[PDF Export] FOOTER:', FOOTER);
+      
       const jsPDF = await loadJsPDF();
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       
