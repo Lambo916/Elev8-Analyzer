@@ -42,7 +42,7 @@
 }
 
 /* ========================================
-   ENHANCED HEADER STYLING
+   ENHANCED HEADER STYLING - MATCH COMPLIPILOT
    ======================================== */
 .elev8-theme .app-header {
     padding: var(--spacing-lg) 0;
@@ -56,14 +56,23 @@
 }
 
 .elev8-theme .header-left {
-    gap: var(--spacing-md);
+    gap: var(--spacing-xs); /* 4px - matches CompliPilot exactly */
+}
+
+.elev8-theme .logo {
+    height: 48px; /* Matches CompliPilot exactly */
 }
 
 .elev8-theme .app-title {
-    font-size: 20px;
+    font-size: 18px; /* Matches CompliPilot exactly (was 20px) */
     letter-spacing: -0.5px;
     font-weight: 600;
     line-height: 1.2;
+}
+
+/* Increased desktop padding for more breathing room */
+.elev8-theme .app-container {
+    padding-inline: var(--spacing-xl); /* 32px horizontal instead of 16px */
 }
 
 /* Animated pulse effect replacing static dot */
@@ -607,30 +616,6 @@
    RESPONSIVE ADJUSTMENTS
    ======================================== */
 @media (max-width: 768px) {
-    .elev8-theme .app-header {
-        padding: var(--spacing-lg) 0;
-    }
-    
-    .elev8-theme .header-content {
-        gap: var(--spacing-sm);
-    }
-    
-    .elev8-theme .header-left {
-        gap: var(--spacing-sm);
-    }
-    
-    .elev8-theme .logo {
-        height: 44px;
-    }
-    
-    .elev8-theme .app-title {
-        font-size: 18px;
-    }
-    
-    .elev8-theme .app-tagline {
-        font-size: 11px;
-    }
-    
     .pillars-grid {
         grid-template-columns: 1fr;
     }
@@ -857,6 +842,27 @@ html.theme-dark .elev8-index-card {
 }
 
 /* ========================================
+   MOBILE OPTIMIZATION (<768px) - THEME BUTTON UNDERNEATH
+   ======================================== */
+@media (max-width: 768px) {
+    .elev8-theme .header-content {
+        flex-wrap: wrap;
+    }
+    
+    /* Theme button moves to new row underneath */
+    .elev8-theme .header-right {
+        flex-basis: 100%;
+        width: 100%;
+        margin-top: var(--spacing-sm);
+    }
+    
+    .elev8-theme .theme-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ========================================
    MOBILE OPTIMIZATION (<400px)
    ======================================== */
 @media (max-width: 400px) {
@@ -874,17 +880,17 @@ html.theme-dark .elev8-index-card {
     }
     
     .elev8-theme .app-tagline {
-        font-size: 11px;
+        font-size: 10px;
     }
     
     /* Logo scaling for mobile */
     .elev8-theme .logo {
-        height: 44px;
-        max-height: 44px;
+        height: 40px;
+        max-height: 40px;
     }
     
     .elev8-theme .header-left {
-        gap: var(--spacing-sm);
+        gap: var(--spacing-xs);
     }
     
     /* Single column layout for very small screens */
