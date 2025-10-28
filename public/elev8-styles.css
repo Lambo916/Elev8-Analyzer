@@ -673,6 +673,18 @@ html.theme-dark .elev8-index-card {
     position: relative;
 }
 
+/* 2-Column Form Row for Compact Layout */
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.form-row-2col .form-group {
+    margin-bottom: 0;
+}
+
 .diagnostic-form .form-label {
     font-weight: 600;
     font-size: var(--font-size-base);
@@ -863,6 +875,20 @@ html.theme-dark .elev8-index-card {
     .elev8-theme .theme-toggle {
         width: 100%;
         justify-content: center;
+    }
+    
+    /* Stack 2-column form rows vertically on mobile */
+    .form-row-2col {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-row-2col .form-group {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .form-row-2col .form-group:last-child {
+        margin-bottom: 0;
     }
 }
 

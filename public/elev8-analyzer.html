@@ -78,93 +78,99 @@
                             <span class="error-message" id="businessNameError"></span>
                         </div>
 
-                        <div class="form-group">
-                            <label for="industry" class="form-label required">
-                                Industry <span class="required-marker">*</span>
-                            </label>
-                            <select 
-                                id="industry" 
-                                class="form-select"
-                                required
-                                data-testid="select-industry"
-                            >
-                                <option value="">Select industry...</option>
-                                <option value="Technology / Software">Technology / Software</option>
-                                <option value="Professional Services">Professional Services</option>
-                                <option value="Healthcare">Healthcare</option>
-                                <option value="Manufacturing">Manufacturing</option>
-                                <option value="Retail / E-commerce">Retail / E-commerce</option>
-                                <option value="Construction">Construction</option>
-                                <option value="Food & Beverage">Food & Beverage</option>
-                                <option value="Real Estate">Real Estate</option>
-                                <option value="Financial Services">Financial Services</option>
-                                <option value="Transportation & Logistics">Transportation & Logistics</option>
-                                <option value="Education">Education</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            <span class="error-message" id="industryError"></span>
+                        <!-- 2-Column Row: Industry + Revenue -->
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label for="industry" class="form-label required">
+                                    Industry <span class="required-marker">*</span>
+                                </label>
+                                <select 
+                                    id="industry" 
+                                    class="form-select"
+                                    required
+                                    data-testid="select-industry"
+                                >
+                                    <option value="">Select industry...</option>
+                                    <option value="Technology / Software">Technology / Software</option>
+                                    <option value="Professional Services">Professional Services</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="Manufacturing">Manufacturing</option>
+                                    <option value="Retail / E-commerce">Retail / E-commerce</option>
+                                    <option value="Construction">Construction</option>
+                                    <option value="Food & Beverage">Food & Beverage</option>
+                                    <option value="Real Estate">Real Estate</option>
+                                    <option value="Financial Services">Financial Services</option>
+                                    <option value="Transportation & Logistics">Transportation & Logistics</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span class="error-message" id="industryError"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="revenueRange" class="form-label required">
+                                    Annual Revenue Range <span class="required-marker">*</span>
+                                </label>
+                                <select 
+                                    id="revenueRange" 
+                                    class="form-select"
+                                    required
+                                    data-testid="select-revenue"
+                                >
+                                    <option value="">Select revenue range...</option>
+                                    <option value="Pre-Revenue">Pre-Revenue</option>
+                                    <option value="$0 - $100K">$0 - $100K</option>
+                                    <option value="$100K - $500K">$100K - $500K</option>
+                                    <option value="$500K - $1M">$500K - $1M</option>
+                                    <option value="$1M - $5M">$1M - $5M</option>
+                                    <option value="$5M - $10M">$5M - $10M</option>
+                                    <option value="$10M+">$10M+</option>
+                                </select>
+                                <span class="error-message" id="revenueRangeError"></span>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="revenueRange" class="form-label required">
-                                Annual Revenue Range <span class="required-marker">*</span>
-                            </label>
-                            <select 
-                                id="revenueRange" 
-                                class="form-select"
-                                required
-                                data-testid="select-revenue"
-                            >
-                                <option value="">Select revenue range...</option>
-                                <option value="Pre-Revenue">Pre-Revenue</option>
-                                <option value="$0 - $100K">$0 - $100K</option>
-                                <option value="$100K - $500K">$100K - $500K</option>
-                                <option value="$500K - $1M">$500K - $1M</option>
-                                <option value="$1M - $5M">$1M - $5M</option>
-                                <option value="$5M - $10M">$5M - $10M</option>
-                                <option value="$10M+">$10M+</option>
-                            </select>
-                            <span class="error-message" id="revenueRangeError"></span>
-                        </div>
+                        <!-- 2-Column Row: Credit Profile + Employees -->
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label for="creditProfile" class="form-label">
+                                    Credit Profile
+                                </label>
+                                <select 
+                                    id="creditProfile" 
+                                    class="form-select"
+                                    data-testid="select-credit"
+                                >
+                                    <option value="">Select credit profile...</option>
+                                    <option value="Excellent (740+)">Excellent (740+)</option>
+                                    <option value="Good (670-739)">Good (670-739)</option>
+                                    <option value="Fair (580-669)">Fair (580-669)</option>
+                                    <option value="Poor (<580)">Poor (&lt;580)</option>
+                                    <option value="Unknown/Not Established">Unknown/Not Established</option>
+                                </select>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="creditProfile" class="form-label">
-                                Credit Profile
-                            </label>
-                            <select 
-                                id="creditProfile" 
-                                class="form-select"
-                                data-testid="select-credit"
-                            >
-                                <option value="">Select credit profile...</option>
-                                <option value="Excellent (740+)">Excellent (740+)</option>
-                                <option value="Good (670-739)">Good (670-739)</option>
-                                <option value="Fair (580-669)">Fair (580-669)</option>
-                                <option value="Poor (<580)">Poor (&lt;580)</option>
-                                <option value="Unknown/Not Established">Unknown/Not Established</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="employees" class="form-label required">
-                                Number of Employees <span class="required-marker">*</span>
-                            </label>
-                            <select 
-                                id="employees" 
-                                class="form-select"
-                                required
-                                data-testid="select-employees"
-                            >
-                                <option value="">Select employee count...</option>
-                                <option value="Just Me (0 employees)">Just Me (0 employees)</option>
-                                <option value="1-5">1-5</option>
-                                <option value="6-10">6-10</option>
-                                <option value="11-25">11-25</option>
-                                <option value="26-50">26-50</option>
-                                <option value="51-100">51-100</option>
-                                <option value="100+">100+</option>
-                            </select>
-                            <span class="error-message" id="employeesError"></span>
+                            <div class="form-group">
+                                <label for="employees" class="form-label required">
+                                    Number of Employees <span class="required-marker">*</span>
+                                </label>
+                                <select 
+                                    id="employees" 
+                                    class="form-select"
+                                    required
+                                    data-testid="select-employees"
+                                >
+                                    <option value="">Select employee count...</option>
+                                    <option value="Just Me (0 employees)">Just Me (0 employees)</option>
+                                    <option value="1-5">1-5</option>
+                                    <option value="6-10">6-10</option>
+                                    <option value="11-25">11-25</option>
+                                    <option value="26-50">26-50</option>
+                                    <option value="51-100">51-100</option>
+                                    <option value="100+">100+</option>
+                                </select>
+                                <span class="error-message" id="employeesError"></span>
+                            </div>
                         </div>
 
                         <div class="form-group">
