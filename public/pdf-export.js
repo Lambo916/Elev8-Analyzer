@@ -2,7 +2,7 @@
  * Goal: Reset body font after every page add, and keep text clear of the footer.
  ***********************************************************************************************/
 
-console.log('[PDF Export] Version 2 loaded - Polished margins (12mm/25mm), header divider fix, disclaimer footer');
+console.log('[PDF Export] Version 3 loaded - TIGHT spacing: content starts 37mm from top (was 60mm+)');
 
 window.YBG_PDF = window.YBG_PDF || {};
 
@@ -111,9 +111,9 @@ window.YBG_PDF = window.YBG_PDF || {};
     height: 15       // Total footer area height including text
   };
 
-  // Safe content area calculation
+  // Safe content area calculation - tight spacing with 5mm buffer below header
   const CONTENT = {
-    top: MARGINS.top + HEADER.height,
+    top: MARGINS.top + HEADER.height + 5,  // 5mm spacer below header divider
     bottom: PAGE.height - MARGINS.bottom - FOOTER.height,
     left: MARGINS.left,
     right: PAGE.width - MARGINS.right,
@@ -1473,16 +1473,11 @@ window.YBG_PDF = window.YBG_PDF || {};
       drawWatermark(doc, iconDataUrl);
       drawHeader(doc, pageNum, iconDataUrl);
       
-      // DEBUG: Draw red border around content area to prove new margins are active
-      doc.setDrawColor(255, 0, 0);
-      doc.setLineWidth(0.5);
-      doc.rect(CONTENT.left, CONTENT.top, CONTENT.width, CONTENT.height);
-      
-      // Title
+      // Title - starts with minimal spacing below header
       doc.setFont(TYPOGRAPHY.fontFamily, "bold");
       doc.setFontSize(22);
       doc.setTextColor(8, 145, 178); // Teal
-      currentY = CONTENT.top + 30;
+      currentY = CONTENT.top + 2;  // Just 2mm padding for visual breathing room
       doc.text("Elev8 Analyzer Report", CONTENT.left, currentY, { align: 'left' });
       
       // Business name
