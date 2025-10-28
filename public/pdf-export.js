@@ -6,7 +6,7 @@ window.YBG_PDF = window.YBG_PDF || {};
 
 (function (ns) {
   // --- Layout & typography tokens (keep aligned with template) ---
-  const MARGINS = { top: 56, right: 56, bottom: 68, left: 56 }; // bottom ↑ to protect footer
+  const MARGINS = { top: 12, right: 56, bottom: 25, left: 56 }; // reduced for tighter layout
   const BODY    = { font: "helvetica", weight: "normal", size: 12, color: [50, 50, 50] };
 
   // Apply standard body style (call whenever you start writing on a page)
@@ -93,8 +93,8 @@ window.YBG_PDF = window.YBG_PDF || {};
   };
 
   const MARGINS = {
-    top: 20,
-    bottom: 20,
+    top: 12,
+    bottom: 25,
     left: 16,
     right: 16
   };
@@ -209,12 +209,12 @@ window.YBG_PDF = window.YBG_PDF || {};
     const y = MARGINS.top;
     
     // CompliPilot logo with proper aspect ratio (square logo 1015x1001 = 1:1)
-    const logoSize = 12;  // mm - square logo
+    const logoSize = 10;  // mm - reduced for tighter layout
     
     if (iconDataUrl) {
       try {
         const logoX = x;
-        const logoY = y + 1;
+        const logoY = y;
         
         // Draw square logo with high quality (SLOW compression for crisp rendering)
         doc.addImage(iconDataUrl, "PNG", logoX, logoY, logoSize, logoSize, "", "SLOW");
@@ -227,10 +227,10 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.setFont(TYPOGRAPHY.fontFamily, "bold");
     doc.setFontSize(TYPOGRAPHY.headerTitleSize);
     doc.setTextColor(...TYPOGRAPHY.colorHeading);
-    doc.text(getToolkitName(), x + logoSize + 4, y + 7);
+    doc.text(getToolkitName(), x + logoSize + 3, y + 6);
     
-    // Add subtle emerald green divider line below header
-    const dividerY = y + 15;  // Position below title
+    // Add subtle emerald green divider line WITHIN header area (not overlapping content)
+    const dividerY = y + HEADER.height - 3;  // Position within header boundary
     doc.setDrawColor(...TYPOGRAPHY.colorAccent); // Emerald Green (#00B87C)
     doc.setLineWidth(0.3);
     doc.line(CONTENT.left, dividerY, CONTENT.right, dividerY);
@@ -241,13 +241,14 @@ window.YBG_PDF = window.YBG_PDF || {};
 
   // ---- Footer Drawing ------------------------------------------------------
   async function drawFooter(doc, pageNum, totalPages) {
-    const mainFooterY = PAGE.height - MARGINS.bottom - 12;
-    const disclaimerY = PAGE.height - MARGINS.bottom - 4;
+    const mainFooterY = PAGE.height - MARGINS.bottom + 6;
+    const copyrightY = PAGE.height - MARGINS.bottom + 11;
+    const disclaimerY = PAGE.height - MARGINS.bottom + 16;
     
     // Emerald green accent line above footer (brand accent)
     doc.setDrawColor(...TYPOGRAPHY.colorAccent); // Emerald Green #00B87C
     doc.setLineWidth(0.4);
-    doc.line(CONTENT.left, CONTENT.bottom + 6, CONTENT.right, CONTENT.bottom + 6);
+    doc.line(CONTENT.left, CONTENT.bottom + 2, CONTENT.right, CONTENT.bottom + 2);
     
     // Main footer row
     doc.setFont(TYPOGRAPHY.fontFamily, "normal");
@@ -267,7 +268,14 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.setFontSize(7); // Smaller than footer size
     doc.setTextColor(120, 120, 120); // More muted gray
     const copyright = "© 2025 Elev8 Analyzer – All Rights Reserved";
-    doc.text(copyright, CONTENT.left, disclaimerY);
+    doc.text(copyright, CONTENT.left, copyrightY);
+    
+    // Disclaimer on last line - matching the app footer
+    doc.setFont(TYPOGRAPHY.fontFamily, "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(130, 130, 130);
+    const disclaimer = "Disclaimer: For informational purposes only. Not legal, tax, or financial advice.";
+    doc.text(disclaimer, CONTENT.left, disclaimerY);
     
     // Reset to body typography
     applyGlobalTypography(doc);
@@ -776,7 +784,7 @@ window.YBG_PDF = window.YBG_PDF || {};
         drawWatermark(this.doc, this.iconDataUrl);
         drawHeader(this.doc, pageNum, this.iconDataUrl);
       });
-      this.yPosition = window.YBG_PDF.PDF_MARGINS.top;
+      this.yPosition = CONTENT.top;  // Start below header, not at top margin
     }
     
     drawTableHeader(columnWidths, headers, columns) {
