@@ -16,15 +16,13 @@ class ThemeManager {
     
     init() {
         const storedTheme = localStorage.getItem(this.STORAGE_KEY);
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
         let initialTheme;
         if (storedTheme) {
             initialTheme = storedTheme;
-        } else if (systemPrefersDark) {
-            initialTheme = this.THEME_DARK;
         } else {
-            initialTheme = this.THEME_LIGHT;
+            // Default to dark theme for all new visitors
+            initialTheme = this.THEME_DARK;
         }
         
         this.setTheme(initialTheme, false);
