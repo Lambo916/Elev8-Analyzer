@@ -1447,6 +1447,11 @@ window.YBG_PDF = window.YBG_PDF || {};
     try {
       console.log('[PDF Export] Starting quick export with chart capture');
       
+      // Force render any lazy-loaded charts first
+      if (typeof forceRenderAllCharts === 'function') {
+        forceRenderAllCharts();
+      }
+      
       // Freeze charts for crisp export
       if (typeof freezeChartsForExport === 'function') {
         freezeChartsForExport();
@@ -1524,6 +1529,11 @@ window.YBG_PDF = window.YBG_PDF || {};
   window.exportElev8AnalysisToPDF = async function(analysis) {
     try {
       console.log('[PDF Export] Starting detailed export');
+      
+      // Force render any lazy-loaded charts first
+      if (typeof forceRenderAllCharts === 'function') {
+        forceRenderAllCharts();
+      }
       
       // Freeze charts for export
       if (typeof freezeChartsForExport === 'function') {
