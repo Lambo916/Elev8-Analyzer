@@ -465,6 +465,36 @@ class Elev8AnalyzerApp {
                 </div>
             </div>
 
+            <!-- Charts Dashboard -->
+            <div class="charts-dashboard">
+                <h3 class="section-title">Business Metrics Visualization</h3>
+                <div class="charts-grid">
+                    <!-- Radar Chart for 8 Pillars -->
+                    <div class="chart-card">
+                        <h4 class="chart-title">Pillar Performance Radar</h4>
+                        <canvas id="pillarRadarChart"></canvas>
+                    </div>
+                    
+                    <!-- Bar Chart for Pillar Scores -->
+                    <div class="chart-card">
+                        <h4 class="chart-title">Pillar Score Comparison</h4>
+                        <canvas id="pillarBarChart"></canvas>
+                    </div>
+                    
+                    <!-- Progress Gauge for Overall Index -->
+                    <div class="chart-card">
+                        <h4 class="chart-title">Business Health Gauge</h4>
+                        <canvas id="healthGaugeChart"></canvas>
+                    </div>
+                    
+                    <!-- Roadmap Timeline Chart -->
+                    <div class="chart-card">
+                        <h4 class="chart-title">Action Roadmap Timeline</h4>
+                        <canvas id="roadmapTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- 8 Pillar Cards -->
             <div class="pillars-section">
                 <h3 class="section-title">8 Pillars of Business Health</h3>
@@ -485,6 +515,380 @@ class Elev8AnalyzerApp {
                 ${this.renderRoadmap(analysis.roadmap || {})}
             </div>
         `;
+
+        // Initialize charts after DOM is updated
+        setTimeout(() => {
+            this.initializeCharts(analysis);
+        }, 100);
+    }
+
+    initializeCharts(analysis) {
+        // Initialize all charts with the analysis data
+        this.createRadarChart(analysis.pillars || []);
+        this.createBarChart(analysis.pillars || []);
+        this.createGaugeChart(analysis.overall?.score || 0);
+        this.createTimelineChart(analysis.roadmap || {});
+    }
+
+    createRadarChart(pillars) {
+        const ctx = document.getElementById('pillarRadarChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (this.radarChart) {
+            this.radarChart.destroy();
+        }
+
+        const isDarkMode = document.documentElement.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+        const gridColor = isDarkMode ? 'rgba(156, 163, 175, 0.2)' : 'rgba(107, 114, 128, 0.2)';
+
+        this.radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: pillars.map(p => {
+                    // Shorten pillar names for better display
+                    const shortNames = {
+                        'Formation & Compliance': 'Formation',
+                        'Business Credit Readiness': 'Credit',
+                        'Financials & Cash Flow': 'Financials',
+                        'Operations & Systems': 'Operations',
+                        'Sales & Marketing': 'Sales',
+                        'Brand & Web Presence': 'Brand',
+                        'Risk & Legal Posture': 'Legal',
+                        'Growth Strategy & Execution': 'Growth'
+                    };
+                    return shortNames[p.name] || p.name;
+                }),
+                datasets: [{
+                    label: 'Current Score',
+                    data: pillars.map(p => p.score),
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Target Score',
+                    data: pillars.map(() => 85), // Target of 85 for all pillars
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        pointLabels: {
+                            color: textColor,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            padding: 10,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.r + '/100';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    createBarChart(pillars) {
+        const ctx = document.getElementById('pillarBarChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (this.barChart) {
+            this.barChart.destroy();
+        }
+
+        const isDarkMode = document.documentElement.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+        const gridColor = isDarkMode ? 'rgba(156, 163, 175, 0.2)' : 'rgba(107, 114, 128, 0.2)';
+
+        // Sort pillars by score
+        const sortedPillars = [...pillars].sort((a, b) => b.score - a.score);
+
+        // Determine colors based on scores
+        const colors = sortedPillars.map(p => {
+            if (p.score >= 71) return 'rgba(16, 185, 129, 0.8)'; // Green
+            if (p.score >= 41) return 'rgba(234, 179, 8, 0.8)'; // Yellow
+            return 'rgba(239, 68, 68, 0.8)'; // Red
+        });
+
+        this.barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedPillars.map(p => {
+                    // Shorten pillar names
+                    const shortNames = {
+                        'Formation & Compliance': 'Formation',
+                        'Business Credit Readiness': 'Credit',
+                        'Financials & Cash Flow': 'Financials',
+                        'Operations & Systems': 'Operations',
+                        'Sales & Marketing': 'Sales',
+                        'Brand & Web Presence': 'Brand',
+                        'Risk & Legal Posture': 'Legal',
+                        'Growth Strategy & Execution': 'Growth'
+                    };
+                    return shortNames[p.name] || p.name;
+                }),
+                datasets: [{
+                    label: 'Score',
+                    data: sortedPillars.map(p => p.score),
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: textColor,
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Score: ' + context.parsed.y + '/100';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    createGaugeChart(score) {
+        const ctx = document.getElementById('healthGaugeChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (this.gaugeChart) {
+            this.gaugeChart.destroy();
+        }
+
+        const isDarkMode = document.documentElement.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+
+        // Determine color based on score
+        let gaugeColor;
+        if (score >= 85) gaugeColor = '#10B981'; // Elite - Green
+        else if (score >= 75) gaugeColor = '#22C55E'; // Strong - Light Green
+        else if (score >= 60) gaugeColor = '#EAB308'; // Stable - Yellow
+        else if (score >= 40) gaugeColor = '#F97316'; // At Risk - Orange
+        else gaugeColor = '#EF4444'; // Critical - Red
+
+        this.gaugeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Score', 'Remaining'],
+                datasets: [{
+                    data: [score, 100 - score],
+                    backgroundColor: [gaugeColor, isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(229, 231, 235, 0.5)'],
+                    borderWidth: 0,
+                    circumference: 180,
+                    rotation: 270
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+            },
+            plugins: [{
+                id: 'text',
+                beforeDraw: function(chart) {
+                    const width = chart.width,
+                        height = chart.height,
+                        ctx = chart.ctx;
+                    
+                    ctx.restore();
+                    const fontSize = (height / 114).toFixed(2);
+                    ctx.font = "bold " + fontSize + "em sans-serif";
+                    ctx.fillStyle = gaugeColor;
+                    ctx.textBaseline = "middle";
+                    
+                    const text = score + "/100",
+                        textX = Math.round((width - ctx.measureText(text).width) / 2),
+                        textY = height / 1.4;
+                    
+                    ctx.fillText(text, textX, textY);
+                    ctx.save();
+                }
+            }]
+        });
+    }
+
+    createTimelineChart(roadmap) {
+        const ctx = document.getElementById('roadmapTimelineChart');
+        if (!ctx) return;
+
+        // Destroy existing chart if it exists
+        if (this.timelineChart) {
+            this.timelineChart.destroy();
+        }
+
+        const isDarkMode = document.documentElement.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+        const gridColor = isDarkMode ? 'rgba(156, 163, 175, 0.2)' : 'rgba(107, 114, 128, 0.2)';
+
+        // Count actions for each period
+        const actionCounts = {
+            '30 Days': (roadmap.d30 || []).length,
+            '60 Days': (roadmap.d60 || []).length,
+            '90 Days': (roadmap.d90 || []).length
+        };
+
+        this.timelineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Start', '30 Days', '60 Days', '90 Days'],
+                datasets: [{
+                    label: 'Actions to Complete',
+                    data: [
+                        actionCounts['30 Days'] + actionCounts['60 Days'] + actionCounts['90 Days'],
+                        actionCounts['60 Days'] + actionCounts['90 Days'],
+                        actionCounts['90 Days'],
+                        0
+                    ],
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }, {
+                    label: 'Completed Actions',
+                    data: [0, actionCounts['30 Days'], actionCounts['30 Days'] + actionCounts['60 Days'], 
+                           actionCounts['30 Days'] + actionCounts['60 Days'] + actionCounts['90 Days']],
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            padding: 10,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' actions';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     getPillarIcon(pillarName) {
