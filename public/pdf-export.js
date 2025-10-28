@@ -1442,8 +1442,95 @@ window.YBG_PDF = window.YBG_PDF || {};
   }
 
   // ---- Elev8 Analyzer PDF Export (Diagnostic Format) ----------------------
+  // ---- Quick Export with html2canvas for Charts ----
+  window.exportElev8QuickPDF = async function() {
+    try {
+      console.log('[PDF Export] Starting quick export with chart capture');
+      
+      // Freeze charts for crisp export
+      if (typeof freezeChartsForExport === 'function') {
+        freezeChartsForExport();
+      }
+      
+      // Wait for chart updates
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Load html2canvas
+      if (!window.html2canvas) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Failed to load html2canvas'));
+          document.head.appendChild(script);
+        });
+      }
+      
+      const jsPDF = await loadJsPDF();
+      
+      // Capture the results panel
+      const resultsPanel = document.getElementById('results-panel');
+      if (!resultsPanel) {
+        throw new Error('Results panel not found');
+      }
+      
+      const canvas = await html2canvas(resultsPanel, {
+        scale: 2,              // High-DPI for crisp text
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: resultsPanel.scrollWidth,
+        windowHeight: resultsPanel.scrollHeight
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      
+      // Calculate dimensions to fit on page
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pageWidth / imgWidth, (pageHeight - 20) / imgHeight);
+      
+      const w = imgWidth * ratio;
+      const h = imgHeight * ratio;
+      const x = (pageWidth - w) / 2;
+      const y = 10;
+      
+      pdf.addImage(imgData, 'PNG', x, y, w, h);
+      
+      // Restore chart animations
+      if (typeof restoreChartAnimations === 'function') {
+        restoreChartAnimations();
+      }
+      
+      // Download
+      const timestamp = new Date().toISOString().slice(0, 10);
+      pdf.save(`Elev8_Analysis_${timestamp}.pdf`);
+      
+      console.log('[PDF Export] Quick export completed successfully');
+    } catch (error) {
+      console.error('[PDF Export] Error during quick export:', error);
+      alert('Failed to export PDF. Please try again.');
+      
+      // Restore animations even on error
+      if (typeof restoreChartAnimations === 'function') {
+        restoreChartAnimations();
+      }
+    }
+  };
+
   window.exportElev8AnalysisToPDF = async function(analysis) {
     try {
+      console.log('[PDF Export] Starting detailed export');
+      
+      // Freeze charts for export
+      if (typeof freezeChartsForExport === 'function') {
+        freezeChartsForExport();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       console.log('[PDF Export] Starting export with MARGINS:', MARGINS);
       console.log('[PDF Export] CONTENT area:', CONTENT);
       console.log('[PDF Export] HEADER:', HEADER);
@@ -1670,9 +1757,21 @@ window.YBG_PDF = window.YBG_PDF || {};
       const filename = `Elev8_Business_Analysis_${businessName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(filename);
       
+      // Restore chart animations
+      if (typeof restoreChartAnimations === 'function') {
+        restoreChartAnimations();
+      }
+      
+      console.log('[PDF Export] Detailed export completed successfully');
+      
     } catch (error) {
       console.error('PDF Export Error:', error);
       alert('Failed to export PDF. Please try again.');
+      
+      // Restore animations even on error
+      if (typeof restoreChartAnimations === 'function') {
+        restoreChartAnimations();
+      }
     }
   };
 
