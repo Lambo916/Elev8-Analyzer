@@ -45,13 +45,18 @@
    ENHANCED HEADER STYLING
    ======================================== */
 .elev8-theme .app-header {
-    padding: 12px 0;
+    padding: var(--spacing-lg) 0;
 }
 
 .elev8-theme .header-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.elev8-theme .header-left {
+    gap: var(--spacing-md);
 }
 
 .elev8-theme .app-title {
@@ -602,6 +607,30 @@
    RESPONSIVE ADJUSTMENTS
    ======================================== */
 @media (max-width: 768px) {
+    .elev8-theme .app-header {
+        padding: var(--spacing-lg) 0;
+    }
+    
+    .elev8-theme .header-content {
+        gap: var(--spacing-sm);
+    }
+    
+    .elev8-theme .header-left {
+        gap: var(--spacing-sm);
+    }
+    
+    .elev8-theme .logo {
+        height: 44px;
+    }
+    
+    .elev8-theme .app-title {
+        font-size: 18px;
+    }
+    
+    .elev8-theme .app-tagline {
+        font-size: 11px;
+    }
+    
     .pillars-grid {
         grid-template-columns: 1fr;
     }
@@ -836,22 +865,26 @@ html.theme-dark .elev8-index-card {
         padding-right: var(--spacing-md);
     }
     
+    .elev8-theme .app-header {
+        padding: var(--spacing-md) 0;
+    }
+    
     .elev8-theme .app-title {
         font-size: 16px;
     }
     
     .elev8-theme .app-tagline {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     /* Logo scaling for mobile */
     .elev8-theme .logo {
-        height: 40px;
-        max-height: 40px;
+        height: 44px;
+        max-height: 44px;
     }
     
     .elev8-theme .header-left {
-        gap: var(--spacing-xs);
+        gap: var(--spacing-sm);
     }
     
     /* Single column layout for very small screens */
