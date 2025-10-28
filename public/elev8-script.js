@@ -23,10 +23,33 @@ function setupChartDefaultsForAnalyzer() {
 }
 
 /**
+ * Force render all pending lazy-loaded charts
+ * Call this before export/print to ensure all charts exist
+ */
+function forceRenderAllCharts() {
+    console.log('[Elev8 Charts] Force rendering all pending charts');
+    
+    // Find all chart-wrap containers that haven't been initialized yet
+    document.querySelectorAll('.chart-wrap:not([data-inited])').forEach(wrap => {
+        const chartType = wrap.dataset.chart;
+        
+        // Get the app instance from the global scope
+        if (window.elev8App && window.elev8App.analysisData) {
+            window.elev8App.initChartByType(chartType, window.elev8App.analysisData);
+            wrap.dataset.inited = '1';
+            console.log(`[Elev8 Charts] Force-rendered ${chartType} chart`);
+        }
+    });
+}
+
+/**
  * Freeze charts before PDF export or print (disable animations, force redraw)
  */
 function freezeChartsForExport() {
     if (!window.Chart) return;
+    
+    // First, force render any lazy-loaded charts that haven't been created yet
+    forceRenderAllCharts();
     
     Chart.defaults.animation = false;
     const canvases = document.querySelectorAll('canvas.chartjs, .chart-card canvas');
@@ -55,6 +78,10 @@ function restoreChartAnimations() {
  * Prepare charts for high-DPI printing
  */
 function prepareChartsForPrint() {
+    // Force render all charts first (in case user hasn't scrolled to them)
+    forceRenderAllCharts();
+    
+    // Then freeze animations
     freezeChartsForExport();
     
     // Force high-DPI redraw for crisp PDF
