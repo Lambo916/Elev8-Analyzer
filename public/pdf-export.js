@@ -2,6 +2,8 @@
  * Goal: Reset body font after every page add, and keep text clear of the footer.
  ***********************************************************************************************/
 
+console.log('[PDF Export] Version 2 loaded - Polished margins (12mm/25mm), header divider fix, disclaimer footer');
+
 window.YBG_PDF = window.YBG_PDF || {};
 
 (function (ns) {
