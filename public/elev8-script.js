@@ -4,6 +4,87 @@
  */
 
 // =====================================================
+// CHART.JS OPTIMIZATION UTILITIES
+// =====================================================
+
+/**
+ * Set up Chart.js defaults for optimal performance and appearance
+ */
+function setupChartDefaultsForAnalyzer() {
+    if (!window.Chart) return;
+    
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.animation = { duration: 300 };
+    Chart.defaults.elements.line.tension = 0.2;
+    Chart.defaults.plugins.legend.labels.boxWidth = 10;
+    
+    console.log('[Elev8 Charts] Defaults configured for optimal performance');
+}
+
+/**
+ * Freeze charts before PDF export or print (disable animations, force redraw)
+ */
+function freezeChartsForExport() {
+    if (!window.Chart) return;
+    
+    Chart.defaults.animation = false;
+    const canvases = document.querySelectorAll('canvas.chartjs, .chart-card canvas');
+    canvases.forEach(c => {
+        const chart = Chart.getChart(c);
+        if (chart) {
+            chart.resize();
+            chart.update(0);
+        }
+    });
+    
+    console.log('[Elev8 Charts] Charts frozen for export');
+}
+
+/**
+ * Restore chart animations after export
+ */
+function restoreChartAnimations() {
+    if (!window.Chart) return;
+    
+    Chart.defaults.animation = { duration: 300 };
+    console.log('[Elev8 Charts] Animations restored');
+}
+
+/**
+ * Prepare charts for high-DPI printing
+ */
+function prepareChartsForPrint() {
+    freezeChartsForExport();
+    
+    // Force high-DPI redraw for crisp PDF
+    const ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    document.querySelectorAll('canvas.chartjs, .chart-card canvas').forEach(c => {
+        const chart = Chart.getChart(c);
+        if (chart) {
+            const { width, height } = c.getBoundingClientRect();
+            c.width = Math.round(width * ratio);
+            c.height = Math.round(height * ratio);
+            chart.resize();
+            chart.update(0);
+        }
+    });
+    
+    console.log('[Elev8 Charts] Prepared for high-DPI print at ' + ratio + 'x');
+}
+
+// Initialize Chart.js when the library loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupChartDefaultsForAnalyzer);
+} else {
+    setupChartDefaultsForAnalyzer();
+}
+
+// Add print event handlers
+window.addEventListener('beforeprint', prepareChartsForPrint);
+window.addEventListener('afterprint', restoreChartAnimations);
+
+// =====================================================
 // THEME MANAGER (reusing existing functionality)
 // =====================================================
 class ThemeManager {
@@ -470,27 +551,27 @@ class Elev8AnalyzerApp {
                 <h3 class="section-title">Business Metrics Visualization</h3>
                 <div class="charts-grid">
                     <!-- Radar Chart for 8 Pillars -->
-                    <div class="chart-card">
+                    <div class="chart-card chart-wrap" data-chart="radar">
                         <h4 class="chart-title">Pillar Performance Radar</h4>
-                        <canvas id="pillarRadarChart"></canvas>
+                        <canvas id="pillarRadarChart" class="chartjs"></canvas>
                     </div>
                     
                     <!-- Bar Chart for Pillar Scores -->
-                    <div class="chart-card">
+                    <div class="chart-card chart-wrap" data-chart="bar">
                         <h4 class="chart-title">Pillar Score Comparison</h4>
-                        <canvas id="pillarBarChart"></canvas>
+                        <canvas id="pillarBarChart" class="chartjs"></canvas>
                     </div>
                     
                     <!-- Progress Gauge for Overall Index -->
-                    <div class="chart-card">
+                    <div class="chart-card chart-wrap" data-chart="gauge">
                         <h4 class="chart-title">Business Health Gauge</h4>
-                        <canvas id="healthGaugeChart"></canvas>
+                        <canvas id="healthGaugeChart" class="chartjs"></canvas>
                     </div>
                     
                     <!-- Roadmap Timeline Chart -->
-                    <div class="chart-card">
+                    <div class="chart-card chart-wrap" data-chart="timeline">
                         <h4 class="chart-title">Action Roadmap Timeline</h4>
-                        <canvas id="roadmapTimelineChart"></canvas>
+                        <canvas id="roadmapTimelineChart" class="chartjs"></canvas>
                     </div>
                 </div>
             </div>
@@ -516,18 +597,54 @@ class Elev8AnalyzerApp {
             </div>
         `;
 
-        // Initialize charts after DOM is updated
+        // Initialize charts with lazy loading after DOM is updated
         setTimeout(() => {
-            this.initializeCharts(analysis);
+            this.setupLazyChartLoading(analysis);
         }, 100);
     }
 
-    initializeCharts(analysis) {
-        // Initialize all charts with the analysis data
-        this.createRadarChart(analysis.pillars || []);
-        this.createBarChart(analysis.pillars || []);
-        this.createGaugeChart(analysis.overall?.score || 0);
-        this.createTimelineChart(analysis.roadmap || {});
+    setupLazyChartLoading(analysis) {
+        // Store analysis data for lazy init
+        this.analysisData = analysis;
+        
+        // Set up IntersectionObserver for lazy chart initialization
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const chartWrap = entry.target;
+                    const chartType = chartWrap.dataset.chart;
+                    
+                    if (!chartWrap.dataset.inited) {
+                        this.initChartByType(chartType, analysis);
+                        chartWrap.dataset.inited = '1';
+                    }
+                    
+                    observer.unobserve(chartWrap);
+                }
+            });
+        }, { rootMargin: '200px' });
+        
+        // Observe all chart containers
+        document.querySelectorAll('.chart-wrap').forEach(wrap => observer.observe(wrap));
+        
+        console.log('[Elev8 Charts] Lazy loading initialized');
+    }
+
+    initChartByType(chartType, analysis) {
+        switch(chartType) {
+            case 'radar':
+                this.createRadarChart(analysis.pillars || []);
+                break;
+            case 'bar':
+                this.createBarChart(analysis.pillars || []);
+                break;
+            case 'gauge':
+                this.createGaugeChart(analysis.overall?.score || 0);
+                break;
+            case 'timeline':
+                this.createTimelineChart(analysis.roadmap || {});
+                break;
+        }
     }
 
     createRadarChart(pillars) {
