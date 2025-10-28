@@ -919,6 +919,8 @@ html.theme-dark .submit-btn:hover {
     transition: all 0.3s ease;
     position: relative;
     background: rgba(var(--card), 0.5);
+    border-radius: 12px;
+    margin-top: var(--spacing-md);
 }
 
 /* Subtle top divider line for separation */
