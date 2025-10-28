@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, json, integer, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, json, integer, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,11 +28,13 @@ export const complianceReports = pgTable("compliance_reports", {
   htmlContent: text("html_content").notNull(),
   checksum: text("checksum").notNull(),
   metadata: json("metadata"),
-  toolkitCode: text("toolkit_code").notNull().default('elev8analyzer'),
+  toolkitCode: text("toolkit_code").notNull().default('Elev8Analyzer'),
   ownerId: text("owner_id").notNull().default(''),
   userId: varchar("user_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  toolkitCreatedAtIndex: index("compliance_reports_toolkit_created_at_idx").on(table.toolkitCode, table.createdAt),
+}));
 
 export const insertComplianceReportSchema = createInsertSchema(complianceReports).omit({
   id: true,
@@ -45,11 +47,12 @@ export type ComplianceReport = typeof complianceReports.$inferSelect;
 export const usageTracking = pgTable("usage_tracking", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   ipAddress: text("ip_address").notNull(),
-  tool: text("tool").notNull().default('elev8analyzer'),
+  tool: text("tool").notNull().default('Elev8Analyzer'),
   reportCount: integer("report_count").notNull().default(0),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 }, (table) => ({
   uniqueIpTool: unique().on(table.ipAddress, table.tool),
+  toolIpIndex: index("usage_tracking_tool_ip_idx").on(table.tool, table.ipAddress),
 }));
 
 export const insertUsageTrackingSchema = createInsertSchema(usageTracking).omit({
@@ -63,10 +66,14 @@ export type UsageTracking = typeof usageTracking.$inferSelect;
 export const savedElev8Reports = pgTable("saved_elev8_reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   ipAddress: text("ip_address").notNull(),
+  tool: text("tool").notNull().default('Elev8Analyzer'),
   reportName: text("report_name").notNull(),
   analysisData: json("analysis_data").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  toolCreatedAtIndex: index("saved_elev8_reports_tool_created_at_idx").on(table.tool, table.createdAt),
+  toolIpIndex: index("saved_elev8_reports_tool_ip_idx").on(table.tool, table.ipAddress),
+}));
 
 export const insertSavedElev8ReportSchema = createInsertSchema(savedElev8Reports).omit({
   id: true,

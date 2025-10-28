@@ -42,22 +42,22 @@ function getClientIp(req: Request): string {
 }
 
 // Normalize and validate tool parameter (prevent bypass via case/variant strings)
-function normalizeTool(tool: any): 'elev8analyzer' | 'grantgenie' | 'complipilot' {
-  const normalized = String(tool || 'grantgenie').toLowerCase().trim();
+function normalizeTool(tool: any): 'Elev8Analyzer' | 'GrantGenie' | 'CompliPilot' {
+  const normalized = String(tool || 'GrantGenie').toLowerCase().trim();
   if (normalized === 'elev8analyzer') {
-    return 'elev8analyzer';
+    return 'Elev8Analyzer';
   }
   if (normalized === 'grantgenie') {
-    return 'grantgenie';
+    return 'GrantGenie';
   }
   if (normalized === 'complipilot') {
-    return 'complipilot';
+    return 'CompliPilot';
   }
-  return 'grantgenie'; // Default to grantgenie for backward compatibility
+  return 'GrantGenie'; // Default to GrantGenie for backward compatibility
 }
 
 // Check usage limit (read-only check before generation)
-async function checkUsageLimit(req: Request, tool: string = 'elev8analyzer'): Promise<{ allowed: boolean; count: number }> {
+async function checkUsageLimit(req: Request, tool: string = 'Elev8Analyzer'): Promise<{ allowed: boolean; count: number }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -94,7 +94,7 @@ async function checkUsageLimit(req: Request, tool: string = 'elev8analyzer'): Pr
 }
 
 // Increment usage after successful generation (atomic with limit enforcement)
-async function incrementUsage(req: Request, tool: string = 'elev8analyzer'): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
+async function incrementUsage(req: Request, tool: string = 'Elev8Analyzer'): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
   try {
     const ipAddress = getClientIp(req);
     
@@ -408,7 +408,7 @@ REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON obje
   app.post("/api/generate", async (req, res) => {
     // Normalize and validate tool parameter (prevent usage cap bypass)
     const tool = normalizeTool(req.body.tool);
-    const toolName = tool === 'grantgenie' ? 'GrantGenie' : tool === 'elev8analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
+    const toolName = tool === 'GrantGenie' ? 'GrantGenie' : tool === 'Elev8Analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
     
     // Check 30-report usage limit BEFORE generation (soft launch protection)
     const usageCheck = await checkUsageLimit(req, tool);
@@ -438,7 +438,7 @@ REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON obje
       let response;
       
       // Handle Elev8 Analyzer diagnostic flow
-      if (tool === 'elev8analyzer') {
+      if (tool === 'Elev8Analyzer') {
         const {
           businessName,
           industry,
@@ -877,6 +877,7 @@ IMPORTANT:
       // Validate using Zod schema
       const validationResult = insertSavedElev8ReportSchema.safeParse({
         ipAddress,
+        tool: 'Elev8Analyzer',
         reportName: reportName.trim(),
         analysisData,
       });
@@ -919,7 +920,7 @@ IMPORTANT:
         });
       }
 
-      // Get all reports for this IP, newest first
+      // Get all reports for this IP and tool, newest first
       const reports = await db
         .select({
           id: savedElev8Reports.id,
@@ -927,7 +928,10 @@ IMPORTANT:
           createdAt: savedElev8Reports.createdAt,
         })
         .from(savedElev8Reports)
-        .where(eq(savedElev8Reports.ipAddress, ipAddress))
+        .where(and(
+          eq(savedElev8Reports.ipAddress, ipAddress),
+          eq(savedElev8Reports.tool, 'Elev8Analyzer')
+        ))
         .orderBy(desc(savedElev8Reports.createdAt));
 
       res.json({ reports });
@@ -951,13 +955,14 @@ IMPORTANT:
         });
       }
 
-      // Get report, ensuring it belongs to this IP
+      // Get report, ensuring it belongs to this IP and tool
       const [report] = await db
         .select()
         .from(savedElev8Reports)
         .where(and(
           eq(savedElev8Reports.id, id),
-          eq(savedElev8Reports.ipAddress, ipAddress)
+          eq(savedElev8Reports.ipAddress, ipAddress),
+          eq(savedElev8Reports.tool, 'Elev8Analyzer')
         ))
         .limit(1);
 
@@ -988,12 +993,13 @@ IMPORTANT:
         });
       }
 
-      // Delete report, ensuring it belongs to this IP
+      // Delete report, ensuring it belongs to this IP and tool
       const [deleted] = await db
         .delete(savedElev8Reports)
         .where(and(
           eq(savedElev8Reports.id, id),
-          eq(savedElev8Reports.ipAddress, ipAddress)
+          eq(savedElev8Reports.ipAddress, ipAddress),
+          eq(savedElev8Reports.tool, 'Elev8Analyzer')
         ))
         .returning();
 
