@@ -2,7 +2,7 @@
  * Goal: Reset body font after every page add, and keep text clear of the footer.
  ***********************************************************************************************/
 
-console.log('[PDF Export] Version 3 loaded - TIGHT spacing: content starts 37mm from top (was 60mm+)');
+console.log('[PDF Export] Version 5 loaded - BALANCED spacing: professional readability with optimal line heights');
 
 window.YBG_PDF = window.YBG_PDF || {};
 
@@ -1473,11 +1473,11 @@ window.YBG_PDF = window.YBG_PDF || {};
       drawWatermark(doc, iconDataUrl);
       drawHeader(doc, pageNum, iconDataUrl);
       
-      // Title - starts with minimal spacing below header
+      // Title - balanced spacing below header
       doc.setFont(TYPOGRAPHY.fontFamily, "bold");
       doc.setFontSize(22);
       doc.setTextColor(8, 145, 178); // Teal
-      currentY = CONTENT.top + 2;  // Just 2mm padding for visual breathing room
+      currentY = CONTENT.top + 12;  // Professional spacing below header divider
       doc.text("Elev8 Analyzer Report", CONTENT.left, currentY, { align: 'left' });
       
       // Business name
@@ -1530,7 +1530,7 @@ window.YBG_PDF = window.YBG_PDF || {};
       doc.setFontSize(16);
       doc.setTextColor(...TYPOGRAPHY.colorHeading);
       doc.text("8 Pillars of Business Health", CONTENT.left, currentY);
-      currentY += 10;
+      currentY += 9;
       
       // Render each pillar
       const pillars = analysis.pillars || [];
@@ -1559,7 +1559,7 @@ window.YBG_PDF = window.YBG_PDF || {};
         doc.setTextColor(...scoreColor);
         doc.text(`Score: ${pillar.score}/100`, CONTENT.right - 30, currentY, { align: 'right' });
         
-        currentY += 7;
+        currentY += 6;
         
         // Insights
         doc.setFont(TYPOGRAPHY.fontFamily, "bold");
@@ -1574,10 +1574,10 @@ window.YBG_PDF = window.YBG_PDF || {};
         (pillar.insights || []).forEach(insight => {
           const lines = doc.splitTextToSize(`• ${insight}`, CONTENT.width - 10);
           doc.text(lines, CONTENT.left + 3, currentY);
-          currentY += lines.length * 4.5;
+          currentY += lines.length * 4.7;
         });
         
-        currentY += 3;
+        currentY += 2.5;
         
         // Actions
         doc.setFont(TYPOGRAPHY.fontFamily, "bold");
@@ -1591,10 +1591,10 @@ window.YBG_PDF = window.YBG_PDF || {};
         (pillar.actions || []).forEach((action, idx) => {
           const lines = doc.splitTextToSize(`${idx + 1}. ${action}`, CONTENT.width - 10);
           doc.text(lines, CONTENT.left + 3, currentY);
-          currentY += lines.length * 4.5;
+          currentY += lines.length * 4.7;
         });
         
-        currentY += 8;
+        currentY += 6;
         
         // Divider line
         if (i < pillars.length - 1) {
@@ -1618,7 +1618,7 @@ window.YBG_PDF = window.YBG_PDF || {};
       doc.setFontSize(16);
       doc.setTextColor(...TYPOGRAPHY.colorHeading);
       doc.text("30/60/90-Day Action Roadmap", CONTENT.left, currentY);
-      currentY += 12;
+      currentY += 9;
       
       const roadmap = analysis.roadmap || {};
       const phases = [
@@ -1643,7 +1643,7 @@ window.YBG_PDF = window.YBG_PDF || {};
         doc.setFontSize(12);
         doc.setTextColor(...phase.color);
         doc.text(phase.title, CONTENT.left, currentY);
-        currentY += 7;
+        currentY += 6;
         
         // Phase actions
         doc.setFont(TYPOGRAPHY.fontFamily, "normal");
@@ -1653,7 +1653,7 @@ window.YBG_PDF = window.YBG_PDF || {};
         phase.actions.forEach((action, idx) => {
           const lines = doc.splitTextToSize(`${idx + 1}. ${action}`, CONTENT.width - 8);
           doc.text(lines, CONTENT.left + 3, currentY);
-          currentY += lines.length * 4.5 + 1;
+          currentY += lines.length * 4.7 + 1;
         });
         
         currentY += 5;
