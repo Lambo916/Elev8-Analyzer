@@ -1165,6 +1165,10 @@ hr,
     .result-actions {
         align-self: flex-end;
     }
+    
+    .footer {
+        padding-bottom: var(--spacing-xl);
+    }
 }
 
 @media (max-width: 480px) {
