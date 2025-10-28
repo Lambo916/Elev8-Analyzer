@@ -1342,16 +1342,22 @@ html.theme-dark .elev8-index-card {
     border-bottom: 1px solid var(--border-color);
 }
 
-.chart-card canvas {
-    flex: 1;
+.chart-card canvas,
+canvas.chartjs {
     width: 100% !important;
-    height: auto !important;
-    min-height: 200px;
+    max-width: 100% !important;
+    height: 320px !important;
+}
+
+.chart-wrap {
+    width: 100%;
+    max-width: 100%;
+    height: 320px;
 }
 
 /* Special styling for the gauge chart */
 #healthGaugeChart {
-    max-height: 200px;
+    max-height: 320px;
 }
 
 /* Responsive adjustments */
@@ -1369,5 +1375,71 @@ html.theme-dark .elev8-index-card {
 @media (min-width: 1200px) {
     .charts-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ==================================================
+   PRINT MEDIA QUERIES - CRISP PDF OUTPUT
+   ================================================== */
+
+@media print {
+    /* Force white background for PDF export */
+    html, body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    /* Remove gradients, shadows, and effects */
+    .app-bg,
+    .page-gradient,
+    .elev8-theme,
+    .shadow,
+    .glass,
+    .parallax,
+    .elev8-index-card,
+    .pillar-card,
+    .insights-card,
+    .roadmap-card {
+        background: #fff !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+    
+    /* Stable chart heights for print */
+    .chart-wrap,
+    .chart-card canvas,
+    canvas.chartjs {
+        height: 280px !important;
+        max-height: 280px !important;
+    }
+    
+    /* Prevent page breaks inside sections */
+    .report-section,
+    .pillar-card,
+    .elev8-index-card,
+    .insights-card,
+    .roadmap-card,
+    .chart-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    /* Hide UI-only elements */
+    .controls,
+    .buttons,
+    .nav,
+    .footer-cta,
+    .app-header,
+    .theme-toggle,
+    button,
+    .analyze-btn {
+        display: none !important;
+    }
+    
+    /* Optimize text rendering */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
