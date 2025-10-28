@@ -74,6 +74,10 @@
     line-height: 1.2;
 }
 
+.elev8-theme .app-tagline {
+    font-size: 12px; /* 10% bigger than 11px */
+}
+
 /* Increased desktop padding for more breathing room */
 .elev8-theme .app-container {
     padding-inline: var(--spacing-xl); /* 32px horizontal instead of 16px */
