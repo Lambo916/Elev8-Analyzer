@@ -60,7 +60,7 @@
 }
 
 .elev8-theme .logo {
-    height: 48px; /* Matches CompliPilot exactly */
+    height: 96px; /* 2x bigger */
 }
 
 .elev8-theme .app-title {
@@ -885,8 +885,8 @@ html.theme-dark .elev8-index-card {
     
     /* Logo scaling for mobile */
     .elev8-theme .logo {
-        height: 40px;
-        max-height: 40px;
+        height: 80px;
+        max-height: 80px;
     }
     
     .elev8-theme .header-left {
