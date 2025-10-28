@@ -7,7 +7,7 @@ import OpenAI from "openai";
 import sanitizeHtml from "sanitize-html";
 import { resolveProfile, type FilingProfile } from "@shared/filing-profiles";
 import { db } from "./db";
-import { complianceReports, insertComplianceReportSchema, type ComplianceReport, usageTracking } from "@shared/schema";
+import { complianceReports, insertComplianceReportSchema, type ComplianceReport, usageTracking, savedElev8Reports, insertSavedElev8ReportSchema, type SavedElev8Report } from "@shared/schema";
 import { eq, desc, or, and, sql } from "drizzle-orm";
 import { getUserId, hasAccess, requireAuth } from "./auth";
 
@@ -848,6 +848,169 @@ IMPORTANT:
           details: error.message,
         });
       }
+    }
+  });
+
+  // =====================================================
+  // ELEV8 ANALYZER SAVED REPORTS API
+  // =====================================================
+  
+  // Save Elev8 Analyzer report (IP-based, no auth required)
+  app.post("/api/elev8/reports/save", async (req, res) => {
+    try {
+      const ipAddress = getClientIp(req);
+      
+      if (ipAddress === 'unknown') {
+        return res.status(400).json({ 
+          error: "Unable to determine client IP address." 
+        });
+      }
+
+      const { reportName, analysisData } = req.body;
+
+      if (!reportName || !analysisData) {
+        return res.status(400).json({ 
+          error: "Report name and analysis data are required." 
+        });
+      }
+
+      // Validate using Zod schema
+      const validationResult = insertSavedElev8ReportSchema.safeParse({
+        ipAddress,
+        reportName: reportName.trim(),
+        analysisData,
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid report data.",
+          details: validationResult.error.issues,
+        });
+      }
+
+      // Insert into database
+      const [savedReport] = await db
+        .insert(savedElev8Reports)
+        .values(validationResult.data)
+        .returning();
+
+      console.log(`[Elev8 Save] Saved report "${reportName}" for IP ${ipAddress}`);
+
+      res.json({ 
+        success: true, 
+        report: savedReport,
+      });
+    } catch (error: any) {
+      console.error("Error saving Elev8 report:", error);
+      res.status(500).json({ 
+        error: "Failed to save report. Please try again.",
+      });
+    }
+  });
+
+  // List all saved Elev8 Analyzer reports for current IP
+  app.get("/api/elev8/reports/list", async (req, res) => {
+    try {
+      const ipAddress = getClientIp(req);
+      
+      if (ipAddress === 'unknown') {
+        return res.status(400).json({ 
+          error: "Unable to determine client IP address." 
+        });
+      }
+
+      // Get all reports for this IP, newest first
+      const reports = await db
+        .select({
+          id: savedElev8Reports.id,
+          reportName: savedElev8Reports.reportName,
+          createdAt: savedElev8Reports.createdAt,
+        })
+        .from(savedElev8Reports)
+        .where(eq(savedElev8Reports.ipAddress, ipAddress))
+        .orderBy(desc(savedElev8Reports.createdAt));
+
+      res.json({ reports });
+    } catch (error: any) {
+      console.error("Error listing Elev8 reports:", error);
+      res.status(500).json({ 
+        error: "Failed to load saved reports.",
+      });
+    }
+  });
+
+  // Load a specific Elev8 Analyzer report
+  app.get("/api/elev8/reports/load/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ipAddress = getClientIp(req);
+      
+      if (ipAddress === 'unknown') {
+        return res.status(400).json({ 
+          error: "Unable to determine client IP address." 
+        });
+      }
+
+      // Get report, ensuring it belongs to this IP
+      const [report] = await db
+        .select()
+        .from(savedElev8Reports)
+        .where(and(
+          eq(savedElev8Reports.id, id),
+          eq(savedElev8Reports.ipAddress, ipAddress)
+        ))
+        .limit(1);
+
+      if (!report) {
+        return res.status(404).json({ 
+          error: "Report not found or access denied." 
+        });
+      }
+
+      res.json({ report });
+    } catch (error: any) {
+      console.error("Error loading Elev8 report:", error);
+      res.status(500).json({ 
+        error: "Failed to load report.",
+      });
+    }
+  });
+
+  // Delete a saved Elev8 Analyzer report
+  app.delete("/api/elev8/reports/delete/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ipAddress = getClientIp(req);
+      
+      if (ipAddress === 'unknown') {
+        return res.status(400).json({ 
+          error: "Unable to determine client IP address." 
+        });
+      }
+
+      // Delete report, ensuring it belongs to this IP
+      const [deleted] = await db
+        .delete(savedElev8Reports)
+        .where(and(
+          eq(savedElev8Reports.id, id),
+          eq(savedElev8Reports.ipAddress, ipAddress)
+        ))
+        .returning();
+
+      if (!deleted) {
+        return res.status(404).json({ 
+          error: "Report not found or access denied." 
+        });
+      }
+
+      console.log(`[Elev8 Delete] Deleted report ${id} for IP ${ipAddress}`);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting Elev8 report:", error);
+      res.status(500).json({ 
+        error: "Failed to delete report.",
+      });
     }
   });
 

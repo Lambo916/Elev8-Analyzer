@@ -278,6 +278,62 @@
         </footer>
     </div>
 
+    <!-- Save Report Modal -->
+    <div id="saveReportModal" class="modal" data-testid="modal-save-report">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Save Analysis Report</h3>
+                <button class="modal-close" id="closeSaveModal" data-testid="button-close-save-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Enter a name for this analysis report:</p>
+                <input 
+                    type="text" 
+                    id="reportNameInput" 
+                    class="modal-input"
+                    placeholder="e.g., Q4 2024 Analysis"
+                    maxlength="100"
+                    data-testid="input-report-name"
+                />
+                <div id="saveReportError" class="modal-error hidden" data-testid="text-save-error"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="cancelSaveBtn" data-testid="button-cancel-save">
+                    Cancel
+                </button>
+                <button class="modal-btn modal-btn-primary" id="confirmSaveBtn" data-testid="button-confirm-save">
+                    Save Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Report Modal -->
+    <div id="loadReportModal" class="modal" data-testid="modal-load-report">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-content-wide">
+            <div class="modal-header">
+                <h3>Load Saved Report</h3>
+                <button class="modal-close" id="closeLoadModal" data-testid="button-close-load-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="loadReportError" class="modal-error hidden" data-testid="text-load-error"></div>
+                <div id="savedReportsList" class="saved-reports-list" data-testid="list-saved-reports">
+                    <div class="loading-message" data-testid="text-loading">Loading saved reports...</div>
+                </div>
+                <div id="noSavedReports" class="no-saved-reports hidden" data-testid="text-no-saved-reports">
+                    No saved reports found. Save your current analysis to see it here.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="cancelLoadBtn" data-testid="button-cancel-load">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Result Item Template (Hidden) -->
     <template id="resultTemplate">
         <div class="result-item" data-testid="item-result">
@@ -290,6 +346,24 @@
                 </div>
             </div>
             <div class="result-content" data-testid="text-result-content"></div>
+        </div>
+    </template>
+
+    <!-- Saved Report Item Template (Hidden) -->
+    <template id="savedReportTemplate">
+        <div class="saved-report-item" data-testid="item-saved-report">
+            <div class="saved-report-info">
+                <div class="saved-report-name" data-testid="text-saved-report-name"></div>
+                <div class="saved-report-date" data-testid="text-saved-report-date"></div>
+            </div>
+            <div class="saved-report-actions">
+                <button class="saved-report-btn load-btn" data-testid="button-load-saved-report">
+                    Load
+                </button>
+                <button class="saved-report-btn delete-btn" data-testid="button-delete-saved-report">
+                    Delete
+                </button>
+            </div>
         </div>
     </template>
 

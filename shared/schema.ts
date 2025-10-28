@@ -59,3 +59,19 @@ export const insertUsageTrackingSchema = createInsertSchema(usageTracking).omit(
 
 export type InsertUsageTracking = z.infer<typeof insertUsageTrackingSchema>;
 export type UsageTracking = typeof usageTracking.$inferSelect;
+
+export const savedElev8Reports = pgTable("saved_elev8_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ipAddress: text("ip_address").notNull(),
+  reportName: text("report_name").notNull(),
+  analysisData: json("analysis_data").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSavedElev8ReportSchema = createInsertSchema(savedElev8Reports).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSavedElev8Report = z.infer<typeof insertSavedElev8ReportSchema>;
+export type SavedElev8Report = typeof savedElev8Reports.$inferSelect;

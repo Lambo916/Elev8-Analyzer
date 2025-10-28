@@ -718,6 +718,214 @@ class Elev8AnalyzerApp {
             console.error('Failed to load from localStorage:', error);
         }
     }
+
+    // =====================================================
+    // SAVE/LOAD REPORT FUNCTIONALITY
+    // =====================================================
+    
+    showSaveModal() {
+        // Check if there's an analysis to save
+        if (!this.currentAnalysis) {
+            alert('No analysis to save. Generate an analysis first.');
+            return;
+        }
+
+        const modal = document.getElementById('saveReportModal');
+        const input = document.getElementById('reportNameInput');
+        const errorDiv = document.getElementById('saveReportError');
+        
+        if (modal && input && errorDiv) {
+            // Clear previous state
+            input.value = '';
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            
+            // Show modal
+            modal.classList.add('active');
+            input.focus();
+            
+            // Setup event listeners (remove old ones first)
+            const closeBtn = document.getElementById('closeSaveModal');
+            const cancelBtn = document.getElementById('cancelSaveBtn');
+            const confirmBtn = document.getElementById('confirmSaveBtn');
+            
+            const closeModal = () => modal.classList.remove('active');
+            
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            if (confirmBtn) {
+                confirmBtn.onclick = () => this.saveReportToDb(input.value.trim(), errorDiv, modal);
+            }
+            
+            // Handle Enter key in input
+            input.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    this.saveReportToDb(input.value.trim(), errorDiv, modal);
+                }
+            };
+            
+            // Close on overlay click
+            modal.querySelector('.modal-overlay').onclick = closeModal;
+        }
+    }
+
+    async saveReportToDb(reportName, errorDiv, modal) {
+        if (!reportName) {
+            errorDiv.textContent = 'Please enter a report name.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/elev8/reports/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reportName,
+                    analysisData: this.currentAnalysis
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to save report');
+            }
+
+            console.log('[Save Report] Saved successfully:', data.report);
+            modal.classList.remove('active');
+            alert(`Report "${reportName}" saved successfully!`);
+        } catch (error) {
+            console.error('[Save Report] Error:', error);
+            errorDiv.textContent = error.message || 'Failed to save report. Please try again.';
+            errorDiv.classList.remove('hidden');
+        }
+    }
+
+    async showLoadModal() {
+        const modal = document.getElementById('loadReportModal');
+        const listDiv = document.getElementById('savedReportsList');
+        const noReportsDiv = document.getElementById('noSavedReports');
+        const errorDiv = document.getElementById('loadReportError');
+        
+        if (modal && listDiv && noReportsDiv && errorDiv) {
+            // Clear previous state
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            noReportsDiv.classList.add('hidden');
+            listDiv.innerHTML = '<div class="loading-message">Loading saved reports...</div>';
+            
+            // Show modal
+            modal.classList.add('active');
+            
+            // Setup close listeners
+            const closeBtn = document.getElementById('closeLoadModal');
+            const cancelBtn = document.getElementById('cancelLoadBtn');
+            const closeModal = () => modal.classList.remove('active');
+            
+            if (closeBtn) closeBtn.onclick = closeModal;
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+            modal.querySelector('.modal-overlay').onclick = closeModal;
+            
+            // Fetch saved reports
+            try {
+                const response = await fetch('/api/elev8/reports/list');
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load reports');
+                }
+                
+                if (data.reports.length === 0) {
+                    listDiv.innerHTML = '';
+                    noReportsDiv.classList.remove('hidden');
+                } else {
+                    this.renderSavedReportsList(data.reports, listDiv, modal);
+                }
+            } catch (error) {
+                console.error('[Load Report] Error:', error);
+                listDiv.innerHTML = '';
+                errorDiv.textContent = error.message || 'Failed to load saved reports.';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+    }
+
+    renderSavedReportsList(reports, listDiv, modal) {
+        listDiv.innerHTML = '';
+        
+        const template = document.getElementById('savedReportTemplate');
+        
+        reports.forEach(report => {
+            const item = template.content.cloneNode(true);
+            
+            item.querySelector('.saved-report-name').textContent = report.reportName;
+            
+            const date = new Date(report.createdAt);
+            item.querySelector('.saved-report-date').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            
+            const loadBtn = item.querySelector('.load-btn');
+            loadBtn.onclick = () => this.loadReportFromDb(report.id, modal);
+            
+            const deleteBtn = item.querySelector('.delete-btn');
+            deleteBtn.onclick = () => this.deleteReport(report.id, report.reportName, () => this.showLoadModal());
+            
+            listDiv.appendChild(item);
+        });
+    }
+
+    async loadReportFromDb(reportId, modal) {
+        try {
+            const response = await fetch(`/api/elev8/reports/load/${reportId}`);
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load report');
+            }
+            
+            // Set the loaded analysis as current
+            this.currentAnalysis = data.report.analysisData;
+            this.analysisHistory.unshift(data.report.analysisData);
+            
+            // Update UI
+            this.renderResults();
+            this.saveToLocalStorage();
+            
+            // Close modal
+            modal.classList.remove('active');
+            
+            console.log('[Load Report] Loaded successfully:', data.report.reportName);
+        } catch (error) {
+            console.error('[Load Report] Error:', error);
+            alert(error.message || 'Failed to load report. Please try again.');
+        }
+    }
+
+    async deleteReport(reportId, reportName, onSuccess) {
+        if (!confirm(`Delete report "${reportName}"?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/elev8/reports/delete/${reportId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to delete report');
+            }
+            
+            console.log('[Delete Report] Deleted successfully:', reportName);
+            
+            // Refresh the list
+            if (onSuccess) onSuccess();
+        } catch (error) {
+            console.error('[Delete Report] Error:', error);
+            alert(error.message || 'Failed to delete report. Please try again.');
+        }
+    }
 }
 
 // =====================================================
@@ -755,7 +963,9 @@ class DropdownManager {
         if (saveReportBtn) {
             saveReportBtn.addEventListener('click', () => {
                 this.closeAllDropdowns();
-                this.saveReport();
+                if (window.elev8App) {
+                    window.elev8App.showSaveModal();
+                }
             });
         }
 
@@ -763,7 +973,9 @@ class DropdownManager {
         if (loadReportBtn) {
             loadReportBtn.addEventListener('click', () => {
                 this.closeAllDropdowns();
-                this.loadReport();
+                if (window.elev8App) {
+                    window.elev8App.showLoadModal();
+                }
             });
         }
 
@@ -787,16 +999,6 @@ class DropdownManager {
         const dropdowns = document.querySelectorAll('.dropdown-menu');
         dropdowns.forEach(dropdown => dropdown.classList.remove('active'));
         this.activeDropdown = null;
-    }
-
-    saveReport() {
-        // Placeholder for save functionality
-        alert('Save Report functionality coming soon!');
-    }
-
-    loadReport() {
-        // Placeholder for load functionality
-        alert('Load Report functionality coming soon!');
     }
 }
 
