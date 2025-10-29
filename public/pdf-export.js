@@ -1446,7 +1446,7 @@ window.YBG_PDF = window.YBG_PDF || {};
     const charts = {};
     
     // Capture each chart canvas as a data URL
-    const chartIds = ['pillarRadarChart', 'pillarBarChart', 'businessHealthGauge', 'roadmapTimelineChart'];
+    const chartIds = ['pillarRadarChart', 'pillarBarChart', 'healthGaugeChart', 'roadmapTimelineChart'];
     const chartNames = ['radar', 'bar', 'gauge', 'timeline'];
     
     for (let i = 0; i < chartIds.length; i++) {
@@ -1458,9 +1458,12 @@ window.YBG_PDF = window.YBG_PDF || {};
         } catch (error) {
           console.warn(`[PDF Export] Failed to capture ${chartNames[i]} chart:`, error);
         }
+      } else {
+        console.warn(`[PDF Export] Canvas not found for ${chartNames[i]} (ID: ${chartIds[i]})`);
       }
     }
     
+    console.log(`[PDF Export] Successfully captured ${Object.keys(charts).length} of 4 charts`);
     return charts;
   }
 
