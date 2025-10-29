@@ -1479,13 +1479,24 @@ window.YBG_PDF = window.YBG_PDF || {};
         throw new Error('Results container not found');
       }
       
-      console.log('[PDF Export] Capturing results panel...');
+      // Temporarily remove height/overflow constraints to capture full content
+      const originalMaxHeight = resultsPanel.style.maxHeight;
+      const originalOverflow = resultsPanel.style.overflow;
+      resultsPanel.style.maxHeight = 'none';
+      resultsPanel.style.overflow = 'visible';
+      
+      console.log('[PDF Export] Capturing full results content...');
       const canvas = await html2canvas(resultsPanel, {
         scale: 2,              // High-DPI for crisp text
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowHeight: resultsPanel.scrollHeight
       });
+      
+      // Restore original styles
+      resultsPanel.style.maxHeight = originalMaxHeight;
+      resultsPanel.style.overflow = originalOverflow;
       
       console.log('[PDF Export] Canvas created:', canvas.width, 'x', canvas.height);
       const imgData = canvas.toDataURL('image/png');
@@ -1493,19 +1504,50 @@ window.YBG_PDF = window.YBG_PDF || {};
       
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       
-      // Calculate dimensions to fit on page
+      // Calculate page dimensions
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const contentWidth = pageWidth - (2 * margin);
+      
+      // Calculate image dimensions to fit page width
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      const ratio = Math.min(pageWidth / imgWidth, (pageHeight - 20) / imgHeight);
+      const ratio = contentWidth / imgWidth;
+      const scaledWidth = contentWidth;
+      const scaledHeight = imgHeight * ratio;
       
-      const w = imgWidth * ratio;
-      const h = imgHeight * ratio;
-      const x = (pageWidth - w) / 2;
-      const y = 10;
+      // Split into multiple pages if needed
+      let position = 0;
+      let pageNum = 0;
       
-      pdf.addImage(imgData, 'PNG', x, y, w, h);
+      while (position < scaledHeight) {
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+        
+        const remainingHeight = scaledHeight - position;
+        const pageContentHeight = Math.min(pageHeight - (2 * margin), remainingHeight);
+        
+        // Calculate source rectangle in original canvas
+        const srcY = position / ratio;
+        const srcHeight = pageContentHeight / ratio;
+        
+        // Create a temporary canvas for this page
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgWidth;
+        pageCanvas.height = srcHeight;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, imgWidth, srcHeight, 0, 0, imgWidth, srcHeight);
+        
+        const pageImgData = pageCanvas.toDataURL('image/png');
+        pdf.addImage(pageImgData, 'PNG', margin, margin, scaledWidth, pageContentHeight);
+        
+        position += pageContentHeight;
+        pageNum++;
+      }
+      
+      console.log('[PDF Export] Created', pageNum, 'page(s)');
       
       // Restore chart animations
       if (typeof restoreChartAnimations === 'function') {
