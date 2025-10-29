@@ -1479,16 +1479,18 @@ window.YBG_PDF = window.YBG_PDF || {};
         throw new Error('Results panel not found');
       }
       
+      console.log('[PDF Export] Capturing results panel...');
       const canvas = await html2canvas(resultsPanel, {
         scale: 2,              // High-DPI for crisp text
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: resultsPanel.scrollWidth,
-        windowHeight: resultsPanel.scrollHeight
+        backgroundColor: '#ffffff'
       });
       
+      console.log('[PDF Export] Canvas created:', canvas.width, 'x', canvas.height);
       const imgData = canvas.toDataURL('image/png');
+      console.log('[PDF Export] Image data created, length:', imgData.length);
+      
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       
       // Calculate dimensions to fit on page
@@ -1517,7 +1519,9 @@ window.YBG_PDF = window.YBG_PDF || {};
       console.log('[PDF Export] Quick export completed successfully');
     } catch (error) {
       console.error('[PDF Export] Error during quick export:', error);
-      alert('Failed to export PDF. Please try again.');
+      console.error('[PDF Export] Error message:', error?.message);
+      console.error('[PDF Export] Error stack:', error?.stack);
+      alert('Failed to export PDF. Please try again.\n\nError: ' + (error?.message || 'Unknown error'));
       
       // Restore animations even on error
       if (typeof restoreChartAnimations === 'function') {
