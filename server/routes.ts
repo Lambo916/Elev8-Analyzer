@@ -32,13 +32,49 @@ function sanitizeHtmlContent(html: string): string {
 }
 
 // Get client IP address from request (30-report cap enforcement)
+// Supports Vercel, Cloudflare, and other proxy environments
 function getClientIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded
-    ? (typeof forwarded === 'string' ? forwarded.split(',')[0] : forwarded[0])
-    : req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+  // Try Vercel-specific headers first (highest priority for Vercel deployments)
+  const vercelIp = req.headers['x-vercel-forwarded-for'] || req.headers['x-vercel-ip-address'];
+  if (vercelIp) {
+    const ip = typeof vercelIp === 'string' ? vercelIp.split(',')[0].trim() : String(vercelIp).trim();
+    console.log(`[IP Detection] Detected via Vercel header: ${ip}`);
+    return ip;
+  }
   
-  return typeof ip === 'string' ? ip.trim() : 'unknown';
+  // Try standard x-forwarded-for header (most common proxy header)
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : String(forwarded[0]).trim();
+    console.log(`[IP Detection] Detected via x-forwarded-for: ${ip}`);
+    return ip;
+  }
+  
+  // Try x-real-ip header (used by some proxies)
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    const ip = typeof realIp === 'string' ? realIp.trim() : String(realIp).trim();
+    console.log(`[IP Detection] Detected via x-real-ip: ${ip}`);
+    return ip;
+  }
+  
+  // Fallback to socket remote address (direct connection)
+  const socketIp = req.socket?.remoteAddress;
+  if (socketIp) {
+    console.log(`[IP Detection] Detected via socket: ${socketIp}`);
+    return socketIp;
+  }
+  
+  // Log all headers for debugging when IP cannot be determined
+  console.error('[IP Detection] Failed to detect IP. Available headers:', {
+    'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'],
+    'x-vercel-ip-address': req.headers['x-vercel-ip-address'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    'socket.remoteAddress': req.socket?.remoteAddress
+  });
+  
+  return 'unknown';
 }
 
 // Normalize and validate tool parameter (prevent bypass via case/variant strings)
