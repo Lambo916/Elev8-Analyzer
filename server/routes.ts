@@ -98,8 +98,10 @@ async function checkUsageLimit(req: Request, tool: string = 'Elev8Analyzer'): Pr
     const ipAddress = getClientIp(req);
     
     if (ipAddress === 'unknown') {
-      console.error('[Usage] Unable to determine client IP - blocking request for security');
-      return { allowed: false, count: 30 }; // Treat as limit reached to block generation
+      // Log warning but allow the request - better for testing and temporary failures
+      console.warn('[Usage] Unable to determine client IP - allowing request with monitoring');
+      console.warn('[Usage] This should be investigated if it happens frequently in production');
+      return { allowed: true, count: 0 }; // Allow but don't track
     }
 
     // Check current usage for this specific tool
@@ -135,8 +137,10 @@ async function incrementUsage(req: Request, tool: string = 'Elev8Analyzer'): Pro
     const ipAddress = getClientIp(req);
     
     if (ipAddress === 'unknown') {
-      console.error('[Usage] Unable to determine client IP - failing increment for security');
-      return { success: false, count: 30, limitReached: true }; // Fail closed to prevent bypass
+      // Log warning but allow the increment to complete without tracking
+      console.warn('[Usage] Unable to determine client IP - skipping usage tracking');
+      console.warn('[Usage] Report will be delivered but not counted toward limit');
+      return { success: true, count: 0, limitReached: false }; // Allow but don't track
     }
 
     // Atomic increment with strict limit enforcement per tool
