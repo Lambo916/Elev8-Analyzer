@@ -1473,10 +1473,10 @@ window.YBG_PDF = window.YBG_PDF || {};
       
       const jsPDF = await loadJsPDF();
       
-      // Capture the results panel
-      const resultsPanel = document.getElementById('results-panel');
+      // Capture the results container
+      const resultsPanel = document.getElementById('resultsContainer');
       if (!resultsPanel) {
-        throw new Error('Results panel not found');
+        throw new Error('Results container not found');
       }
       
       console.log('[PDF Export] Capturing results panel...');
