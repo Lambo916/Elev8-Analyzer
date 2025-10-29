@@ -218,6 +218,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // IP detection test endpoint (for troubleshooting Vercel deployments)
+  app.get("/api/check-ip", (req, res) => {
+    const detectedIp = getClientIp(req);
+    
+    res.json({
+      detectedIp,
+      headers: {
+        'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'] || null,
+        'x-vercel-ip-address': req.headers['x-vercel-ip-address'] || null,
+        'x-forwarded-for': req.headers['x-forwarded-for'] || null,
+        'x-real-ip': req.headers['x-real-ip'] || null,
+        'socket.remoteAddress': req.socket?.remoteAddress || null,
+      },
+      isUnknown: detectedIp === 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Auth config endpoint (public)
   app.get("/api/auth/config", (req, res) => {
     const supabaseUrl = process.env.SUPABASE_URL;
