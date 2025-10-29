@@ -1441,6 +1441,29 @@ window.YBG_PDF = window.YBG_PDF || {};
     doc.save(filename);
   }
 
+  // ---- Chart Capture Helper ----
+  async function captureChartImages() {
+    const charts = {};
+    
+    // Capture each chart canvas as a data URL
+    const chartIds = ['pillarRadarChart', 'pillarBarChart', 'businessHealthGauge', 'roadmapTimelineChart'];
+    const chartNames = ['radar', 'bar', 'gauge', 'timeline'];
+    
+    for (let i = 0; i < chartIds.length; i++) {
+      const canvas = document.getElementById(chartIds[i]);
+      if (canvas) {
+        try {
+          charts[chartNames[i]] = canvas.toDataURL('image/png');
+          console.log(`[PDF Export] Captured ${chartNames[i]} chart`);
+        } catch (error) {
+          console.warn(`[PDF Export] Failed to capture ${chartNames[i]} chart:`, error);
+        }
+      }
+    }
+    
+    return charts;
+  }
+
   // ---- Elev8 Analyzer PDF Export (Diagnostic Format) ----------------------
   // ---- Quick Export with html2canvas for Charts ----
   window.exportElev8QuickPDF = async function() {
@@ -1574,7 +1597,7 @@ window.YBG_PDF = window.YBG_PDF || {};
 
   window.exportElev8AnalysisToPDF = async function(analysis) {
     try {
-      console.log('[PDF Export] Starting detailed export');
+      console.log('[PDF Export] Starting detailed export with charts');
       
       // Force render any lazy-loaded charts first
       if (typeof forceRenderAllCharts === 'function') {
@@ -1586,6 +1609,10 @@ window.YBG_PDF = window.YBG_PDF || {};
         freezeChartsForExport();
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+      
+      // Capture chart images
+      const chartImages = await captureChartImages();
+      console.log('[PDF Export] Captured', Object.keys(chartImages).length, 'charts');
       
       console.log('[PDF Export] Starting export with MARGINS:', MARGINS);
       console.log('[PDF Export] CONTENT area:', CONTENT);
@@ -1659,7 +1686,67 @@ window.YBG_PDF = window.YBG_PDF || {};
         currentY += summaryLines.length * TYPOGRAPHY.lineHeight;
       }
       
-      // ---- Page 2+: 8 Pillar Breakdown ----
+      // ---- Charts Page ----
+      if (chartImages && (chartImages.radar || chartImages.bar || chartImages.gauge)) {
+        doc.addPage();
+        pageNum++;
+        applyGlobalTypography(doc);
+        drawWatermark(doc, iconDataUrl);
+        drawHeader(doc, pageNum, iconDataUrl);
+        
+        currentY = CONTENT.top;
+        
+        // Section heading
+        doc.setFont(TYPOGRAPHY.fontFamily, "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(...TYPOGRAPHY.colorHeading);
+        doc.text("Business Metrics Visualization", CONTENT.left, currentY);
+        currentY += 12;
+        
+        const chartWidth = (CONTENT.width - 10) / 2; // Two columns
+        const chartHeight = 60; // Fixed height for charts
+        let chartX = CONTENT.left;
+        
+        // Add charts in a 2x2 grid
+        if (chartImages.radar) {
+          doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(...TYPOGRAPHY.colorMeta);
+          doc.text("Pillar Performance Radar", chartX, currentY);
+          doc.addImage(chartImages.radar, 'PNG', chartX, currentY + 3, chartWidth, chartHeight);
+        }
+        
+        if (chartImages.bar) {
+          chartX = CONTENT.left + chartWidth + 10;
+          doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(...TYPOGRAPHY.colorMeta);
+          doc.text("Pillar Score Comparison", chartX, currentY);
+          doc.addImage(chartImages.bar, 'PNG', chartX, currentY + 3, chartWidth, chartHeight);
+        }
+        
+        currentY += chartHeight + 15;
+        chartX = CONTENT.left;
+        
+        if (chartImages.gauge) {
+          doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(...TYPOGRAPHY.colorMeta);
+          doc.text("Business Health Gauge", chartX, currentY);
+          doc.addImage(chartImages.gauge, 'PNG', chartX, currentY + 3, chartWidth, chartHeight);
+        }
+        
+        if (chartImages.timeline) {
+          chartX = CONTENT.left + chartWidth + 10;
+          doc.setFont(TYPOGRAPHY.fontFamily, "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(...TYPOGRAPHY.colorMeta);
+          doc.text("Action Roadmap Timeline", chartX, currentY);
+          doc.addImage(chartImages.timeline, 'PNG', chartX, currentY + 3, chartWidth, chartHeight);
+        }
+      }
+      
+      // ---- Page: 8 Pillar Breakdown ----
       doc.addPage();
       pageNum++;
       applyGlobalTypography(doc);

@@ -1177,9 +1177,9 @@ class Elev8AnalyzerApp {
             return;
         }
 
-        // Call the quick PDF export function that captures charts (defined in pdf-export.js)
-        if (typeof window.exportElev8QuickPDF === 'function') {
-            window.exportElev8QuickPDF();
+        // Call the detailed PDF export function with chart embedding (defined in pdf-export.js)
+        if (typeof window.exportElev8AnalysisToPDF === 'function') {
+            window.exportElev8AnalysisToPDF(this.currentAnalysis);
         } else {
             alert('PDF export functionality not available.');
         }
