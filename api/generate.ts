@@ -17,14 +17,49 @@ function getOpenAI() {
   return openai;
 }
 
-// Get client IP address from request
+// Get client IP address from request (Vercel-optimized)
 function getClientIp(req: VercelRequest): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded
-    ? (typeof forwarded === 'string' ? forwarded.split(',')[0] : forwarded[0])
-    : req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+  // Try Vercel-specific headers first (highest priority for Vercel deployments)
+  const vercelIp = req.headers['x-vercel-forwarded-for'] || req.headers['x-vercel-ip-address'];
+  if (vercelIp) {
+    const ip = typeof vercelIp === 'string' ? vercelIp.split(',')[0].trim() : String(vercelIp).trim();
+    console.log(`[IP Detection] Detected via Vercel header: ${ip}`);
+    return ip;
+  }
   
-  return typeof ip === 'string' ? ip.trim() : 'unknown';
+  // Try standard x-forwarded-for header (most common proxy header)
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : String(forwarded[0]).trim();
+    console.log(`[IP Detection] Detected via x-forwarded-for: ${ip}`);
+    return ip;
+  }
+  
+  // Try x-real-ip header (used by some proxies)
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    const ip = typeof realIp === 'string' ? realIp.trim() : String(realIp).trim();
+    console.log(`[IP Detection] Detected via x-real-ip: ${ip}`);
+    return ip;
+  }
+  
+  // Fallback to socket remote address (direct connection)
+  const socketIp = req.socket?.remoteAddress;
+  if (socketIp) {
+    console.log(`[IP Detection] Detected via socket: ${socketIp}`);
+    return socketIp;
+  }
+  
+  // Log all headers for debugging when IP cannot be determined
+  console.error('[IP Detection] Failed to detect IP. Available headers:', {
+    'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'],
+    'x-vercel-ip-address': req.headers['x-vercel-ip-address'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    'socket.remoteAddress': req.socket?.remoteAddress
+  });
+  
+  return 'unknown';
 }
 
 // Check usage limit (read-only check before generation)
@@ -33,8 +68,10 @@ async function checkUsageLimit(req: VercelRequest): Promise<{ allowed: boolean; 
     const ipAddress = getClientIp(req);
     
     if (ipAddress === 'unknown') {
-      console.error('[Usage] Unable to determine client IP - blocking request for security');
-      return { allowed: false, count: 30 }; // Treat as limit reached to block generation
+      // Log warning but allow the request - better for testing and temporary failures
+      console.warn('[Usage] Unable to determine client IP - allowing request with monitoring');
+      console.warn('[Usage] This should be investigated if it happens frequently in production');
+      return { allowed: true, count: 0 }; // Allow but don't track
     }
 
     const db = getDb();
@@ -69,8 +106,10 @@ async function incrementUsage(req: VercelRequest): Promise<{ success: boolean; c
     const ipAddress = getClientIp(req);
     
     if (ipAddress === 'unknown') {
-      console.error('[Usage] Unable to determine client IP - failing increment for security');
-      return { success: false, count: 30, limitReached: true }; // Fail closed to prevent bypass
+      // Log warning but allow the increment to complete without tracking
+      console.warn('[Usage] Unable to determine client IP - skipping usage tracking');
+      console.warn('[Usage] Report will be delivered but not counted toward limit');
+      return { success: true, count: 0, limitReached: false }; // Allow but don't track
     }
 
     const db = getDb();
