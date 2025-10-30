@@ -5,7 +5,7 @@ import { getDb } from './_lib/db-serverless.js';
 import { validateEnv } from './config.js';
 import OpenAI from 'openai';
 import { resolveProfile } from './_lib/filing-profiles.js';
-import { complianceReports, insertComplianceReportSchema } from './_lib/schema.js';
+import { complianceReports, insertComplianceReportSchema, usageTracking } from './_lib/schema.js';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Validate environment on cold start
@@ -38,6 +38,154 @@ function getOpenAI() {
     openai = new OpenAI({ apiKey: apiKey.replace(/\s+/g, '').trim() });
   }
   return openai;
+}
+
+// Get client IP address from request (Vercel-optimized)
+function getClientIp(req: VercelRequest): string {
+  // Try Vercel-specific headers first (highest priority for Vercel deployments)
+  const vercelIp = req.headers['x-vercel-forwarded-for'] || req.headers['x-vercel-ip-address'];
+  if (vercelIp) {
+    const ip = typeof vercelIp === 'string' ? vercelIp.split(',')[0].trim() : String(vercelIp).trim();
+    console.log(`[IP Detection] Detected via Vercel header: ${ip}`);
+    return ip;
+  }
+  
+  // Try standard x-forwarded-for header (most common proxy header)
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : String(forwarded[0]).trim();
+    console.log(`[IP Detection] Detected via x-forwarded-for: ${ip}`);
+    return ip;
+  }
+  
+  // Try x-real-ip header (used by some proxies)
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) {
+    const ip = typeof realIp === 'string' ? realIp.trim() : String(realIp).trim();
+    console.log(`[IP Detection] Detected via x-real-ip: ${ip}`);
+    return ip;
+  }
+  
+  // Fallback to socket remote address (direct connection)
+  const socketIp = req.socket?.remoteAddress;
+  if (socketIp) {
+    console.log(`[IP Detection] Detected via socket: ${socketIp}`);
+    return socketIp;
+  }
+  
+  // Log all headers for debugging when IP cannot be determined
+  console.error('[IP Detection] Failed to detect IP. Available headers:', {
+    'x-vercel-forwarded-for': req.headers['x-vercel-forwarded-for'],
+    'x-vercel-ip-address': req.headers['x-vercel-ip-address'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-real-ip': req.headers['x-real-ip'],
+    'socket.remoteAddress': req.socket?.remoteAddress
+  });
+  
+  return 'unknown';
+}
+
+// Check usage limit for a specific tool
+async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allowed: boolean; count: number }> {
+  try {
+    const ipAddress = getClientIp(req);
+    
+    if (ipAddress === 'unknown') {
+      console.warn(`[Usage] Unable to determine client IP for ${tool} - allowing request with monitoring`);
+      console.warn('[Usage] This should be investigated if it happens frequently in production');
+      return { allowed: true, count: 0 };
+    }
+
+    const db = getDb();
+    
+    // Check current usage for this specific tool
+    const existing = await db
+      .select()
+      .from(usageTracking)
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
+      .limit(1);
+
+    const currentCount = existing.length > 0 ? existing[0].reportCount : 0;
+
+    if (currentCount >= 30) {
+      console.log(`[Usage] IP ${ipAddress} has reached limit for ${tool}: ${currentCount}/30`);
+      return { allowed: false, count: currentCount };
+    }
+
+    console.log(`[Usage] IP ${ipAddress} current usage for ${tool}: ${currentCount}/30`);
+    return { allowed: true, count: currentCount };
+  } catch (error) {
+    console.error(`[Usage] Check error for ${tool}:`, error);
+    return { allowed: true, count: 0 };
+  }
+}
+
+// Increment usage counter for a specific tool
+async function incrementUsage(req: VercelRequest, tool: string): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
+  try {
+    const ipAddress = getClientIp(req);
+    
+    if (ipAddress === 'unknown') {
+      console.warn(`[Usage] Unable to determine client IP for ${tool} - skipping usage tracking`);
+      console.warn('[Usage] Report will be delivered but not counted toward limit');
+      return { success: true, count: 0, limitReached: false };
+    }
+
+    const db = getDb();
+    
+    // Atomic increment with strict limit enforcement
+    const updated = await db
+      .update(usageTracking)
+      .set({
+        reportCount: sql`${usageTracking.reportCount} + 1`,
+        lastUpdated: new Date(),
+      })
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool),
+        sql`${usageTracking.reportCount} < 30`
+      ))
+      .returning();
+
+    if (updated.length > 0) {
+      console.log(`[Usage] IP ${ipAddress} incremented to ${updated[0].reportCount}/30 for ${tool}`);
+      return { success: true, count: updated[0].reportCount };
+    }
+
+    // Check if record exists
+    const existing = await db
+      .select()
+      .from(usageTracking)
+      .where(and(
+        eq(usageTracking.ipAddress, ipAddress),
+        eq(usageTracking.tool, tool)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      console.log(`[Usage] IP ${ipAddress} already at limit for ${tool}: ${existing[0].reportCount}/30`);
+      return { success: false, count: existing[0].reportCount, limitReached: true };
+    }
+
+    // First report for this IP and tool
+    const inserted = await db
+      .insert(usageTracking)
+      .values({
+        ipAddress,
+        reportCount: 1,
+        tool,
+      })
+      .returning();
+    
+    console.log(`[Usage] IP ${ipAddress} first report for ${tool}: 1/30`);
+    return { success: true, count: inserted[0].reportCount };
+  } catch (error) {
+    console.error(`[Usage] Increment error for ${tool}:`, error);
+    return { success: false, count: 0, limitReached: true };
+  }
 }
 
 // Sanitize HTML content to prevent XSS
@@ -178,19 +326,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Route: /api/generate (POST) - public (for report generation)
     if (path.endsWith('/api/generate') && method === 'POST') {
-      console.log('[Vercel] /api/generate - Starting report generation');
+      console.log('[Vercel Catch-All] /api/generate - Starting report generation');
       
-      const { formData } = req.body as any;
+      const { formData, tool } = req.body as any;
       
       if (!formData) {
-        console.error('[Vercel] /api/generate - Missing formData');
+        console.error('[Vercel Catch-All] /api/generate - Missing formData');
         return res.status(400).json({ error: 'formData is required' });
       }
 
-      console.log('[Vercel] /api/generate - Form data:', {
+      // Normalize tool name (case-insensitive)
+      const normalizedTool = tool ? String(tool).toLowerCase() : 'elev8analyzer';
+      const toolName = normalizedTool === 'grantgenie' ? 'GrantGenie' : normalizedTool === 'elev8analyzer' ? 'Elev8Analyzer' : 'CompliPilot';
+      const displayName = toolName === 'GrantGenie' ? 'GrantGenie' : toolName === 'Elev8Analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
+      
+      console.log(`[Vercel Catch-All] /api/generate - Processing ${toolName} request`);
+
+      // Check 30-report usage limit BEFORE generation
+      const usageCheck = await checkUsageLimit(req, toolName);
+      if (!usageCheck.allowed) {
+        console.log(`[Vercel Catch-All] /api/generate - Request blocked: usage limit reached for ${toolName} (${usageCheck.count}/30)`);
+        return res.status(429).json({
+          error: `You've reached your 30-report limit for the ${displayName} soft launch.`,
+          limitReached: true,
+          count: usageCheck.count,
+          limit: 30,
+          tool: toolName
+        });
+      }
+
+      console.log(`[Vercel Catch-All] /api/generate - Usage check passed: ${usageCheck.count}/30 for ${toolName}`);
+      console.log('[Vercel Catch-All] /api/generate - Form data:', {
         filingType: formData.filingType,
         jurisdiction: formData.jurisdiction,
-        entityType: formData.entityType
+        entityType: formData.entityType,
+        businessName: formData.businessName
       });
 
       // Try pre-built profile first
@@ -258,7 +428,24 @@ Deadline: ${formData.deadline || 'Not specified'}`;
         }
       }
 
-      console.log('[Vercel] /api/generate - Report generated successfully');
+      console.log(`[Vercel Catch-All] /api/generate - Report generated successfully for ${toolName}`);
+      
+      // Increment usage counter AFTER successful generation
+      const incrementResult = await incrementUsage(req, toolName);
+      
+      // If increment failed due to limit (race condition), reject the request
+      if (!incrementResult.success && incrementResult.limitReached) {
+        console.log(`[Vercel Catch-All] /api/generate - Limit reached during increment for ${toolName}: ${incrementResult.count}/30`);
+        return res.status(429).json({
+          error: `You've reached your 30-report limit for the ${displayName} soft launch.`,
+          limitReached: true,
+          count: incrementResult.count,
+          limit: 30,
+          tool: toolName
+        });
+      }
+
+      console.log(`[Vercel Catch-All] /api/generate - Usage incremented: ${incrementResult.count}/30 for ${toolName}`);
       return res.json({ reportHtml });
     }
 
