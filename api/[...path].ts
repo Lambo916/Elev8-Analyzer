@@ -356,76 +356,232 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       console.log(`[Vercel Catch-All] /api/generate - Usage check passed: ${usageCheck.count}/30 for ${toolName}`);
-      console.log('[Vercel Catch-All] /api/generate - Form data:', {
-        filingType: formData.filingType,
-        jurisdiction: formData.jurisdiction,
-        entityType: formData.entityType,
-        businessName: formData.businessName
-      });
 
-      // Try pre-built profile first
-      const profile = resolveProfile(
-        formData.filingType || '',
-        formData.jurisdiction || '',
-        formData.entityType || ''
-      );
+      let response;
 
-      let reportHtml = '';
-      
-      if (profile) {
-        console.log('[Vercel] /api/generate - Using pre-built profile:', profile.name);
-        
-        // Generate HTML from profile
-        const checklistHtml = profile.checklist.map(item => 
-          `<li><strong>${item.label}:</strong> ${item.description}</li>`
-        ).join('\n');
-        
-        reportHtml = `<h2>Filing Profile: ${profile.name}</h2>
-<h3>Requirements Checklist</h3>
-<ul>${checklistHtml}</ul>`;
-      } else {
-        console.log('[Vercel] /api/generate - Using OpenAI for report generation');
-        
+      // Handle Elev8 Analyzer diagnostic flow
+      if (toolName === 'Elev8Analyzer') {
+        const {
+          businessName,
+          industry,
+          revenueRange,
+          creditProfile,
+          employees,
+          challenges,
+          goals
+        } = formData;
+
+        console.log(`[Vercel Catch-All] Generating Elev8 analysis for: ${businessName} (${industry})`);
+
+        // Validate required fields
+        if (!businessName || !industry || !revenueRange || !employees) {
+          return res.status(400).json({
+            error: "Business name, industry, revenue range, and employee count are required.",
+          });
+        }
+
+        // Build diagnostic prompt
+        const diagnosticPrompt = `Generate a comprehensive business health diagnostic for the following company:
+
+BUSINESS PROFILE:
+- Business Name: ${businessName}
+- Industry: ${industry}
+- Annual Revenue: ${revenueRange}
+- Credit Profile: ${creditProfile || 'Not provided'}
+- Employees: ${employees}
+
+CHALLENGES:
+${challenges || 'Not specified'}
+
+STRATEGIC GOALS:
+${goals || 'Not specified'}
+
+Analyze this business across all 8 pillars and provide a detailed, actionable assessment. Be specific and realistic based on the profile provided. Return ONLY valid JSON matching the exact structure specified in the system prompt.`;
+
+        const systemPrompt = `You are Elev8 Analyzer, an expert business diagnostic assistant that evaluates companies across 8 critical pillars of business health and growth.
+
+Your role is to generate comprehensive, actionable reports that score each pillar (0-100), assign status indicators, and provide prioritized roadmaps for improvement.
+
+CRITICAL OUTPUT STRUCTURE - You MUST return valid JSON matching this exact schema:
+
+{
+  "overall": {
+    "score": <number 0-100>,
+    "summary": "<2-3 sentence high-level assessment>"
+  },
+  "pillars": [
+    {
+      "name": "Formation & Compliance",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Business Credit Readiness",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Financials & Cash Flow",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Operations & Systems",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Sales & Marketing",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Brand & Web Presence",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Risk & Legal Posture",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    },
+    {
+      "name": "Growth Strategy & Execution",
+      "score": <0-100>,
+      "status": "red|yellow|green",
+      "insights": ["insight 1", "insight 2"],
+      "actions": ["action 1", "action 2", "action 3"]
+    }
+  ],
+  "roadmap": {
+    "d30": ["30-day action 1", "30-day action 2", "30-day action 3"],
+    "d60": ["60-day action 1", "60-day action 2", "60-day action 3"],
+    "d90": ["90-day action 1", "90-day action 2", "90-day action 3"]
+  }
+}
+
+SCORING GUIDELINES:
+- Scores 0-40: Red status (critical issues, immediate attention required)
+- Scores 41-70: Yellow status (needs improvement, moderate priority)
+- Scores 71-100: Green status (solid foundation, optimize and maintain)
+- Overall score: Weighted average emphasizing Financials, Operations, and Sales & Marketing
+
+INSIGHTS GUIDELINES:
+- Provide 2 specific, data-driven insights per pillar
+- Reference the business information provided
+- Be honest but constructive
+
+ACTIONS GUIDELINES:
+- Provide exactly 3 prioritized, actionable steps per pillar
+- Make them specific, measurable, and achievable
+- Start with highest-impact items
+- Be realistic given company size and resources
+
+ROADMAP GUIDELINES:
+- 30-day: Quick wins and foundational fixes
+- 60-day: Process improvements and systematic changes
+- 90-day: Strategic initiatives and growth investments
+- Each timeframe should have 3 specific actions
+
+REMEMBER: Return ONLY valid JSON. No markdown, no extra text, just the JSON object.`;
+
         try {
           const ai = getOpenAI();
-          const prompt = `Generate a compliance report for:
+          
+          const completion = await ai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              },
+              {
+                role: "user",
+                content: diagnosticPrompt,
+              },
+            ],
+            response_format: { type: "json_object" },
+            max_tokens: 3500,
+          });
+
+          response = JSON.parse(completion.choices[0].message.content || '{}');
+          console.log(`[Vercel Catch-All] Elev8 analysis generated successfully`);
+
+        } catch (error: any) {
+          console.error('[Vercel Catch-All] OpenAI error:', error.message);
+          return res.status(500).json({ 
+            error: 'Failed to generate analysis. Please try again.',
+            details: error.message 
+          });
+        }
+
+      } else {
+        // Handle GrantGenie/CompliPilot (legacy HTML generation)
+        console.log('[Vercel Catch-All] Using legacy HTML generation for', toolName);
+        
+        const profile = resolveProfile(
+          formData.filingType || '',
+          formData.jurisdiction || '',
+          formData.entityType || ''
+        );
+
+        let reportHtml = '';
+        
+        if (profile) {
+          const checklistHtml = profile.checklist.map(item => 
+            `<li><strong>${item.label}:</strong> ${item.description}</li>`
+          ).join('\n');
+          
+          reportHtml = `<h2>Filing Profile: ${profile.name}</h2>
+<h3>Requirements Checklist</h3>
+<ul>${checklistHtml}</ul>`;
+        } else {
+          try {
+            const ai = getOpenAI();
+            const prompt = `Generate a compliance report for:
 Entity: ${formData.entityName}
 Type: ${formData.entityType}
 Jurisdiction: ${formData.jurisdiction}
 Filing Type: ${formData.filingType}
 Deadline: ${formData.deadline || 'Not specified'}`;
 
-          console.log('[Vercel] /api/generate - Calling OpenAI API...');
-          
-          // Add timeout protection for OpenAI call (9 seconds to be safe)
-          const completion = await Promise.race([
-            ai.chat.completions.create({
+            const completion = await ai.chat.completions.create({
               model: "gpt-4o",
               messages: [{
                 role: "system",
-                content: "You are GrantGenie, an AI grant writing assistant. Generate professional grant proposals in HTML format with structured sections."
+                content: "You are an AI assistant. Generate professional reports in HTML format."
               }, {
                 role: "user",
                 content: prompt
               }],
               max_tokens: 4000,
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('OpenAI API timeout')), 9000)
-            )
-          ]) as any;
+            });
 
-          console.log('[Vercel] /api/generate - OpenAI API call completed');
-          reportHtml = completion.choices[0].message.content || '';
-        } catch (error: any) {
-          console.error('[Vercel] /api/generate - OpenAI error:', error.message);
-          
-          // Return a friendly error instead of crashing
-          return res.status(500).json({ 
-            error: 'Failed to generate report. Please try again.',
-            details: error.message 
-          });
+            reportHtml = completion.choices[0].message.content || '';
+          } catch (error: any) {
+            console.error('[Vercel Catch-All] OpenAI error:', error.message);
+            return res.status(500).json({ 
+              error: 'Failed to generate report. Please try again.',
+              details: error.message 
+            });
+          }
         }
+
+        response = { reportHtml };
       }
 
       console.log(`[Vercel Catch-All] /api/generate - Report generated successfully for ${toolName}`);
@@ -446,7 +602,7 @@ Deadline: ${formData.deadline || 'Not specified'}`;
       }
 
       console.log(`[Vercel Catch-All] /api/generate - Usage incremented: ${incrementResult.count}/30 for ${toolName}`);
-      return res.json({ reportHtml });
+      return res.json(response);
     }
 
     // All routes below require authentication
