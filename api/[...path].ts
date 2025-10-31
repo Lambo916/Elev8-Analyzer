@@ -89,36 +89,41 @@ function getClientIp(req: VercelRequest): string {
 async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allowed: boolean; count: number }> {
   try {
     const ipAddress = getClientIp(req);
+    const toolLower = tool.toLowerCase();
+    
+    console.log(`[Usage Check] Starting - IP: ${ipAddress}, Tool: ${tool} (normalized: ${toolLower})`);
     
     if (ipAddress === 'unknown') {
-      console.warn(`[Usage] Unable to determine client IP for ${tool} - allowing request with monitoring`);
-      console.warn('[Usage] This should be investigated if it happens frequently in production');
+      console.warn(`[Usage] Unable to determine client IP for ${tool} - ALLOWING REQUEST with monitoring`);
       return { allowed: true, count: 0 };
     }
 
     const db = getDb();
     
-    // Check current usage for this specific tool
+    // Check current usage for this specific tool (case-insensitive)
     const existing = await db
       .select()
       .from(usageTracking)
       .where(and(
         eq(usageTracking.ipAddress, ipAddress),
-        eq(usageTracking.tool, tool)
+        eq(usageTracking.tool, toolLower)
       ))
       .limit(1);
 
     const currentCount = existing.length > 0 ? existing[0].reportCount : 0;
+    
+    console.log(`[Usage Check] Query result - Records found: ${existing.length}, Count: ${currentCount}`);
 
     if (currentCount >= 30) {
-      console.log(`[Usage] IP ${ipAddress} has reached limit for ${tool}: ${currentCount}/30`);
+      console.log(`[Usage] IP ${ipAddress} has reached limit for ${toolLower}: ${currentCount}/30 - BLOCKING`);
       return { allowed: false, count: currentCount };
     }
 
-    console.log(`[Usage] IP ${ipAddress} current usage for ${tool}: ${currentCount}/30`);
+    console.log(`[Usage] IP ${ipAddress} within limit for ${toolLower}: ${currentCount}/30 - ALLOWING`);
     return { allowed: true, count: currentCount };
-  } catch (error) {
-    console.error(`[Usage] Check error for ${tool}:`, error);
+  } catch (error: any) {
+    console.error(`[Usage] Check error for ${tool} - FAIL-SAFE: ALLOWING REQUEST`, error.message);
+    // CRITICAL: Fail open - allow request if anything goes wrong
     return { allowed: true, count: 0 };
   }
 }
@@ -127,10 +132,10 @@ async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allo
 async function incrementUsage(req: VercelRequest, tool: string): Promise<{ success: boolean; count: number; limitReached?: boolean }> {
   try {
     const ipAddress = getClientIp(req);
+    const toolLower = tool.toLowerCase();
     
     if (ipAddress === 'unknown') {
-      console.warn(`[Usage] Unable to determine client IP for ${tool} - skipping usage tracking`);
-      console.warn('[Usage] Report will be delivered but not counted toward limit');
+      console.warn(`[Usage Increment] Unable to determine client IP for ${tool} - skipping usage tracking`);
       return { success: true, count: 0, limitReached: false };
     }
 
@@ -145,13 +150,13 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
       })
       .where(and(
         eq(usageTracking.ipAddress, ipAddress),
-        eq(usageTracking.tool, tool),
+        eq(usageTracking.tool, toolLower),
         sql`${usageTracking.reportCount} < 30`
       ))
       .returning();
 
     if (updated.length > 0) {
-      console.log(`[Usage] IP ${ipAddress} incremented to ${updated[0].reportCount}/30 for ${tool}`);
+      console.log(`[Usage Increment] IP ${ipAddress} incremented to ${updated[0].reportCount}/30 for ${toolLower}`);
       return { success: true, count: updated[0].reportCount };
     }
 
@@ -161,12 +166,12 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
       .from(usageTracking)
       .where(and(
         eq(usageTracking.ipAddress, ipAddress),
-        eq(usageTracking.tool, tool)
+        eq(usageTracking.tool, toolLower)
       ))
       .limit(1);
 
     if (existing.length > 0) {
-      console.log(`[Usage] IP ${ipAddress} already at limit for ${tool}: ${existing[0].reportCount}/30`);
+      console.log(`[Usage Increment] IP ${ipAddress} already at limit for ${toolLower}: ${existing[0].reportCount}/30`);
       return { success: false, count: existing[0].reportCount, limitReached: true };
     }
 
@@ -176,14 +181,14 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
       .values({
         ipAddress,
         reportCount: 1,
-        tool,
+        tool: toolLower,
       })
       .returning();
     
-    console.log(`[Usage] IP ${ipAddress} first report for ${tool}: 1/30`);
+    console.log(`[Usage Increment] IP ${ipAddress} first report for ${toolLower}: 1/30`);
     return { success: true, count: inserted[0].reportCount };
-  } catch (error) {
-    console.error(`[Usage] Increment error for ${tool}:`, error);
+  } catch (error: any) {
+    console.error(`[Usage Increment] Error for ${tool}:`, error.message);
     return { success: false, count: 0, limitReached: true };
   }
 }
@@ -335,17 +340,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'formData is required' });
       }
 
-      // Normalize tool name (case-insensitive)
-      const normalizedTool = tool ? String(tool).toLowerCase() : 'elev8analyzer';
-      const toolName = normalizedTool === 'grantgenie' ? 'GrantGenie' : normalizedTool === 'elev8analyzer' ? 'Elev8Analyzer' : 'CompliPilot';
-      const displayName = toolName === 'GrantGenie' ? 'GrantGenie' : toolName === 'Elev8Analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
+      // Normalize tool name to lowercase for database consistency
+      const toolName = tool ? String(tool).toLowerCase() : 'elev8analyzer';
+      const displayName = toolName === 'grantgenie' ? 'GrantGenie' : toolName === 'elev8analyzer' ? 'Elev8 Analyzer' : 'CompliPilot';
       
-      console.log(`[Vercel Catch-All] /api/generate - Processing ${toolName} request`);
+      console.log(`[Vercel Catch-All] /api/generate - Processing ${displayName} request (tool: ${toolName})`);
 
       // Check 30-report usage limit BEFORE generation
       const usageCheck = await checkUsageLimit(req, toolName);
       if (!usageCheck.allowed) {
-        console.log(`[Vercel Catch-All] /api/generate - Request blocked: usage limit reached for ${toolName} (${usageCheck.count}/30)`);
+        console.log(`[Vercel Catch-All] /api/generate - Request BLOCKED: usage limit reached for ${toolName} (${usageCheck.count}/30)`);
         return res.status(429).json({
           error: `You've reached your 30-report limit for the ${displayName} soft launch.`,
           limitReached: true,
@@ -355,12 +359,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      console.log(`[Vercel Catch-All] /api/generate - Usage check passed: ${usageCheck.count}/30 for ${toolName}`);
+      console.log(`[Vercel Catch-All] /api/generate - Usage check PASSED: ${usageCheck.count}/30 for ${toolName}`);
 
       let response;
 
       // Handle Elev8 Analyzer diagnostic flow
-      if (toolName === 'Elev8Analyzer') {
+      if (toolName === 'elev8analyzer') {
         const {
           businessName,
           industry,
