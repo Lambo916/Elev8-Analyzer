@@ -401,6 +401,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Route: /api/db/ping (Database health check - public)
     if (path.endsWith('/api/db/ping') && method === 'GET') {
       try {
+        if (!process.env.DATABASE_URL) {
+          return res.json({ 
+            ok: false, 
+            error: 'Database not configured',
+            database: 'not_configured'
+          });
+        }
         const db = getDb();
         const result = await db.execute(sql`SELECT 1 as ping`);
         return res.json({ 
@@ -727,6 +734,15 @@ Deadline: ${formData.deadline || 'Not specified'}`;
 
     // Route: /api/reports/save (POST) - requires authentication
     if (path.endsWith('/api/reports/save') && method === 'POST') {
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        console.warn('[Reports] Cannot save - DATABASE_URL not configured');
+        return res.status(503).json({ 
+          error: 'Report saving is temporarily unavailable',
+          message: 'Database not configured'
+        });
+      }
+
       // Strip any user-controlled fields that should be server-controlled
       const { userId: _, ownerId: __, ...sanitizedBody } = req.body as any;
       
@@ -749,6 +765,12 @@ Deadline: ${formData.deadline || 'Not specified'}`;
 
     // Route: /api/reports/list (GET) - requires authentication
     if (path.endsWith('/api/reports/list') && method === 'GET') {
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        console.warn('[Reports] Cannot list - DATABASE_URL not configured');
+        return res.json([]); // Return empty array if no database
+      }
+
       const toolkitCode = req.query.toolkit as string;
 
       if (!toolkitCode) {
@@ -781,6 +803,15 @@ Deadline: ${formData.deadline || 'Not specified'}`;
 
     // Route: /api/reports/:id (GET) - requires authentication
     if (path.match(/\/api\/reports\/[^/]+$/) && method === 'GET') {
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        console.warn('[Reports] Cannot fetch - DATABASE_URL not configured');
+        return res.status(503).json({ 
+          error: 'Report retrieval is temporarily unavailable',
+          message: 'Database not configured'
+        });
+      }
+
       const id = path.split('/').pop() as string;
       const db = getDb();
       
@@ -801,6 +832,15 @@ Deadline: ${formData.deadline || 'Not specified'}`;
 
     // Route: /api/reports/:id (DELETE) - requires authentication
     if (path.match(/\/api\/reports\/[^/]+$/) && method === 'DELETE') {
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        console.warn('[Reports] Cannot delete - DATABASE_URL not configured');
+        return res.status(503).json({ 
+          error: 'Report deletion is temporarily unavailable',
+          message: 'Database not configured'
+        });
+      }
+
       const id = path.split('/').pop() as string;
       const db = getDb();
       
