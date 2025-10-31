@@ -1,7 +1,9 @@
 // Environment variable validation for serverless deployment
 
 export function validateEnv() {
-  const required = ['DATABASE_URL', 'OPENAI_API_KEY'];
+  // Only OPENAI_API_KEY is strictly required
+  // DATABASE_URL is optional - app works without it (in-memory mode)
+  const required = ['OPENAI_API_KEY'];
   const missing: string[] = [];
 
   for (const key of required) {
@@ -15,6 +17,11 @@ export function validateEnv() {
       `Missing required environment variables: ${missing.join(', ')}. ` +
       `Please configure these in your Vercel project settings.`
     );
+  }
+
+  // Log warnings for optional but recommended variables
+  if (!process.env.DATABASE_URL) {
+    console.warn('[Config] DATABASE_URL not set - running without database (usage tracking disabled)');
   }
 
   // Validate DATABASE_URL format
