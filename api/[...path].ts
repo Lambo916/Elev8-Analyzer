@@ -391,6 +391,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
+  // CRITICAL: Normalize req.body for Vercel serverless functions
+  // Vercel sends req.body as a string, but Express (dev) parses it to an object
+  let body: any = {};
+  try {
+    if (req.body) {
+      if (typeof req.body === 'string') {
+        // Production: Parse the JSON string
+        body = JSON.parse(req.body);
+        console.log('[Vercel] Parsed string body to JSON');
+      } else if (typeof req.body === 'object') {
+        // Development: Already parsed by Express middleware
+        body = req.body;
+        console.log('[Vercel] Body already parsed (development mode)');
+      }
+    }
+  } catch (parseError: any) {
+    console.error('[Vercel] Failed to parse request body:', parseError.message);
+    return res.status(400).json({ 
+      error: 'Invalid JSON in request body',
+      details: parseError.message 
+    });
+  }
+
+  // Replace req.body with normalized version
+  req.body = body;
+
   const { url = '', method = 'GET' } = req;
   const path = url.split('?')[0];
 
