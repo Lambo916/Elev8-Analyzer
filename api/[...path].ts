@@ -88,6 +88,12 @@ function getClientIp(req: VercelRequest): string {
 // Check usage limit for a specific tool
 async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allowed: boolean; count: number }> {
   try {
+    // EMERGENCY BYPASS: Temporarily disable all usage limits
+    if (process.env.DISABLE_USAGE_LIMITS === 'true') {
+      console.log(`[Usage Check] EMERGENCY BYPASS ACTIVE - Allowing all requests`);
+      return { allowed: true, count: 0 };
+    }
+
     const ipAddress = getClientIp(req);
     const toolLower = tool.toLowerCase();
     
