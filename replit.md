@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+## 2025-01-31: Monitor-Only Mode & Vercel Deployment Fix
+- Implemented monitor-only mode for usage limiting with FEATURE_USAGE_ENFORCEMENT flag
+- Added BYPASS_IPS and configurable REPORT_CAP environment variables
+- Consolidated serverless endpoints from 16 to 8 to fit Vercel Hobby plan (12 function limit)
+- Merged api/usage/check.ts and api/usage/increment.ts into single api/usage.ts endpoint
+- Removed debug endpoints (api/check-ip.ts, api/debug-usage.ts) and redundant api/generate.ts
+- Enhanced logging shows enforcement status (ENFORCING vs MONITOR-ONLY) and configurable caps
+- Version endpoint (api/version.ts) displays current configuration and mode
+
 ## 2025-01-28: Dynamic Charts Dashboard
 - Added Chart.js integration for interactive business metrics visualization
 - Implemented 4 key chart types:

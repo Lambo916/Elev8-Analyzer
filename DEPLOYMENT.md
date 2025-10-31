@@ -1,123 +1,175 @@
-# CompliPilot Production Deployment Guide
+# Elev8 Analyzer - Production Deployment Guide
 
-## ✅ Security Status: PRODUCTION-READY
+## ✅ Vercel Deployment Status: READY
 
-CompliPilot has been secured with **application-layer user isolation** using Supabase JWT authentication. All security vulnerabilities have been patched and verified.
+**Issue Fixed:** Consolidated serverless functions from 16 → 8 (under Vercel Hobby plan's 12 function limit)
 
 ---
 
 ## 📋 Pre-Deployment Checklist
 
-- [x] Application-layer security implemented and audited
-- [x] Supabase JWT authentication integrated
-- [x] User data isolation verified (no cross-user access)
-- [x] API endpoints protected with ownership validation
-- [x] Build configuration tested
-- [x] Environment variables documented
-- [ ] RLS policies executed in Supabase (optional but recommended)
+- [x] Serverless functions consolidated (8/12 used)
+- [x] Monitor-only mode implemented with FEATURE_USAGE_ENFORCEMENT flag
+- [x] Bypass lists (BYPASS_IPS) and configurable caps (REPORT_CAP) added
+- [x] Enhanced logging for usage tracking
+- [x] Version endpoint for deployment verification
+- [x] All usage tracking preserved for analytics
 
 ---
 
-## 🚀 Deployment to Vercel
+## 🚀 Deploy to Vercel (3 Steps)
 
-### Step 1: Push to GitHub
+### Step 1: Set Environment Variables in Vercel
 
-Replit automatically commits your changes. To push to GitHub:
+Go to **Vercel Dashboard** → **Settings** → **Environment Variables** and add:
 
-1. Open the **Git pane** in your Replit workspace (left sidebar)
-2. Review the changes
-3. Click **"Push"** to send commits to GitHub
-4. Verify the push succeeded
-
-Alternatively, use the Shell:
-```bash
-git push origin main
+#### Required Variables:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+DATABASE_URL=your_postgres_connection_string
 ```
 
-### Step 2: Deploy to Vercel
-
-#### Option A: Vercel Dashboard (Recommended)
-
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click **"Add New Project"**
-3. Import your GitHub repository
-4. Configure the project:
-   - **Framework Preset**: Other
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
-
-5. Add environment variables:
-   ```
-   SUPABASE_URL=https://juijtvagjaaxjqjhmrxp.supabase.co
-   SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   DATABASE_URL=postgresql://[your-supabase-connection-string]
-   OPENAI_API_KEY=sk-proj-...
-   NODE_ENV=production
-   ```
-
-6. Click **"Deploy"**
-
-#### Option B: Vercel CLI
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy
-vercel --prod
+#### Monitor-Only Mode (Recommended for Launch):
+```
+FEATURE_USAGE_ENFORCEMENT=off
 ```
 
-When prompted, add the environment variables listed above.
+#### Optional Configuration:
+```
+REPORT_CAP=30
+TOOL_NAME=elev8analyzer
+PUBLIC_SITE_URL=https://analyzer.yourbizguru.com
+BYPASS_IPS=your.ip.address.here
+CORS_ALLOWED_ORIGINS=https://analyzer.yourbizguru.com
+```
 
-### Step 3: Configure Environment Variables
+### Step 2: Push Code & Deploy
 
-In Vercel Dashboard → Settings → Environment Variables, add:
+```bash
+git add .
+git commit -m "Fix Vercel deployment: consolidate serverless functions"
+git push
+```
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `SUPABASE_URL` | https://juijtvagjaaxjqjhmrxp.supabase.co | Your Supabase project URL |
-| `SUPABASE_ANON_KEY` | eyJhbGci... | Supabase anonymous/public key |
-| `DATABASE_URL` | postgresql://... | Supabase PostgreSQL connection string |
-| `OPENAI_API_KEY` | sk-proj-... | OpenAI API key for GPT-5 |
-| `NODE_ENV` | production | Environment mode |
+Vercel will automatically deploy in 1-2 minutes.
 
-**Important**: These variables are already configured in your Replit Secrets. Copy them from:
-- Replit Secrets panel → Copy each secret value
-- Paste into Vercel environment variables
+### Step 3: Verify Deployment
 
-### Step 4: Verify Deployment
+#### ✅ Check Version Endpoint:
+```
+https://analyzer.yourbizguru.com/api/version
+```
 
-Once deployed, Vercel will provide a production URL (e.g., `https://complipilot.vercel.app`)
+Should return:
+```json
+{
+  "version": "1.1.0-monitor-mode",
+  "usageLimiting": {
+    "mode": "monitor-only",
+    "enforcement": false,
+    "reportCap": 30
+  },
+  "configuration": {
+    "publicSiteUrl": "https://analyzer.yourbizguru.com"
+  }
+}
+```
 
-Test the deployment:
+#### ✅ Test the App:
+- Visit https://analyzer.yourbizguru.com
+- Fill in business details
+- Click "Generate Analysis"
+- Should work without any "Report Limit Reached" errors
 
-1. **Health Check**:
-   ```bash
-   curl https://your-app.vercel.app/api/auth/config
-   ```
-   Should return:
-   ```json
-   {
-     "supabaseUrl": "https://juijtvagjaaxjqjhmrxp.supabase.co",
-     "supabaseAnonKey": "eyJhbGci...",
-     "authEnabled": true
-   }
-   ```
+#### ✅ Check Vercel Logs:
+Look for these messages in your Vercel function logs:
+```
+[Usage Check] Starting - IP: xxx.xxx.xxx.xxx, Tool: elev8analyzer, Enforcement: MONITOR-ONLY, Cap: 30
+[Usage Check] ALLOWING (monitor-only mode)
+[Usage Increment] IP xxx.xxx.xxx.xxx incremented to X/30 - Mode: MONITOR-ONLY
+```
 
-2. **Load the Application**:
-   - Visit `https://your-app.vercel.app`
-   - The CompliPilot interface should load
-   - Try generating a compliance report
+---
 
-3. **Test Authentication** (optional):
-   - Sign up or sign in through Supabase UI
-   - Save a report
-   - Verify it appears in your saved reports list
-   - Logout and verify you cannot access the report
+## 🔧 Serverless Functions (8/12 Used)
+
+The following endpoints are deployed to Vercel:
+
+1. **api/[...path].ts** - Main AI generation handler (Elev8 Analyzer + GrantGenie)
+2. **api/version.ts** - Version and configuration status
+3. **api/usage.ts** - Usage tracking (check & increment combined)
+4. **api/auth/login.ts** - User authentication
+5. **api/auth/register.ts** - User registration
+6. **api/reports/[id].ts** - Get specific report by ID
+7. **api/reports/list.ts** - List all saved reports
+8. **api/reports/save.ts** - Save report to database
+
+**What was removed to fit the limit:**
+- ❌ `api/generate.ts` (redundant - handled by api/[...path].ts)
+- ❌ `api/check-ip.ts` (debug only)
+- ❌ `api/debug-usage.ts` (debug only)
+- ❌ `api/usage/check.ts` + `api/usage/increment.ts` (merged into api/usage.ts)
+
+---
+
+## 📊 Environment Variable Reference
+
+### Core Configuration
+
+#### FEATURE_USAGE_ENFORCEMENT
+- **Default:** `on`
+- **Values:** `on` | `off`
+- **Purpose:** Controls usage limit enforcement
+  - `off` = Monitor-only mode (tracks but doesn't block)
+  - `on` = Enforcing mode (blocks at cap)
+- **Recommendation:** Start with `off` for soft launch
+
+#### REPORT_CAP
+- **Default:** `30`
+- **Purpose:** Number of reports allowed per IP per tool
+- **Note:** Works in both modes (monitored in off, enforced in on)
+
+#### BYPASS_IPS
+- **Format:** Comma-separated IP addresses
+- **Example:** `192.168.1.1,10.0.0.5,207.213.21.10`
+- **Purpose:** IPs in this list always bypass usage limits
+- **Tip:** Add your own IP for unlimited testing
+
+#### TOOL_NAME
+- **Default:** `elev8analyzer`
+- **Values:** `elev8analyzer` | `grantgenie` | `complipilot`
+- **Purpose:** Identifies the tool for usage tracking
+
+#### PUBLIC_SITE_URL
+- **Example:** `https://analyzer.yourbizguru.com`
+- **Purpose:** Your production URL for CORS and branding
+
+#### CORS_ALLOWED_ORIGINS
+- **Example:** `https://analyzer.yourbizguru.com`
+- **Purpose:** CORS configuration for iframe embedding
+
+---
+
+## 📈 Monitor-Only Mode Explained
+
+**What it does:**
+- ✅ Tracks all usage in the database (full analytics)
+- ✅ Usage counts continue incrementing beyond the cap
+- ✅ Users **NEVER** see "Report Limit Reached" errors
+- ✅ Detailed logs show usage patterns for debugging
+- ✅ No disruption to user experience
+
+**When to use:**
+- During soft launch to gather usage data
+- For testing without blocking real users
+- When you want analytics but no restrictions
+- To avoid false positives from bugs
+
+**How to switch to enforcing mode later:**
+1. Change `FEATURE_USAGE_ENFORCEMENT=on` in Vercel
+2. Wait for next serverless function cold start (or redeploy)
+3. Users will start seeing limit enforcement
+4. All historical usage data is preserved
 
 ---
 
