@@ -85,19 +85,70 @@ function getClientIp(req: VercelRequest): string {
   return 'unknown';
 }
 
+/*
+ * ENVIRONMENT VARIABLES for Usage Limiting:
+ * 
+ * FEATURE_USAGE_ENFORCEMENT="off" (default: "on")
+ *   - When "off": Monitor-only mode - tracks usage but never blocks
+ *   - When "on": Enforces 30-report limit per IP per tool
+ * 
+ * BYPASS_EMAILS="email1@example.com,email2@example.com"
+ *   - Comma-separated list of emails that bypass usage limits
+ *   - (Not yet implemented - requires user auth system)
+ * 
+ * BYPASS_IPS="192.168.1.1,10.0.0.1"
+ *   - Comma-separated list of IP addresses that bypass usage limits
+ * 
+ * REPORT_CAP=30 (default: 30)
+ *   - Number of reports allowed per IP per tool
+ * 
+ * TOOL_NAME="elev8analyzer"
+ *   - Name of the tool for usage tracking
+ * 
+ * PUBLIC_SITE_URL="https://analyzer.yourbizguru.com"
+ *   - Public URL of the deployed site
+ * 
+ * CORS_ALLOWED_ORIGINS="https://analyzer.yourbizguru.com"
+ *   - CORS origins - must include PUBLIC_SITE_URL
+ */
+
+// Check if IP is in bypass list
+function isIpBypassed(ipAddress: string): boolean {
+  const bypassIps = process.env.BYPASS_IPS?.split(',').map(ip => ip.trim()) || [];
+  const isBypassed = bypassIps.includes(ipAddress);
+  if (isBypassed) {
+    console.log(`[Usage Check] IP ${ipAddress} is in BYPASS_IPS list`);
+  }
+  return isBypassed;
+}
+
+// Check if enforcement is enabled
+function isEnforcementEnabled(): boolean {
+  const enforcement = process.env.FEATURE_USAGE_ENFORCEMENT || 'on';
+  return enforcement.toLowerCase() === 'on';
+}
+
+// Get report cap from environment
+function getReportCap(): number {
+  const cap = parseInt(process.env.REPORT_CAP || '30', 10);
+  return isNaN(cap) ? 30 : cap;
+}
+
 // Check usage limit for a specific tool
 async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allowed: boolean; count: number }> {
   try {
-    // EMERGENCY BYPASS: Temporarily disable all usage limits
-    if (process.env.DISABLE_USAGE_LIMITS === 'true') {
-      console.log(`[Usage Check] EMERGENCY BYPASS ACTIVE - Allowing all requests`);
-      return { allowed: true, count: 0 };
-    }
-
     const ipAddress = getClientIp(req);
     const toolLower = tool.toLowerCase();
+    const enforcementEnabled = isEnforcementEnabled();
+    const reportCap = getReportCap();
     
-    console.log(`[Usage Check] Starting - IP: ${ipAddress}, Tool: ${tool} (normalized: ${toolLower})`);
+    console.log(`[Usage Check] Starting - IP: ${ipAddress}, Tool: ${tool} (normalized: ${toolLower}), Enforcement: ${enforcementEnabled ? 'ENABLED' : 'MONITOR-ONLY'}, Cap: ${reportCap}`);
+    
+    // Check IP bypass list
+    if (isIpBypassed(ipAddress)) {
+      console.log(`[Usage Check] IP ${ipAddress} BYPASSED via BYPASS_IPS - ALLOWING`);
+      return { allowed: true, count: 0 };
+    }
     
     if (ipAddress === 'unknown') {
       console.warn(`[Usage] Unable to determine client IP for ${tool} - ALLOWING REQUEST with monitoring`);
@@ -118,14 +169,20 @@ async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allo
 
     const currentCount = existing.length > 0 ? existing[0].reportCount : 0;
     
-    console.log(`[Usage Check] Query result - Records found: ${existing.length}, Count: ${currentCount}`);
+    console.log(`[Usage Check] Query result - Records found: ${existing.length}, Count: ${currentCount}/${reportCap}`);
 
-    if (currentCount >= 30) {
-      console.log(`[Usage] IP ${ipAddress} has reached limit for ${toolLower}: ${currentCount}/30 - BLOCKING`);
-      return { allowed: false, count: currentCount };
+    // Check if limit is reached
+    if (currentCount >= reportCap) {
+      if (enforcementEnabled) {
+        console.log(`[Usage] IP ${ipAddress} has reached limit for ${toolLower}: ${currentCount}/${reportCap} - BLOCKING (enforcement enabled)`);
+        return { allowed: false, count: currentCount };
+      } else {
+        console.log(`[Usage] IP ${ipAddress} has reached limit for ${toolLower}: ${currentCount}/${reportCap} - ALLOWING (monitor-only mode)`);
+        return { allowed: true, count: currentCount };
+      }
     }
 
-    console.log(`[Usage] IP ${ipAddress} within limit for ${toolLower}: ${currentCount}/30 - ALLOWING`);
+    console.log(`[Usage] IP ${ipAddress} within limit for ${toolLower}: ${currentCount}/${reportCap} - ALLOWING`);
     return { allowed: true, count: currentCount };
   } catch (error: any) {
     console.error(`[Usage] Check error for ${tool} - FAIL-SAFE: ALLOWING REQUEST`, error.message);
@@ -139,6 +196,8 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
   try {
     const ipAddress = getClientIp(req);
     const toolLower = tool.toLowerCase();
+    const enforcementEnabled = isEnforcementEnabled();
+    const reportCap = getReportCap();
     
     if (ipAddress === 'unknown') {
       console.warn(`[Usage Increment] Unable to determine client IP for ${tool} - skipping usage tracking`);
@@ -147,23 +206,34 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
 
     const db = getDb();
     
-    // Atomic increment with strict limit enforcement
+    // In monitor-only mode, always increment (no cap enforcement)
+    // In enforcing mode, only increment if below cap
+    const whereConditions = enforcementEnabled
+      ? and(
+          eq(usageTracking.ipAddress, ipAddress),
+          eq(usageTracking.tool, toolLower),
+          sql`${usageTracking.reportCount} < ${reportCap}`
+        )
+      : and(
+          eq(usageTracking.ipAddress, ipAddress),
+          eq(usageTracking.tool, toolLower)
+        );
+    
+    // Atomic increment
     const updated = await db
       .update(usageTracking)
       .set({
         reportCount: sql`${usageTracking.reportCount} + 1`,
         lastUpdated: new Date(),
       })
-      .where(and(
-        eq(usageTracking.ipAddress, ipAddress),
-        eq(usageTracking.tool, toolLower),
-        sql`${usageTracking.reportCount} < 30`
-      ))
+      .where(whereConditions)
       .returning();
 
     if (updated.length > 0) {
-      console.log(`[Usage Increment] IP ${ipAddress} incremented to ${updated[0].reportCount}/30 for ${toolLower}`);
-      return { success: true, count: updated[0].reportCount };
+      const newCount = updated[0].reportCount;
+      const atCap = newCount >= reportCap;
+      console.log(`[Usage Increment] IP ${ipAddress} incremented to ${newCount}/${reportCap} for ${toolLower}${atCap ? ' (AT CAP)' : ''} - Mode: ${enforcementEnabled ? 'ENFORCING' : 'MONITOR-ONLY'}`);
+      return { success: true, count: newCount, limitReached: atCap };
     }
 
     // Check if record exists
@@ -177,8 +247,23 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
       .limit(1);
 
     if (existing.length > 0) {
-      console.log(`[Usage Increment] IP ${ipAddress} already at limit for ${toolLower}: ${existing[0].reportCount}/30`);
-      return { success: false, count: existing[0].reportCount, limitReached: true };
+      const currentCount = existing[0].reportCount;
+      const atCap = currentCount >= reportCap;
+      
+      if (enforcementEnabled && atCap) {
+        // In enforcing mode, don't allow increment beyond cap
+        console.log(`[Usage Increment] IP ${ipAddress} at limit for ${toolLower}: ${currentCount}/${reportCap} - BLOCKING (enforcement enabled)`);
+        return { success: false, count: currentCount, limitReached: true };
+      } else if (!enforcementEnabled && atCap) {
+        // In monitor-only mode, this shouldn't happen (we should have incremented above)
+        // But if it does, it means the WHERE clause didn't match, so try a direct update
+        console.log(`[Usage Increment] IP ${ipAddress} at cap for ${toolLower}: ${currentCount}/${reportCap} - ALLOWING (monitor-only mode)`);
+        return { success: true, count: currentCount, limitReached: false };
+      }
+      
+      // This shouldn't happen, but handle it gracefully
+      console.warn(`[Usage Increment] Unexpected state for IP ${ipAddress}, ${toolLower}: ${currentCount}/${reportCap}`);
+      return { success: false, count: currentCount, limitReached: atCap };
     }
 
     // First report for this IP and tool
@@ -191,11 +276,13 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
       })
       .returning();
     
-    console.log(`[Usage Increment] IP ${ipAddress} first report for ${toolLower}: 1/30`);
+    console.log(`[Usage Increment] IP ${ipAddress} first report for ${toolLower}: 1/${reportCap} - Mode: ${enforcementEnabled ? 'ENFORCING' : 'MONITOR-ONLY'}`);
     return { success: true, count: inserted[0].reportCount };
   } catch (error: any) {
     console.error(`[Usage Increment] Error for ${tool}:`, error.message);
-    return { success: false, count: 0, limitReached: true };
+    // In monitor-only mode, allow on error; in enforcing mode, block on error
+    const enforcementEnabled = isEnforcementEnabled();
+    return { success: !enforcementEnabled, count: 0, limitReached: enforcementEnabled };
   }
 }
 
