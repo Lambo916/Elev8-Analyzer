@@ -155,6 +155,12 @@ async function checkUsageLimit(req: VercelRequest, tool: string): Promise<{ allo
       return { allowed: true, count: 0 };
     }
 
+    // If DATABASE_URL is not configured, skip usage tracking (fail-safe mode)
+    if (!process.env.DATABASE_URL) {
+      console.warn(`[Usage] DATABASE_URL not configured - skipping usage tracking for ${toolLower} - ALLOWING`);
+      return { allowed: true, count: 0 };
+    }
+
     const db = getDb();
     
     // Check current usage for this specific tool (case-insensitive)
@@ -201,6 +207,12 @@ async function incrementUsage(req: VercelRequest, tool: string): Promise<{ succe
     
     if (ipAddress === 'unknown') {
       console.warn(`[Usage Increment] Unable to determine client IP for ${tool} - skipping usage tracking`);
+      return { success: true, count: 0, limitReached: false };
+    }
+
+    // If DATABASE_URL is not configured, skip usage tracking (fail-safe mode)
+    if (!process.env.DATABASE_URL) {
+      console.warn(`[Usage Increment] DATABASE_URL not configured - skipping usage tracking for ${toolLower}`);
       return { success: true, count: 0, limitReached: false };
     }
 
