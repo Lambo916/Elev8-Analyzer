@@ -185,14 +185,14 @@ class UsageTracker {
 
     async checkUsageLimit() {
         try {
-            const response = await fetch('/api/usage/check?tool=' + this.TOOL);
+            const response = await fetch('/api/usage?action=check&tool=' + this.TOOL);
             const data = await response.json();
             
             console.log('[Usage] Check result:', data);
             
             return {
-                allowed: data.allowed,
-                count: data.count || 0,
+                allowed: !data.hasReachedLimit,
+                count: data.reportCount || 0,
                 limit: data.limit || 30
             };
         } catch (error) {
@@ -203,7 +203,7 @@ class UsageTracker {
 
     async incrementUsage() {
         try {
-            const response = await fetch('/api/usage/increment', {
+            const response = await fetch('/api/usage?action=increment&tool=' + this.TOOL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tool: this.TOOL })
@@ -407,15 +407,12 @@ class Elev8AnalyzerApp {
             }
 
             // Call API
-            const response = await fetch('/api/generate', {
+            const response = await fetch('/api/elev8analyzer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    tool: 'elev8analyzer',
-                    formData: formData
-                })
+                body: JSON.stringify(formData)
             });
 
             const data = await response.json();

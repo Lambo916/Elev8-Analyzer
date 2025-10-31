@@ -116,7 +116,7 @@ class ComplianceToolkit {
     // ========================================================
     async checkUsageLimit() {
         try {
-            const response = await fetch('/api/usage/check');
+            const response = await fetch('/api/usage?action=check&tool=grantgenie');
             if (!response.ok) {
                 console.warn('[Usage] Check failed, allowing generation');
                 return { allowed: true, count: 0 };
@@ -136,9 +136,10 @@ class ComplianceToolkit {
 
     async incrementUsage() {
         try {
-            const response = await fetch('/api/usage/increment', {
+            const response = await fetch('/api/usage?action=increment&tool=grantgenie', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tool: 'grantgenie' })
             });
             if (response.ok) {
                 const data = await response.json();
@@ -391,10 +392,10 @@ class ComplianceToolkit {
             };
 
             // Call backend for structured JSON
-            const response = await fetch('/api/generate', {
+            const response = await fetch('/api/grantgenie', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ formData: payload })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
