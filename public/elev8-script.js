@@ -407,12 +407,15 @@ class Elev8AnalyzerApp {
             }
 
             // Call API
-            const response = await fetch('/api/elev8analyzer', {
+            const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    formData: formData,
+                    tool: 'elev8analyzer'
+                })
             });
 
             const data = await response.json();
@@ -1325,7 +1328,7 @@ class Elev8AnalyzerApp {
         }
 
         try {
-            const response = await fetch('/api/elev8/reports/save', {
+            const response = await fetch('/api/reports/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1377,7 +1380,7 @@ class Elev8AnalyzerApp {
             
             // Fetch saved reports
             try {
-                const response = await fetch('/api/elev8/reports/list');
+                const response = await fetch('/api/reports/list?toolkit=elev8analyzer');
                 const data = await response.json();
                 
                 if (!response.ok) {
@@ -1424,7 +1427,7 @@ class Elev8AnalyzerApp {
 
     async loadReportFromDb(reportId, modal) {
         try {
-            const response = await fetch(`/api/elev8/reports/load/${reportId}`);
+            const response = await fetch(`/api/reports/${reportId}`);
             const data = await response.json();
             
             if (!response.ok) {
@@ -1455,7 +1458,7 @@ class Elev8AnalyzerApp {
         }
         
         try {
-            const response = await fetch(`/api/elev8/reports/delete/${reportId}`, {
+            const response = await fetch(`/api/reports/${reportId}`, {
                 method: 'DELETE'
             });
             
