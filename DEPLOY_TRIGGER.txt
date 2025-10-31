@@ -1,0 +1,8 @@
+Deployment triggered at: 2025-10-31T16:45:00Z
+
+This file forces a fresh Vercel deployment.
+All fixes should now be live:
+- Vercel static file routing configured
+- API endpoints corrected (/api/generate)
+- Database protection in place (7 checks)
+- Mobile Safari form validation fixed (novalidate)
